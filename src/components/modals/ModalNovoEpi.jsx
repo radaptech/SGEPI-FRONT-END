@@ -6,26 +6,22 @@ const PROTECOES_PADRAO = [
   "Mãos e Braços", "Pés e Pernas", "Corpo Inteiro", "Quedas"
 ];
 
-// Lista pré-estabelecida de tamanhos comuns para EPIs
 const TAMANHOS_SUGERIDOS = [
   "Único", "PP", "P", "M", "G", "GG", "EXG",
   "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"
 ];
 
-function ModalNovoEpi({ onClose, onSalvar }) {
+function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
   const [carregandoDados, setCarregandoDados] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [erroCarregamento, setErroCarregamento] = useState("");
   
   const [tiposProtecao, setTiposProtecao] = useState([]);
   const [tamanhosDisponiveis, setTamanhosDisponiveis] = useState([]);
 
-  // Estados para Adição de Proteção
   const [mostrandoAddProtecao, setMostrandoAddProtecao] = useState(false);
   const [novoTipoNome, setNovoTipoNome] = useState("");
   const [salvandoNovoTipo, setSalvandoNovoTipo] = useState(false);
 
-  // Estados para Adição de Tamanho
   const [mostrandoAddTamanho, setMostrandoAddTamanho] = useState(false);
   const [novoTamanhoNome, setNovoTamanhoNome] = useState("");
   const [salvandoNovoTamanho, setSalvandoNovoTamanho] = useState(false);
@@ -39,19 +35,39 @@ function ModalNovoEpi({ onClose, onSalvar }) {
     async function carregarConfiguracoes() {
       setCarregandoDados(true);
       try {
-        const resProtecoes = await api.get("/protecoes");
-        const resTamanhos = await api.get("/tamanhos");
+        const [resProtecoes, resTamanhos] = await Promise.all([
+          api.get("/protecoes"),
+          api.get("/tamanhos")
+        ]);
         setTiposProtecao(Array.isArray(resProtecoes) ? resProtecoes : []);
         setTamanhosDisponiveis(Array.isArray(resTamanhos) ? resTamanhos : []);
+
+        if (epiParaEditar) {
+          const formatarDataParaInput = (dataBR) => {
+            if (!dataBR || !dataBR.includes('/')) return "";
+            const [d, m, a] = dataBR.split("/");
+            return `${a}-${m}-${d}`;
+          };
+
+          setForm({
+            nome: epiParaEditar.nome || "",
+            fabricante: epiParaEditar.fabricante || "",
+            ca: epiParaEditar.ca || "",
+            descricao: epiParaEditar.descricao || "",
+            data_validade_ca: formatarDataParaInput(epiParaEditar.data_validadeCa),
+            id_protecao: epiParaEditar.protecao?.id || "",
+            id_tamanho: epiParaEditar.tamanhos?.map(t => t.id) || [],
+            alerta_minimo: epiParaEditar.alerta_minimo || "",
+          });
+        }
       } catch (erro) {
         console.error("Erro ao carregar:", erro);
-        setErroCarregamento("Erro ao carregar dados.");
       } finally {
         setCarregandoDados(false);
       }
     }
     carregarConfiguracoes();
-  }, []);
+  }, [epiParaEditar]);
 
   async function handleAddNovoTipo() {
     if (!novoTipoNome) return;
@@ -69,29 +85,26 @@ function ModalNovoEpi({ onClose, onSalvar }) {
     } catch (err) { alert("Erro ao salvar proteção."); } finally { setSalvandoNovoTipo(false); }
   }
 
-async function handleAddNovoTamanho() {
+ async function handleAddNovoTamanho() {
   if (!novoTamanhoNome) return;
-  
   try {
     setSalvandoNovoTamanho(true);
-    
-    // CORREÇÃO: Enviando "tamanho" em vez de "nome" para bater com a Struct Go
     const res = await api.post("/gerencial/cadastro-tamanho", { 
       tamanho: novoTamanhoNome 
     });
 
-    // Como seu Axios retorna o dado direto ou dentro de uma chave
-    const novo = res?.tamanho_criado || res; 
+    const novo = res?.tamanho_criado || res?.data?.tamanho_criado || res; 
 
     if (novo && (novo.id || novo.Id || novo.ID)) {
       const novoItem = { 
         id: novo.id || novo.Id || novo.ID, 
-        nome: novo.nome || novo.Nome || novo.tamanho || novo.Tamanho 
+        tamanho: novo.tamanho || novo.Tamanho || novo.nome || novoTamanhoNome
       };
       
+      // 1. Atualiza a lista de tamanhos disponíveis (Espalhando o array para mudar a referência)
       setTamanhosDisponiveis(prev => [...prev, novoItem]);
       
-      // Adiciona aos selecionados
+      // 2. Seleciona automaticamente o tamanho recém-criado no formulário
       setForm(prev => ({
         ...prev,
         id_tamanho: [...prev.id_tamanho, novoItem.id]
@@ -99,15 +112,18 @@ async function handleAddNovoTamanho() {
 
       setNovoTamanhoNome("");
       setMostrandoAddTamanho(false);
+      
+      // Dica: Se ainda assim não aparecer, você pode forçar um log para ver se o array mudou
+      console.log("Novo tamanho adicionado à lista:", novoItem);
+
     } else {
-      // Fallback: recarregar lista se o objeto de retorno for confuso
+      // Fallback: recarregar do banco se o retorno do POST for incompleto
       const listaAtualizada = await api.get("/tamanhos");
       setTamanhosDisponiveis(Array.isArray(listaAtualizada) ? listaAtualizada : []);
       setMostrandoAddTamanho(false);
     }
   } catch (err) {
-    console.error("Erro ao salvar tamanho:", err.response?.data);
-    alert(err.response?.data?.error || "Erro ao salvar tamanho.");
+    alert("Erro ao salvar tamanho.");
   } finally {
     setSalvandoNovoTamanho(false);
   }
@@ -135,65 +151,48 @@ async function handleAddNovoTamanho() {
     });
   }
 
-async function salvarEpi() {
-  // 1. Validação de segurança no Front
-  if (!form.nome || !form.fabricante || !form.ca || !form.id_protecao || form.id_tamanho.length === 0) {
-    return alert("Preencha todos os campos obrigatórios (*)");
+  async function salvarEpi() {
+    if (!form.nome || !form.fabricante || !form.ca || !form.id_protecao || form.id_tamanho.length === 0) {
+      return alert("Preencha todos os campos obrigatórios (*)");
+    }
+
+    try {
+      setSalvando(true);
+      const caApenasNumeros = String(form.ca).replace(/\D/g, "");
+      
+      const formatarDataParaBR = (dataEstrangeira) => {
+        if (!dataEstrangeira) return "";
+        const [ano, mes, dia] = dataEstrangeira.split("-");
+        return `${dia}/${mes}/${ano}`;
+      };
+
+      const payload = {
+        nome: form.nome.trim(),
+        fabricante: form.fabricante.trim(),
+        ca: caApenasNumeros,
+        descricao: form.descricao || "",
+        validade_ca: formatarDataParaBR(form.data_validade_ca),
+        id_protecao: Number(form.id_protecao), 
+        tamanhos: form.id_tamanho.map(id => Number(id)), 
+        alerta_minimo: Number(form.alerta_minimo || 0) 
+      };
+
+      if (epiParaEditar) {
+        await api.patch(`/gerencial/epi/${epiParaEditar.id}`, payload);
+        alert("EPI atualizado com sucesso!");
+      } else {
+        await api.post("/gerencial/cadastro-epi", payload);
+        alert("EPI cadastrado com sucesso!");
+      }
+      
+      if (onSalvar) onSalvar();
+      onClose();
+    } catch (erro) {
+      alert(erro.response?.data?.error || "Erro ao salvar EPI.");
+    } finally {
+      setSalvando(false);
+    }
   }
-
-  try {
-    setSalvando(true);
-
-    // 2. Limpeza do CA (O Go exige APENAS números por causa do binding:"numeric")
-    const caApenasNumeros = form.ca.replace(/\D/g, "");
-
-    // FORMATANDO A DATA: de YYYY-MM-DD para DD/MM/YYYY
-  const formatarDataParaBR = (dataEstrangeira) => {
-    if (!dataEstrangeira) return "";
-    const [ano, mes, dia] = dataEstrangeira.split("-");
-    return `${dia}/${mes}/${ano}`;
-  };
-
-  const dataFormatada = formatarDataParaBR(form.data_validade_ca);
-    // 3. Montagem do Payload rigorosa
-    const payload = {
-      nome: form.nome.trim(),
-      fabricante: form.fabricante.trim(),
-      ca: caApenasNumeros, // Envia "12345" em vez de "12.345"
-      descricao: form.descricao || "", // lte=250
-      data_validade_ca: dataFormatada, // String DD/MM/YYYY para o configs.DataBr
-      
-      // Converte para Number pois a Struct espera 'int'
-      id_protecao: Number(form.id_protecao), 
-      
-      // Converte cada ID para int (Idtamanho []int)
-      id_tamanho: form.id_tamanho.map(id => Number(id)), 
-      
-      // AlertaMinimo int com binding:"required" (não pode ser vazio)
-      alerta_minimo: Number(form.alerta_minimo || 0) 
-    };
-
-    console.log("Tentando enviar este payload:", payload);
-
-    const resposta = await api.post("/gerencial/cadastro-epi", payload);
-    
-    // Se chegou aqui, o Go aceitou!
-    if (onSalvar) onSalvar(resposta);
-    onClose();
-    alert("EPI cadastrado com sucesso!");
-
-  } catch (erro) {
-    const dadosErro = erro.response?.data;
-  
-    console.error("DEBUG BACKEND:", dadosErro); // Olhe isso no F12!
-
-    const mensagemFinal = dadosErro?.detalhes || dadosErro?.error || "Erro desconhecido";
-  
-  alert(`Erro no Cadastro:\n${mensagemFinal}`);
-  } finally {
-    setSalvando(false);
-  }
-}
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 text-slate-700">
@@ -202,9 +201,13 @@ async function salvarEpi() {
         {/* Header */}
         <div className="px-6 py-5 border-b bg-slate-50 flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">+</div>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-2xl font-bold ${epiParaEditar ? 'bg-amber-500' : 'bg-blue-600'}`}>
+              {epiParaEditar ? '✎' : '+'}
+            </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-800">Cadastrar Novo EPI</h3>
+              <h3 className="text-xl font-bold text-slate-800">
+                {epiParaEditar ? `Editar: ${epiParaEditar.nome}` : "Cadastrar Novo EPI"}
+              </h3>
               <p className="text-sm text-slate-500">Gestão de Equipamentos de Proteção.</p>
             </div>
           </div>
@@ -213,7 +216,6 @@ async function salvarEpi() {
 
         <div className="flex-1 overflow-y-auto px-6 py-8">
           <div className="space-y-10">
-            
             {/* Identificação */}
             <section>
               <h4 className="text-sm font-extrabold tracking-wide text-slate-400 uppercase mb-5">Identificação</h4>
@@ -223,7 +225,7 @@ async function salvarEpi() {
                   <input type="text" value={form.nome} onChange={(e) => atualizarCampo("nome", e.target.value)} className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
 
-                <div className="relative">
+                <div>
                   <label className="flex justify-between items-center text-sm font-bold mb-2">
                     Tipo de Proteção *
                     <button type="button" onClick={() => setMostrandoAddProtecao(!mostrandoAddProtecao)} className="text-blue-600 text-xs font-extrabold">
@@ -252,54 +254,34 @@ async function salvarEpi() {
                 </div>
               </div>
             </section>
-            {/* Seção de Descrição */}
+
+            {/* Descrição */}
             <section>
-              <label className="block text-sm font-bold mb-2 text-slate-700">
-                Descrição do Equipamento
-              </label>
+              <label className="block text-sm font-bold mb-2 text-slate-700">Descrição do Equipamento</label>
               <textarea
                 value={form.descricao}
                 onChange={(e) => atualizarCampo("descricao", e.target.value)}
                 className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px] resize-none"
-                placeholder="Detalhes técnicos, modelo específico ou observações sobre o uso do EPI..."
                 maxLength={250}
               />
-              <div className="flex justify-end mt-1">
-                <span className={`text-[10px] font-bold ${form.descricao?.length >= 250 ? 'text-red-500' : 'text-slate-400'}`}>
-                  {form.descricao?.length || 0}/250 caracteres
-                </span>
-              </div>
             </section>
 
-            {/* Tamanhos com Lista Pré-definida */}
+            {/* Tamanhos */}
             <section>
               <div className="flex items-center justify-between mb-5">
                 <h4 className="text-sm font-extrabold tracking-wide text-slate-400 uppercase">Grade de Tamanhos</h4>
                 <button type="button" onClick={() => setMostrandoAddTamanho(!mostrandoAddTamanho)} className="text-blue-600 text-xs font-extrabold">
-                   {mostrandoAddTamanho ? "✕ Voltar" : "+ Novo Tamanho"}
+                  {mostrandoAddTamanho ? "✕ Voltar" : "+ Novo Tamanho"}
                 </button>
               </div>
 
               {mostrandoAddTamanho && (
                 <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-100 rounded-2xl flex gap-3">
-                  <select 
-                    autoFocus
-                    value={novoTamanhoNome}
-                    onChange={(e) => setNovoTamanhoNome(e.target.value)}
-                    className="flex-1 h-11 px-4 rounded-xl border border-blue-200 outline-none focus:ring-2 focus:ring-blue-400"
-                  >
-                    <option value="">Selecione o tamanho para adicionar...</option>
-                    {TAMANHOS_SUGERIDOS.map(t => (
-                        <option key={t} value={t}>{t}</option>
-                    ))}
+                  <select value={novoTamanhoNome} onChange={(e) => setNovoTamanhoNome(e.target.value)} className="flex-1 h-11 px-4 rounded-xl border border-blue-200 outline-none">
+                    <option value="">Selecione...</option>
+                    {TAMANHOS_SUGERIDOS.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
-                  <button 
-                    onClick={handleAddNovoTamanho}
-                    disabled={salvandoNovoTamanho || !novoTamanhoNome}
-                    className="px-6 bg-blue-600 text-white rounded-xl font-bold text-sm"
-                  >
-                    {salvandoNovoTamanho ? "..." : "Habilitar"}
-                  </button>
+                  <button onClick={handleAddNovoTamanho} className="px-6 bg-blue-600 text-white rounded-xl font-bold">Add</button>
                 </div>
               )}
 
@@ -310,16 +292,13 @@ async function salvarEpi() {
                     return (
                       <button
                         key={tam.id} type="button" onClick={() => alternarTamanho(tam.id)}
-                        className={`min-w-[54px] h-11 px-4 rounded-xl border-2 font-bold transition-all duration-200 flex items-center justify-center
+                        className={`min-w-[54px] h-11 px-4 rounded-xl border-2 font-bold transition-all duration-200
                           ${isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md scale-105" : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"}`}
                       >
-                        {tam.tamanho}
+                        {tam.tamanho || tam.nome}
                       </button>
                     );
                   })}
-                </div>
-                <div className="mt-5 pt-4 border-t border-slate-200">
-                  <p className="text-[13px] text-slate-500 italic">Resumo: <span className="text-slate-800 font-bold not-italic">{nomesTamanhosSelecionados}</span></p>
                 </div>
               </div>
             </section>
@@ -328,13 +307,7 @@ async function salvarEpi() {
             <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-bold mb-2">Número do CA</label>
-                <input 
-                    type="text" 
-                    value={form.ca} 
-                    onChange={(e) => atualizarCampo("ca", e.target.value.replace(/\D/g, ""))} // Já limpa enquanto digita
-                    className="w-full h-12 px-4 border border-slate-300 rounded-xl" 
-                    placeholder="Somente números" 
-                  />
+                <input type="text" value={form.ca} onChange={(e) => atualizarCampo("ca", e.target.value.replace(/\D/g, ""))} className="w-full h-12 px-4 border border-slate-300 rounded-xl" />
               </div>
               <div>
                 <label className="block text-sm font-bold mb-2">Validade do CA</label>
@@ -350,8 +323,8 @@ async function salvarEpi() {
 
         <div className="px-6 py-4 border-t bg-slate-50 flex justify-end gap-3">
           <button onClick={onClose} className="px-6 h-12 font-bold text-slate-400">Cancelar</button>
-          <button onClick={salvarEpi} disabled={salvando} className="h-12 px-12 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700">
-            {salvando ? "Salvando..." : "💾 Salvar Equipamento"}
+          <button onClick={salvarEpi} disabled={salvando} className={`h-12 px-12 rounded-xl text-white font-bold transition-all ${epiParaEditar ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+            {salvando ? "Salvando..." : epiParaEditar ? "Atualizar EPI" : "Salvar Equipamento"}
           </button>
         </div>
       </div>
