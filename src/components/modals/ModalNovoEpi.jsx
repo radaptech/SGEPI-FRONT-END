@@ -171,6 +171,18 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
         fabricante: form.fabricante.trim(),
         ca: caApenasNumeros,
         descricao: form.descricao || "",
+        data_validade_ca: formatarDataParaBR(form.data_validade_ca),
+        id_protecao: Number(form.id_protecao), 
+        id_tamanho: form.id_tamanho.map(id => Number(id)), 
+        alerta_minimo: Number(form.alerta_minimo || 0) 
+      };
+
+      const PayloadAtualizarEpi = {
+
+        nome: form.nome.trim(),
+        fabricante: form.fabricante.trim(),
+        ca: caApenasNumeros,
+        descricao: form.descricao || "",
         validade_ca: formatarDataParaBR(form.data_validade_ca),
         id_protecao: Number(form.id_protecao), 
         tamanhos: form.id_tamanho.map(id => Number(id)), 
@@ -178,7 +190,7 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
       };
 
       if (epiParaEditar) {
-        await api.patch(`/gerencial/epi/${epiParaEditar.id}`, payload);
+        await api.patch(`/gerencial/epi/${epiParaEditar.id}`, PayloadAtualizarEpi);
         alert("EPI atualizado com sucesso!");
       } else {
         await api.post("/gerencial/cadastro-epi", payload);

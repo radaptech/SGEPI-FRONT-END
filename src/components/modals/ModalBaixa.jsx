@@ -1,42 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../services/api";
 
-const mockFuncionarios = [
-  { id: 1, nome: "João Silva", matricula: "483920" },
-  { id: 2, nome: "Maria Santos", matricula: "739104" },
-  { id: 3, nome: "Carlos Oliveira", matricula: "102938" },
-  { id: 4, nome: "Ana Pereira", matricula: "554433" },
-];
 
-const mockEpis = [
-  { id: 1, nome: "Capacete de Segurança" },
-  { id: 2, nome: "Sapato de Segurança" },
-  { id: 3, nome: "Luva de Proteção" },
-  { id: 4, nome: "Protetor Auricular" },
-];
-
-const mockTamanhos = [
-  { id: 1, tamanho: "P" },
-  { id: 2, tamanho: "M" },
-  { id: 3, tamanho: "G" },
-  { id: 4, tamanho: "GG" },
-  { id: 5, tamanho: "38" },
-  { id: 6, tamanho: "40" },
-  { id: 7, tamanho: "42" },
-  { id: 8, tamanho: "44" },
-  { id: 9, tamanho: "Único" },
-];
-
-const mockMotivos = [
-  { id: 1, nome: "Vencimento / Validade Expirada" },
-  { id: 2, nome: "Dano / Quebra Acidental" },
-  { id: 3, nome: "Perda / Roubo" },
-  { id: 4, nome: "Descarte Técnico" },
-  { id: 5, nome: "Ajuste de Inventário (Balanço)" },
-  { id: 6, nome: "Desligamento / Demissão" },
-  { id: 7, nome: "Desgaste Natural" },
-  { id: 8, nome: "Devolução de Funcionário" },
-];
 
 function extrairLista(resp, fallback = []) {
   const dados = resp?.data ?? resp ?? fallback;
@@ -267,9 +232,9 @@ function ModalBaixa({ onClose, onSalvar }) {
     async function carregarDados() {
       const [listaFuncionarios, listaEpis, listaTamanhos, listaMotivos] =
         await Promise.all([
-          buscarPrimeiraLista(["/funcionarios"], mockFuncionarios),
-          buscarPrimeiraLista(["/epis", "/epi", "/produtos"], mockEpis),
-          buscarPrimeiraLista(["/tamanhos", "/tamanho"], mockTamanhos),
+          buscarPrimeiraLista(["/funcionarios"]),
+          buscarPrimeiraLista(["/epis", "/epi", "/produtos"]),
+          buscarPrimeiraLista(["/tamanhos", "/tamanho"]),
           buscarPrimeiraLista(
             [
               "/motivos-devolucao",
@@ -277,7 +242,6 @@ function ModalBaixa({ onClose, onSalvar }) {
               "/motivos_baixa",
               "/motivos",
             ],
-            mockMotivos
           ),
         ]);
 

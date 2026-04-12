@@ -1,119 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
 
-const mockTiposProtecao = [
-  { id: 1, nome: "Proteção da Cabeça" },
-  { id: 2, nome: "Proteção Auditiva" },
-  { id: 3, nome: "Proteção Respiratória" },
-  { id: 4, nome: "Proteção Visual" },
-  { id: 5, nome: "Proteção de Mãos" },
-  { id: 6, nome: "Proteção de Pés" },
-  { id: 7, nome: "Proteção contra Quedas" },
-];
-
-const mockEpis = [
-  {
-    id: 1,
-    nome: "Capacete de Segurança Aba Frontal",
-    fabricante: "3M do Brasil",
-    CA: "12345",
-    descricao: "Capacete para proteção da cabeça em ambiente industrial.",
-    validade_CA: "2028-10-15",
-    idTipoProtecao: 1,
-    alerta_minimo: 10,
-  },
-  {
-    id: 2,
-    nome: "Luva de Raspa Cano Longo",
-    fabricante: "Volk do Brasil",
-    CA: "67890",
-    descricao: "Luva de proteção para trabalhos com abrasão e calor.",
-    validade_CA: "2027-05-20",
-    idTipoProtecao: 5,
-    alerta_minimo: 20,
-  },
-  {
-    id: 3,
-    nome: "Máscara Respiratória PFF2",
-    fabricante: "Delta Plus",
-    CA: "54321",
-    descricao: "Máscara para proteção respiratória.",
-    validade_CA: "2026-12-01",
-    idTipoProtecao: 3,
-    alerta_minimo: 15,
-  },
-  {
-    id: 4,
-    nome: "Botina de Segurança Couro",
-    fabricante: "Marluvas",
-    CA: "98765",
-    descricao: "Botina de segurança para proteção dos pés.",
-    validade_CA: "2027-03-10",
-    idTipoProtecao: 6,
-    alerta_minimo: 8,
-  },
-  {
-    id: 5,
-    nome: "Óculos de Proteção Incolor",
-    fabricante: "Kalipso",
-    CA: "11223",
-    descricao: "Óculos para proteção visual contra partículas.",
-    validade_CA: "2027-01-30",
-    idTipoProtecao: 4,
-    alerta_minimo: 12,
-  },
-];
-
-const mockTamanhos = [
-  { id: 1, tamanho: "P" },
-  { id: 2, tamanho: "M" },
-  { id: 3, tamanho: "G" },
-  { id: 4, tamanho: "GG" },
-  { id: 5, tamanho: "38" },
-  { id: 6, tamanho: "40" },
-  { id: 7, tamanho: "42" },
-  { id: 8, tamanho: "44" },
-  { id: 9, tamanho: "Único" },
-];
-
-const mockEntradas = [
-  {
-    id: 101,
-    idEpi: 1,
-    idTamanho: 9,
-    data_entrada: "2026-03-01",
-    quantidade: 30,
-    quantidadeAtual: 18,
-    data_fabricacao: "2026-01-10",
-    data_validade: "2028-10-15",
-    lote: "CAP-001",
-    valor_unitario: 29.9,
-  },
-  {
-    id: 102,
-    idEpi: 2,
-    idTamanho: 2,
-    data_entrada: "2026-03-02",
-    quantidade: 40,
-    quantidadeAtual: 9,
-    data_fabricacao: "2026-01-15",
-    data_validade: "2027-05-20",
-    lote: "LUV-008",
-    valor_unitario: 14.5,
-  },
-  {
-    id: 103,
-    idEpi: 4,
-    idTamanho: 6,
-    data_entrada: "2026-03-03",
-    quantidade: 20,
-    quantidadeAtual: 6,
-    data_fabricacao: "2026-02-01",
-    data_validade: "2027-03-10",
-    lote: "BOT-014",
-    valor_unitario: 119.9,
-  },
-];
 
 function extrairLista(resp, fallback = []) {
   const dados = resp?.data ?? resp ?? fallback;
@@ -288,13 +175,13 @@ function ModalBusca({ onClose }) {
           await Promise.all([
             buscarPrimeiraLista(
               ["/tipo-protecao", "/tipos-protecao", "/tipos_protecao"],
-              mockTiposProtecao
+            
             ),
-            buscarPrimeiraLista(["/epis", "/epi", "/produtos"], mockEpis),
-            buscarPrimeiraLista(["/tamanhos", "/tamanho"], mockTamanhos),
+            buscarPrimeiraLista(["/epis", "/epi", "/produtos"], ),
+            buscarPrimeiraLista(["/tamanhos", "/tamanho"], ),
             buscarPrimeiraLista(
               ["/entrada-epi", "/entrada_epi", "/entradas"],
-              mockEntradas
+              
             ),
           ]);
 
