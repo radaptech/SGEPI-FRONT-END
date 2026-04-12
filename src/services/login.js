@@ -1,6 +1,4 @@
-
-
-// ... dentro do seu componente React ...
+import api from './api';
 
 const realizarLogin = async (email, senha) => {
   try {

@@ -183,9 +183,7 @@ export function useSignaturePad() {
     if (event?.target?.releasePointerCapture) {
       try {
         event.target.releasePointerCapture(event.pointerId);
-      } catch {
-        // ignora
-      }
+      } catch {}
     }
 
     ctx.closePath();

@@ -1,14 +1,9 @@
 function converterParaData(dataString) {
   if (!dataString) return null;
-
-  // Se o Go mandou no formato brasileiro DD/MM/YYYY (do configs.DataBr)
   if (dataString.includes("/")) {
     const [dia, mes, ano] = dataString.split("/");
-    // Remonta no padrão internacional YYYY-MM-DD para o Javascript entender
     return new Date(`${ano}-${mes}-${dia}T00:00:00`);
   }
-
-  // Se já vier no padrão do banco (YYYY-MM-DD), o JS lê direto
   return new Date(dataString);
 }
 

@@ -1,5 +1,5 @@
 # 1. Usa uma imagem leve do Node (como se fosse o "Windows" do container)
-FROM node:18-alpine
+FROM node:20-alpine
 
 # 2. Cria uma pasta dentro do container para colocar seu app
 WORKDIR /app
@@ -16,5 +16,5 @@ COPY . .
 # 6. Expõe a porta 3000 (onde o React roda)
 EXPOSE 3000
 
-# 7. O comando para iniciar o projeto (igual você faz no terminal)
+# 7. O comando para iniciar o projeto 
 CMD ["npm", "start"]

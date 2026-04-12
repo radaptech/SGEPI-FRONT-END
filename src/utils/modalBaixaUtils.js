@@ -9,9 +9,7 @@ export async function buscarPrimeiraLista(api, rotas, fallback = []) {
       const resp = await api.get(rota);
       const lista = extrairLista(resp, fallback);
       if (Array.isArray(lista)) return lista;
-    } catch {
-      // tenta próxima rota
-    }
+    } catch {}
   }
   return fallback;
 }

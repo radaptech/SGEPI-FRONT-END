@@ -3,14 +3,12 @@ export function converterDataParaISO(dataBruta) {
   if (!dataBruta) return null;
   
   const dataStr = String(dataBruta).substring(0, 10);
-  
-  // Se a API Go mandou no formato DD/MM/YYYY, inverte para YYYY-MM-DD
+
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataStr)) {
     const [dia, mes, ano] = dataStr.split("/");
     return `${ano}-${mes}-${dia}`;
   }
-  
-  return dataStr; // Se já vier em ISO, só devolve normal
+  return dataStr;
 }
 
 
@@ -39,14 +37,12 @@ export function normalizarFuncionario(item) {
 
 export function normalizarEntrada(item) {
   return {
-    // Tenta pegar com I maiúsculo (Go) ou i minúsculo (JS)
     id: Number(item?.Id),
     idEpi: Number(item?.IdEpi),
     idTamanho: Number(item?.IdTamanho),
     quantidadeAtual: Number(item?.QuantidadeAtual),
     quantidade: Number(item?.Quantidade),
-    valor_unitario: Number(item?.ValorUnitario),
-    
+    valor_unitario: Number(item?.ValorUnitario),   
     data_entrada: converterDataParaISO(
       item?.DataEntrada),
     lote: String(item?.Lote ?? item?.lote ?? ""),
@@ -60,7 +56,6 @@ export function normalizarEntrega(item) {
     data_entrega: converterDataParaISO(
       item?.DataEntrega ?? item?.data_entrega ?? item?.dataEntrega ?? item?.data
     ),
-    // Mantido para os modais, caso você use
     assinatura: item?.assinatura ?? null,
     token_validacao: item?.token_validacao ?? null,
   };
@@ -68,7 +63,7 @@ export function normalizarEntrega(item) {
 
 export function normalizarItemEntregue(item) {
   return {
-    id: item?.id ?? Date.now() + Math.random(), // Fallback de ID caso a API não mande ID do item
+    id: item?.id ?? Date.now() + Math.random(),
     idEntrega: Number(item?.idEntrega ?? 0),
     idEpi: Number(item?.idEpi ?? 0),
     idTamanho: Number(item?.idTamanho ?? 0),

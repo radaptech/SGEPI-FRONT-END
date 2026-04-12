@@ -8,11 +8,8 @@ export const PERMISSOES = {
   visualizar_dashboard: [PERFIS.ADMIN, PERFIS.COLABORADOR, PERFIS.GERENTE],
   visualizar_estoque: [PERFIS.ADMIN, PERFIS.COLABORADOR, PERFIS.GERENTE],
   visualizar_departamentos: [PERFIS.ADMIN, PERFIS.COLABORADOR, PERFIS.GERENTE],
-
-  // ADICIONE ESTAS LINHAS AQUI:
   visualizar_entregas: [PERFIS.ADMIN, PERFIS.COLABORADOR, PERFIS.GERENTE],
-  cadastrar_entregas: [PERFIS.ADMIN, PERFIS.GERENTE], // Apenas admin e gerente criam novas
-
+  cadastrar_entregas: [PERFIS.ADMIN, PERFIS.GERENTE], 
   cadastrar_departamento: [PERFIS.ADMIN],
   excluir_departamento: [PERFIS.ADMIN],
   cadastrar_funcionario: [PERFIS.ADMIN],
@@ -35,7 +32,6 @@ export function temPermissao(usuario, permissao) {
 
   const perfisPermitidos = PERMISSOES[permissao] || [];
 
-  // Super usuário (God Mode)
   if (
     usuario?.email === "adm@gmail.com" ||
     usuario?.login === "adm@gmail.com"

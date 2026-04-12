@@ -57,7 +57,6 @@ export function encontrarLimitesDesenho(canvas) {
       const g = data[i + 1];
       const b = data[i + 2];
       const a = data[i + 3];
-
       const pixelEhBranco = r === 255 && g === 255 && b === 255 && a === 255;
 
       if (!pixelEhBranco) {

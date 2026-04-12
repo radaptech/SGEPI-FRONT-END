@@ -218,7 +218,7 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
 
       onClose();
     } catch (erro) {
-      alert(erro?.message || "Erro ao registrar entrega.");
+      alert(erro?.message || "Erro ao registrar a entrega.");
     } finally {
       setCarregando(false);
     }

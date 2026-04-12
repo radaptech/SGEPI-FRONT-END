@@ -66,18 +66,6 @@ export function useDashboardResumo() {
   }),
 ]);
     
-
-      // ======== LOGS ATUALIZADOS ========
-      console.log("📦 DADOS BRUTOS DA API:");
-      console.log("EPIs:", listaEpis);
-      console.log("Tamanhos:", listaTamanhos);
-      console.log("Funcionários:", listaFuncionarios);
-      console.log("Entradas:", listaEntradas);
-      console.log("Entregas:", listaEntregas);
-      console.log("Itens Entregues:", listaItensEntregues);
-      console.log("Devoluções:", listaDevolucoes);
-      console.log("=================================");
-
       setEpis((listaEpis || []).map(normalizarEpi));
       setTamanhos((listaTamanhos || []).map(normalizarTamanho));
       setFuncionarios((listaFuncionarios || []).map(normalizarFuncionario));

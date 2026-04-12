@@ -1,4 +1,3 @@
-// novo estoqueNormalizers.js
 export function normalizarEntradaCompleta(item) {
   return {
     id: item?.id ?? 0,
@@ -7,8 +6,6 @@ export function normalizarEntradaCompleta(item) {
     quantidadeAtual: item?.quantidade_atual ?? 0,
     preco: item?.valor_unitario ?? 0,
     validade: item?.data_validade ?? item?.epi?.validade_ca ?? null,
-    
-    // Pegando direto dos objetos aninhados
     tamanho: item?.tamanho?.tamanho ?? "-",
     nome: item?.epi?.nome ?? "EPI sem nome",
     fabricante: item?.epi?.fabricante ?? "-",
@@ -17,8 +14,6 @@ export function normalizarEntradaCompleta(item) {
     alertaMinimo: item?.epi?.alertaMinimo ?? "-",
     tipoProtecao: item?.epi?.protecao?.nome ?? "-",
     data_entrada: item?.data_entrada ?? "-",
-    
-    // Calculado no front
     valorTotal: (item?.quantidade_atual ?? 0) * (item?.valor_unitario ?? 0)
   };
 }

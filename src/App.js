@@ -37,9 +37,6 @@ function App() {
 
   const handleLogin = (dadosLogin) => {
     const usuarioRecebido = dadosLogin?.usuario ?? dadosLogin;
-
-    console.log("Usuário recebido no App:", usuarioRecebido);
-
     setUsuario(usuarioRecebido);
     setPaginaAtual("Dashboard");
   };

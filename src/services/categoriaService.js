@@ -4,11 +4,8 @@ async function tentarPost(rotas, payload) {
   for (const rota of rotas) {
     try {
       return await api.post(rota, payload);
-    } catch (erro) {
-      // tenta a próxima rota
-    }
+    } catch (erro) {}
   }
-
   throw new Error("Não foi possível cadastrar a categoria em nenhuma rota.");
 }
 
@@ -16,11 +13,8 @@ async function tentarGet(rotas) {
   for (const rota of rotas) {
     try {
       return await api.get(rota);
-    } catch (erro) {
-      // tenta a próxima rota
-    }
+    } catch (erro) {}
   }
-
   throw new Error("Não foi possível buscar categorias em nenhuma rota.");
 }
 
@@ -28,11 +22,8 @@ async function tentarDelete(rotas) {
   for (const rota of rotas) {
     try {
       return await api.delete(rota);
-    } catch (erro) {
-      // tenta a próxima rota
-    }
+    } catch (erro) {}
   }
-
   throw new Error("Não foi possível excluir a categoria em nenhuma rota.");
 }
 

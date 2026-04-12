@@ -49,7 +49,7 @@ const carregarDados = useCallback(async () => {
       
     } catch (erro) {
       console.error("Erro ao carregar dados:", erro);
-      setErroTela("Não foi possível carregar os departamentos e funções.");
+      setErroTela("Não foi possível carregar os departamentos e as funções.");
     } finally {
       setCarregandoTela(false);
     }

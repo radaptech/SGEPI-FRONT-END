@@ -4,9 +4,7 @@ async function tentarPost(rotas, payload) {
   for (const rota of rotas) {
     try {
       return await api.post(rota, payload);
-    } catch (erro) {
-      // tenta a próxima rota
-    }
+    } catch (erro) {}
   }
 
   throw new Error("Não foi possível cadastrar o status em nenhuma rota.");
@@ -16,11 +14,8 @@ async function tentarGet(rotas) {
   for (const rota of rotas) {
     try {
       return await api.get(rota);
-    } catch (erro) {
-      // tenta a próxima rota
-    }
+    } catch (erro) {}
   }
-
   throw new Error("Não foi possível buscar os status em nenhuma rota.");
 }
 
@@ -28,11 +23,8 @@ async function tentarPut(rotas, payload) {
   for (const rota of rotas) {
     try {
       return await api.put(rota, payload);
-    } catch (erro) {
-      // tenta a próxima rota
-    }
+    } catch (erro) {}
   }
-
   throw new Error("Não foi possível atualizar o status em nenhuma rota.");
 }
 
@@ -40,9 +32,7 @@ async function tentarDelete(rotas) {
   for (const rota of rotas) {
     try {
       return await api.delete(rota);
-    } catch (erro) {
-      // tenta a próxima rota
-    }
+    } catch (erro) {}
   }
 
   throw new Error("Não foi possível excluir o status em nenhuma rota.");

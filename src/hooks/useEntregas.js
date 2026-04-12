@@ -192,26 +192,11 @@ export function useEntregas({ usuarioLogado }) {
         buscarPrimeiraLista(["/entrega-itens-dashbord"]),
       ]);
 
-      console.log("==========================================");
-      console.log("📦 1. DADOS BRUTOS RETORNADOS PELA API:");
-      console.log("Lista Funcionarios:", listaFuncionarios);
-      console.log("Lista Epis:", listaEpis);
-      console.log("Lista Tamanhos:", listaTamanhos);
-      console.log("Lista Entregas (Cabeçalho):", listaEntregas);
-      console.log("Lista Itens Entregues:", listaItensEntregues);
-      console.log("==========================================");
-
-      // Se algo vier undefined, a gente previne erros com `|| []`
       const funcNorm = (listaFuncionarios || []).map(normalizarFuncionario);
       const episNorm = (listaEpis || []).map(normalizarEpi);
       const tamNorm = (listaTamanhos || []).map(normalizarTamanho);
       const entregasNorm = (listaEntregas || []).map(normalizarEntrega);
       const itensNorm = (listaItensEntregues || []).map(normalizarItemEntregue);
-
-      console.log("✨ 2. DADOS NORMALIZADOS (Pós limpeza):");
-      console.log("Entregas Normalizadas:", entregasNorm);
-      console.log("Itens Normalizados:", itensNorm);
-      console.log("==========================================");
 
       setFuncionarios(funcNorm);
       setEpis(episNorm);
@@ -220,7 +205,7 @@ export function useEntregas({ usuarioLogado }) {
       setItensEntregues(itensNorm);
     } catch (erro) {
       console.error("Erro ao carregar entregas:", erro);
-      setErroTela(erro?.message || "Não foi possível carregar os dados das entregas da API.");
+      setErroTela(erro?.message || "Não foi possível carregar os dados das entregas.");
     } finally {
       setCarregando(false);
     }
@@ -297,8 +282,6 @@ export function useEntregas({ usuarioLogado }) {
 
   // LOG PARA ACOMPANHAMENTO DO ARRAY FINAL
   useEffect(() => {
-    console.log("🔄 3. ENTREGAS RESOLVIDAS (Cruzamento Funcionario/EPI):", entregasResolvidas);
-    console.log("👁️ 4. ENTREGAS VISÍVEIS (Após filtro de tela e ordenação):", entregasOrdenadas);
   }, [entregasResolvidas, entregasOrdenadas]);
 
   const totalPaginas = Math.max(1, Math.ceil(entregasOrdenadas.length / itensPorPagina));

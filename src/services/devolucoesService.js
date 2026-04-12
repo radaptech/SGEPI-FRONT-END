@@ -90,9 +90,7 @@ async function buscarPrimeiraLista(rotas, fallback) {
       if (Array.isArray(lista)) {
         return lista;
       }
-    } catch {
-      // tenta a próxima rota
-    }
+    } catch {}
   }
 
   return fallback;

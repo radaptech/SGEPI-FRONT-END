@@ -194,7 +194,9 @@ function Dashboard({ usuarioLogado }) {
           {
             key: "quantidade",
             label: "Quantidade",
-            render: (item) => <span className="font-bold">{item.quantidade}</span>,
+            render: (item) => (
+              <span className="font-bold">{item.quantidade}</span>
+            ),
           },
           {
             key: "valorTotal",
@@ -269,7 +271,7 @@ function Dashboard({ usuarioLogado }) {
 
   if (!podeVisualizarDashboard) {
     return (
-      <div className="animate-fade-in">
+      <div className="animate-fade-in h-full min-h-0 overflow-hidden">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-4 text-amber-700">
             Você não tem permissão para visualizar o dashboard.
@@ -280,8 +282,8 @@ function Dashboard({ usuarioLogado }) {
   }
 
   return (
-    <div className="animate-fade-in overflow-x-hidden xl:h-[calc(100vh-110px)] xl:overflow-hidden">
-      <div className="grid h-full grid-rows-[auto_auto_1fr] gap-3">
+    <div className="animate-fade-in h-full min-h-0 overflow-hidden overflow-x-hidden -mt-[20px]">
+      <div className="grid h-full min-h-0 grid-rows-[auto_auto_1fr] gap-2">
         <div className="grid grid-cols-1 xl:grid-cols-[1.7fr_0.8fr] gap-3">
           <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100">
             <h2 className="text-2xl md:text-[2rem] leading-tight font-bold text-gray-800 tracking-tight">
@@ -316,7 +318,7 @@ function Dashboard({ usuarioLogado }) {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-3 min-h-0">
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 min-h-0">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 min-h-0">
             <h3 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
               📌 Resumo rápido
             </h3>
@@ -345,18 +347,19 @@ function Dashboard({ usuarioLogado }) {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 min-h-0">
-            <h3 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-              ⚡ Ações Rápidas
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 min-h-0">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <span>⚡</span>
+              <span>Ações Rápidas</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <QuickActionCard
                 titulo="Registrar Entrada"
-                descricao="Repor estoque / Compras"
+                descricao="Reposição de estoque e compras"
                 icone="➕"
                 onClick={() => setModalAberto("entrada")}
-                className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg hover:shadow-xl hover:-translate-y-1"
+                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-md hover:shadow-lg hover:-translate-y-1"
                 descricaoClassName="text-emerald-100 group-hover:text-white"
                 iconBoxClassName="bg-white/10 group-hover:bg-white/20"
               />
@@ -366,28 +369,29 @@ function Dashboard({ usuarioLogado }) {
                 descricao="Entregar EPI ao funcionário"
                 icone="👷"
                 onClick={() => setModalAberto("entrega")}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:shadow-xl hover:-translate-y-1"
+                className="h-full bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg hover:-translate-y-1"
                 descricaoClassName="text-blue-100 group-hover:text-white"
                 iconBoxClassName="bg-white/10 group-hover:bg-white/20"
               />
 
               <QuickActionCard
-                titulo="Devolução / Baixa"
-                descricao="Registrar devolução, dano ou descarte"
+                titulo="Devolução"
+                descricao="Registrar baixa ou descarte"
                 icone="📉"
                 onClick={() => setModalAberto("baixa")}
-                className="bg-gradient-to-r from-rose-600 to-rose-700 text-white shadow-lg hover:shadow-xl hover:-translate-y-1"
+                className="h-full bg-gradient-to-r from-rose-600 to-rose-700 text-white shadow-md hover:shadow-lg hover:-translate-y-1"
                 descricaoClassName="text-rose-100 group-hover:text-white"
                 iconBoxClassName="bg-white/10 group-hover:bg-white/20"
               />
 
               <QuickActionCard
-                titulo="Consultar Estoque Rápido"
-                descricao="Pesquisar por CA, nome, fabricante ou lote"
+                titulo="Consultar Estoque"
+                descricao="Buscar por CA, nome ou fabricante"
                 icone="🔍"
                 onClick={() => setModalAberto("busca")}
-                className="bg-white border-2 border-dashed border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50"
-                descricaoClassName="text-gray-400 group-hover:text-blue-400"
+                className="h-full bg-slate-50 border border-slate-200 text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50"
+                descricaoClassName="text-slate-500 group-hover:text-blue-500"
+                iconBoxClassName="bg-slate-100 group-hover:bg-blue-100"
               />
             </div>
           </div>

@@ -11,7 +11,6 @@ export function normalizarEpiEntrada(item) {
     id: Number(item?.id ?? item?.ID ?? 0),
     nome: item?.nome || "",
     ca: item?.ca || "",
-    // ADICIONADO: Capturando o fabricante do cadastro do EPI
     fabricante: item?.fabricante || "-",
     tamanhos: item?.tamanhos || [] 
   };
@@ -27,20 +26,14 @@ export function normalizarTamanhoEntrada(item) {
 export function normalizarEntrada(item) {
   return {
     id: Number(item?.id ?? 0),
-    
-    // IDs
     Idfornecedor: Number(item?.id_fornecedor ?? item?.fornecedor?.id ?? 0),
     IdEpi: Number(item?.id_epi ?? item?.epi?.id ?? 0),
     IdTamanho: Number(item?.id_tamanho ?? item?.tamanho?.id ?? 0),
-    
-    // Dados do EPI (Mapeando o fabricante aqui também)
     epi_nome_back: item?.epi?.nome || "", 
     epi_ca_back: item?.epi?.ca || "",
-    epi_fabricante_back: item?.epi?.fabricante || "-", // ADICIONADO
-    
+    epi_fabricante_back: item?.epi?.fabricante || "-", 
     tamanho_nome_back: item?.tamanho?.tamanho || "",
     fornecedor_nome_back: item?.fornecedor?.nome_fantasia || item?.fornecedor?.razao_social || "",
-
     data_entrada: item?.data_entrada ?? "",
     quantidade: Number(item?.quantidade ?? 0),
     quantidade_atual: Number(item?.quantidade_atual ?? 0),
