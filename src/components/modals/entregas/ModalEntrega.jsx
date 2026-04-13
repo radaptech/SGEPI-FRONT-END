@@ -7,14 +7,26 @@ import EntregaItensForm from "./EntregaItensForm";
 import EntregaFooter from "./EntregaFooter";
 import ModalAssinatura from "./ModalAssinatura";
 
-function ModalEntrega({ onClose, onSalvar }) {
+function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
   const assinatura = useSignaturePad();
 
   const entrega = useModalEntrega({
     assinaturaPreview: assinatura.assinaturaPreview,
     onClose,
     onSalvar,
+    funcionarios, 
   });
+
+  // 🔍 LOG DE DIAGNÓSTICO: Se isso imprimir 'undefined', o erro está no 'return' do useModalEntrega.js
+  console.log("Estado atual do hook 'entrega':", {
+    tamanhos: entrega.tamanhosFiltrados,
+    carregando: entrega.carregandoTamanhos
+  });
+
+  const handleMudancaEpi = (valor) => {
+    entrega.setIdEpiTemp(valor);
+    entrega.setIdTamanhoTemp(""); 
+  };
 
   return (
     <>
@@ -24,7 +36,7 @@ function ModalEntrega({ onClose, onSalvar }) {
 
           <div className="p-6 overflow-y-auto space-y-6">
             <EntregaForm
-              carregandoDados={entrega.carregandoDados}
+              carregandoDados={false} 
               buscaFuncionario={entrega.buscaFuncionario}
               setBuscaFuncionario={entrega.setBuscaFuncionario}
               funcionariosFiltrados={entrega.funcionariosFiltrados}
@@ -39,10 +51,13 @@ function ModalEntrega({ onClose, onSalvar }) {
             />
 
             <EntregaItensForm
-              epis={entrega.epis}
-              tamanhos={entrega.tamanhos}
+              epis={epis} 
+              // 🌟 GARANTA QUE O NOME AQUI SEJA 'tamanhosFiltrados' (igual ao return do seu hook)
+              tamanhos={entrega.tamanhosFiltrados || []} 
+              carregandoTamanhos={entrega.carregandoTamanhos}
+              
               idEpiTemp={entrega.idEpiTemp}
-              setIdEpiTemp={entrega.setIdEpiTemp}
+              setIdEpiTemp={handleMudancaEpi}
               idTamanhoTemp={entrega.idTamanhoTemp}
               setIdTamanhoTemp={entrega.setIdTamanhoTemp}
               qtdTemp={entrega.qtdTemp}

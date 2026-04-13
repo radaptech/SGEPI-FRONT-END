@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
+import formatarData from "../utils/DatasFormater";
+import { api } from "../services/api"; 
 import {
   criarEntrega,
   listarEpisEntrega,
   listarFuncionariosEntrega,
-  listarTamanhosEntrega,
 } from "../services/entregaService";
 import {
   gerarTokenValidacaoEntrega,
   normalizarEpiEntrega,
   normalizarFuncionarioEntrega,
-  normalizarTamanhoEntrega,
+  normalizarTamanhoEntrega, // 🌟 Normalizer de volta à ativa
 } from "../utils/entregaNormalizers";
 import {
   montarItemEntrega,
@@ -20,7 +21,8 @@ import {
 export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
   const [funcionarios, setFuncionarios] = useState([]);
   const [epis, setEpis] = useState([]);
-  const [tamanhos, setTamanhos] = useState([]);
+  const [tamanhosFiltrados, setTamanhosFiltrados] = useState([]);
+  const [carregandoTamanhos, setCarregandoTamanhos] = useState(false);
 
   const [funcionario, setFuncionario] = useState("");
   const [buscaFuncionario, setBuscaFuncionario] = useState("");
@@ -36,66 +38,77 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
   const [carregando, setCarregando] = useState(false);
   const [carregandoDados, setCarregandoDados] = useState(true);
 
+  // 1. Carga Inicial de Funcionários e EPIs
   useEffect(() => {
     let ativo = true;
-
-    async function carregarDados() {
+    async function carregarDadosIniciais() {
       setCarregandoDados(true);
-
       try {
-        const [listaFuncionarios, listaEpis, listaTamanhos] = await Promise.all(
-          [
-            listarFuncionariosEntrega(),
-            listarEpisEntrega(),
-            listarTamanhosEntrega(),
-          ]
-        );
-
+        const [listaFuncionarios, listaEpis] = await Promise.all([
+          listarFuncionariosEntrega(),
+          listarEpisEntrega(),
+        ]);
         if (!ativo) return;
-
         setFuncionarios(listaFuncionarios.map(normalizarFuncionarioEntrega));
         setEpis(listaEpis.map(normalizarEpiEntrega));
-        setTamanhos(listaTamanhos.map(normalizarTamanhoEntrega));
       } catch (erro) {
-        console.error("Erro ao carregar dados da entrega:", erro);
-
-        if (!ativo) return;
-
-        setFuncionarios([]);
-        setEpis([]);
-        setTamanhos([]);
+        console.error("Erro ao carregar dados iniciais:", erro);
       } finally {
-        if (ativo) {
-          setCarregandoDados(false);
-        }
+        if (ativo) setCarregandoDados(false);
+      }
+    }
+    carregarDadosIniciais();
+    return () => { ativo = false; };
+  }, []);
+
+  // 🌟 2. BUSCA DE TAMANHOS POR EPI (DINÂMICA)
+  useEffect(() => {
+    let ativo = true;
+    async function buscarTamanhos() {
+      if (!idEpiTemp) {
+        setTamanhosFiltrados([]);
+        return;
+      }
+
+      try {
+        setCarregandoTamanhos(true);
+        const response = await api.get(`/tamanhos-id-epi/${idEpiTemp}`);
+        
+        if (!ativo) return;
+        
+        // 🛡️ Captura protegida: Aceita response.data ou o próprio response (caso haja interceptor)
+        const dadosBrutos = response?.data || response || [];
+        
+        // 🔄 Aplica a normalização para garantir que o objeto use sempre 'tamanho' minúsculo
+        const dadosNormalizados = Array.isArray(dadosBrutos) 
+          ? dadosBrutos.map(normalizarTamanhoEntrega)
+          : [];
+
+        setTamanhosFiltrados(dadosNormalizados);
+      } catch (erro) {
+        console.error("Erro ao buscar tamanhos por EPI:", erro);
+        setTamanhosFiltrados([]);
+      } finally {
+        if (ativo) setCarregandoTamanhos(false);
       }
     }
 
-    carregarDados();
+    buscarTamanhos();
+    return () => { ativo = false; };
+  }, [idEpiTemp]);
 
-    return () => {
-      ativo = false;
-    };
-  }, []);
-
+  // 3. Memos para performance e busca de objetos
   const funcionarioSelecionado = useMemo(() => {
-    return (
-      funcionarios.find((item) => Number(item.id) === Number(funcionario)) ||
-      null
-    );
+    return funcionarios.find((item) => Number(item.id) === Number(funcionario)) || null;
   }, [funcionarios, funcionario]);
 
   const funcionariosFiltrados = useMemo(() => {
     const termo = buscaFuncionario.toLowerCase().trim();
-
     if (!termo) return funcionarios;
-
-    return funcionarios.filter((item) => {
-      return (
-        (item.nome || "").toLowerCase().includes(termo) ||
-        String(item.matricula || "").includes(termo)
-      );
-    });
+    return funcionarios.filter((item) => 
+      (item.nome || "").toLowerCase().includes(termo) ||
+      String(item.matricula || "").includes(termo)
+    );
   }, [funcionarios, buscaFuncionario]);
 
   const epiSelecionadoObj = useMemo(() => {
@@ -103,11 +116,10 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
   }, [epis, idEpiTemp]);
 
   const tamanhoSelecionadoObj = useMemo(() => {
-    return (
-      tamanhos.find((item) => Number(item.id) === Number(idTamanhoTemp)) || null
-    );
-  }, [tamanhos, idTamanhoTemp]);
+    return tamanhosFiltrados.find((item) => Number(item.id) === Number(idTamanhoTemp)) || null;
+  }, [tamanhosFiltrados, idTamanhoTemp]);
 
+  // 4. Ações do Formulário
   function adicionarItem() {
     if (!idEpiTemp || !idTamanhoTemp || !qtdTemp) {
       alert("Selecione o EPI, o tamanho e a quantidade.");
@@ -131,11 +143,7 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
     }
 
     const novoItem = montarItemEntrega(
-      {
-        idEpi: idEpiTemp,
-        idTamanho: idTamanhoTemp,
-        quantidade: qtdTemp,
-      },
+      { idEpi: idEpiTemp, idTamanho: idTamanhoTemp, quantidade: qtdTemp },
       epiSelecionadoObj,
       tamanhoSelecionadoObj
     );
@@ -151,71 +159,30 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
   }
 
   async function salvarEntrega() {
-    if (!funcionario) {
-      alert("Selecione o funcionário.");
-      return;
-    }
-
-    if (itensParaEntregar.length === 0) {
-      alert("Adicione pelo menos um item para entrega.");
-      return;
-    }
-
-    if (!assinaturaPreview) {
-      alert("Peça para o colaborador assinar antes de confirmar.");
-      return;
-    }
+    if (!funcionario) return alert("Selecione o funcionário.");
+    if (itensParaEntregar.length === 0) return alert("Adicione pelo menos um item.");
+    if (!assinaturaPreview) return alert("Peça a assinatura do colaborador.");
 
     setCarregando(true);
 
-    const tokenValidacao = gerarTokenValidacaoEntrega();
-
-    const itensNormalizados = itensParaEntregar.map((item) => ({
-      id: item.id,
-      idEpi: Number(item.idEpi),
-      idTamanho: Number(item.idTamanho),
-      quantidade: Number(item.quantidade),
-      epiNome: item.epiNome,
-      tamanhoNome: item.tamanhoNome,
-    }));
-
     const payloadEntregaBase = {
-      idFuncionario: Number(funcionario),
-      data_entrega: dataEntrega,
-      assinatura: assinaturaPreview,
-      token_validacao: tokenValidacao,
-      itens: itensNormalizados.map((item) => ({
-        idEpi: item.idEpi,
-        idTamanho: item.idTamanho,
-        quantidade: item.quantidade,
+      id_funcionario: Number(funcionario),
+      data_entrega: formatarData(dataEntrega),
+      assinatura_digital: assinaturaPreview,
+      itens: itensParaEntregar.map((item) => ({
+        id_epi: Number(item.idEpi),
+        id_tamanho: Number(item.idTamanho),
+        quantidade: Number(item.quantidade),
       })),
-    };
-
-    const entregaFinal = {
-      id: Date.now(),
-      idFuncionario: Number(funcionario),
-      data_entrega: dataEntrega,
-      assinatura: assinaturaPreview,
-      token_validacao: tokenValidacao,
-      itens: itensNormalizados,
-      funcionario: Number(funcionario),
-      nome_funcionario: funcionarioSelecionado?.nome || "",
-      dataEntrega,
     };
 
     try {
       const respostaEntrega = await criarEntrega(payloadEntregaBase);
-
       const idEntregaFinal = resolverIdEntrega(respostaEntrega);
 
-      if (idEntregaFinal > 0) {
-        entregaFinal.id = idEntregaFinal;
-      }
-
       if (onSalvar) {
-        await onSalvar(entregaFinal);
+        await onSalvar({ ...payloadEntregaBase, id: idEntregaFinal || Date.now() });
       }
-
       onClose();
     } catch (erro) {
       alert(erro?.message || "Erro ao registrar a entrega.");
@@ -227,7 +194,8 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
   return {
     funcionarios,
     epis,
-    tamanhos,
+    tamanhosFiltrados,
+    carregandoTamanhos,
     funcionario,
     setFuncionario,
     buscaFuncionario,

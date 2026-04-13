@@ -15,8 +15,14 @@ export function normalizarEpiEntrega(item) {
 
 export function normalizarTamanhoEntrega(item) {
   return {
+    // Garante que o ID seja sempre um número, independente se vier id ou ID
     id: Number(item?.id ?? item?.ID ?? 0),
+    
+    // Pega o texto do tamanho (ex: "34", "G", "M")
     tamanho: String(item?.tamanho ?? item?.Tamanho ?? ""),
+    
+    // Mapeia todas as variações possíveis que o banco ou o Go podem enviar
+    idEpi: Number(item?.id_epi ?? item?.Id_epi ?? item?.idEpi ?? item?.epi_id ?? 0),
   };
 }
 
@@ -37,21 +43,16 @@ export function normalizarEntrega(item) {
   return {
     id: Number(item?.id ?? 0),
     idFuncionario: Number(item?.funcionario?.id ?? 0),
-    data_entrega: item?.data_entrega ?? "",
-    assinatura: item?.assinatura_digital ?? "",
-    token_validacao: item?.token_validacao ?? item?.token ?? "---",
-    nome_funcionario: item?.funcionario?.nome ?? "",
-    matricula_funcionario: item?.funcionario?.matricula ?? "",
+    // Tudo convertido para camelCase daqui para baixo!
+    dataEntrega: item?.data_entrega ?? item?.dataEntrega ?? "",
+    assinatura: item?.assinatura_digital ?? item?.assinaturaDigital ?? "",
+    tokenValidacao: item?.token_validacao ?? item?.tokenValidacao ?? item?.token ?? "---",
+    nomeFuncionario: item?.funcionario?.nome ?? item?.nome_funcionario ?? "",
+    matriculaFuncionario: String(item?.funcionario?.matricula ?? item?.matricula_funcionario ?? ""),
+    
     itens: Array.isArray(itensOriginais) 
       ? itensOriginais.map(normalizarItemEntrega) 
       : [],
   };
 }
 
-export function gerarTokenValidacaoEntrega() {
-  try {
-    return crypto.randomUUID();
-  } catch {
-    return `token-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-  }
-}

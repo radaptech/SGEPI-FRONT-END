@@ -310,6 +310,7 @@ console.log("📥 Dados brutos recebidos das 'entradas':", entradas);
   return {
     epis,
     entradas,
+    funcionarios,
     carregandoResumo,
     resumo,
     estoqueDetalhado,

@@ -17,6 +17,7 @@ function Dashboard({ usuarioLogado }) {
   const {
     epis,
     entradas,
+    funcionarios,
     carregandoResumo,
     resumo,
     estoqueDetalhado,
@@ -412,9 +413,14 @@ function Dashboard({ usuarioLogado }) {
         <ModalEntrada onClose={fecharModal} onSalvar={aoSalvarModal} />
       )}
 
-      {modalAberto === "entrega" && (
-        <ModalEntrega onClose={fecharModal} onSalvar={aoSalvarModal} />
-      )}
+     {modalAberto === "entrega" && (
+     <ModalEntrega 
+        onClose={fecharModal} 
+        onSalvar={aoSalvarModal} 
+        epis={epis} // Passa os EPIs do Dashboard
+        funcionarios={funcionarios} // 🌟 PASSA OS FUNCIONÁRIOS AQUI!
+      />  
+        )}  
 
       {modalAberto === "baixa" && (
         <ModalBaixa onClose={fecharModal} onSalvar={aoSalvarModal} />
