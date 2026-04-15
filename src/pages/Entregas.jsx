@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { useEntregas } from "../hooks/useEntregas";
 import ModalEntrega from "../components/modals/entregas/ModalEntrega";
-import formatarData from "../utils/DatasFormater.js";
+import { api } from "../services/api";
 
-// Funções utilitárias de exibição
 function resumirItens(entrega) {
   const itens = Array.isArray(entrega?.itens) ? entrega.itens : [];
   if (itens.length === 0) return "Sem itens";
+  
   return itens
-    .map((item) => `${item.epiNome} (${item.tamanhoNome || item.tamanho || "-"}) x${item.quantidade}`)
+    .map((item) => {
+      const tamanho = item.tamanhoNome || item.tamanho || "-";
+      return `${item.epiNome} (${tamanho}) x${item.quantidade}`;
+    })
     .join(", ");
 }
 
@@ -16,7 +20,6 @@ function totalItensEntrega(entrega) {
 }
 
 function Entregas({ usuarioLogado }) {
-  // Puxando lógica do Hook refatorado
   const {
     busca,
     setBusca,
@@ -34,8 +37,47 @@ function Entregas({ usuarioLogado }) {
     estatisticasTela = { totalEntregas: 0, totalItens: 0, totalTipos: 0 },
     funcionarios,
     epis
-    // 🌟 REMOVIDO: 'tamanhos' não é mais necessário aqui no Caminho B
   } = useEntregas({ usuarioLogado });
+
+  // Estado para controlar o loading do botão específico
+  const [baixandoPdfId, setBaixandoPdfId] = useState(null);
+
+  // 🌟 FUNÇÃO AJUSTADA PARA RECEBER A MATRÍCULA
+const handleBaixarPDF = async (matricula, idEntrega) => {
+    if (!matricula || matricula === "-") {
+      alert("Matrícula não encontrada para este funcionário.");
+      return;
+    }
+
+    try {
+      setBaixandoPdfId(idEntrega);
+      
+      const response = await api.get(`/gerencial/${matricula}/ficha-pdf/${idEntrega}`, {
+        responseType: 'blob', // Importante para receber o arquivo como Blob
+        },
+      );
+
+      // 👇 O PULO DO GATO: Se o interceptor já tirou o .data, usamos o response direto!
+      const arquivoBlob = response.data ? response.data : response;
+
+      // Garantimos que estamos lidando com os bytes corretos para o PDF
+      const url = window.URL.createObjectURL(new Blob([arquivoBlob], { type: 'application/pdf' }));
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Ficha_EPI_${matricula}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Erro ao baixar o PDF:", error);
+      alert("Não foi possível baixar o PDF desta entrega.");
+    } finally {
+      setBaixandoPdfId(null);
+    }
+  };
 
   if (!podeVisualizar) {
     return (
@@ -102,43 +144,87 @@ function Entregas({ usuarioLogado }) {
                     <th className="p-4">Colaborador</th>
                     <th className="p-4">Itens</th>
                     <th className="p-4 text-center">Qtd.</th>
-                    <th className="p-4">Token</th>
+                    <th className="p-4 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {entregasVisiveis.map((entrega) => (
-                    <tr key={entrega.id} className="hover:bg-gray-50 transition">
-                      <td className="p-4 text-gray-600 font-mono text-sm">{formatarData(entrega.dataEntrega)}</td>
-                      <td className="p-4">
-                        <div className="font-medium text-gray-800">{entrega.funcionario?.nome || "Não identificado"}</div>
-                        <div className="text-xs text-gray-400">Matrícula: {entrega.funcionario?.matricula || "-"}</div>
-                      </td>
-                      <td className="p-4 text-gray-600 text-sm max-w-[400px]">
-                        <span className="line-clamp-2">{resumirItens(entrega)}</span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
-                          {totalItensEntrega(entrega)}
-                        </span>
-                      </td>
-                      <td className="p-4 text-gray-500 font-mono text-xs">{entrega.tokenValidacao || "-"}</td>
-                    </tr>
-                  ))}
+                  {entregasVisiveis.map((entrega) => {
+                    const nomeFunc = entrega.funcionario?.nome || entrega.nomeFuncionario || "Não identificado";
+                    const matriculaFunc = entrega.funcionario?.matricula || entrega.matriculaFuncionario || "-";
+                    const isBaixando = baixandoPdfId === entrega.id;
+
+                    return (
+                      <tr key={entrega.id} className="hover:bg-gray-50 transition">
+                        <td className="p-4 text-gray-600 font-mono text-sm">{entrega.dataEntrega}</td>
+                        <td className="p-4">
+                          <div className="font-medium text-gray-800">{nomeFunc}</div>
+                          <div className="text-xs text-gray-400">Matrícula: {matriculaFunc}</div>
+                        </td>
+                        <td className="p-4 text-gray-600 text-sm max-w-[400px]">
+                          <span className="line-clamp-2">{resumirItens(entrega)}</span>
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
+                            {totalItensEntrega(entrega)}
+                          </span>
+                        </td>
+                        {/* Botão de PDF Desktop */}
+                        <td className="p-4 text-center">
+                          <button
+                            onClick={() => handleBaixarPDF(matriculaFunc, entrega.id)}
+                            disabled={isBaixando}
+                            title="Baixar Recibo PDF"
+                            className={`p-2 rounded-lg transition-colors border ${
+                              isBaixando 
+                                ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-wait' 
+                                : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'
+                            }`}
+                          >
+                            {isBaixando ? '⏳' : '📄 PDF'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
+            {/* MOBILE VIEW */}
             <div className="lg:hidden space-y-4">
-              {entregasVisiveis.map((entrega) => (
-                <div key={entrega.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                   <div className="flex justify-between mb-2">
-                      <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 rounded">{formatarData(entrega.dataEntrega)}</span>
-                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 rounded">{totalItensEntrega(entrega)} itens</span>
-                   </div>
-                   <h3 className="font-bold text-gray-800">{entrega.funcionario?.nome}</h3>
-                   <p className="text-gray-600 text-sm italic">{resumirItens(entrega)}</p>
-                </div>
-              ))}
+              {entregasVisiveis.map((entrega) => {
+                const nomeFunc = entrega.funcionario?.nome || entrega.nomeFuncionario || "Não identificado";
+                const matriculaFunc = entrega.funcionario?.matricula || entrega.matriculaFuncionario || "-";
+                const isBaixando = baixandoPdfId === entrega.id;
+
+                return (
+                  <div key={entrega.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 rounded">
+                        {entrega.dataEntrega}
+                      </span>
+                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 rounded">
+                        {totalItensEntrega(entrega)} itens
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-gray-800 pr-10">{nomeFunc}</h3>
+                    <p className="text-gray-600 text-sm italic mt-1">{resumirItens(entrega)}</p>
+                    
+                    {/* Botão de PDF Mobile */}
+                    <button
+                      onClick={() => handleBaixarPDF(matriculaFunc, entrega.id)}
+                      disabled={isBaixando}
+                      className={`mt-4 w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border ${
+                        isBaixando 
+                          ? 'bg-gray-100 border-gray-200 text-gray-400' 
+                          : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                      }`}
+                    >
+                      {isBaixando ? '⏳ Gerando...' : '📄 Baixar PDF'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             {totalPaginas > 1 && (
@@ -166,7 +252,6 @@ function Entregas({ usuarioLogado }) {
           onSalvar={aoSalvarEntrega} 
           funcionarios={funcionarios}
           epis={epis}
-          // 🌟 MUDANÇA: Não passamos mais 'tamanhos' aqui, o modal cuidará disso sozinho.
         />
       )}
     </>

@@ -30,6 +30,7 @@ function ModalDetalhesEstoque({ aberto, item, onClose }) {
       ["Tamanho", item.tamanho || "-"],
       ["Lote", item.lote || "-"],
       ["Preço Unit.", formatarPreco(item.preco)],
+      ["Qtd. Inicial", String(item.quantidadeInicial)],
       ["Qtd. Atual", String(item.quantidadeAtual)],
       ["Validade", formatarValidade(item.validade)],
       ["Entrada no estoque ", item.data_entrada || "-"],

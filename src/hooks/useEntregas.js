@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { temPermissao } from "../utils/permissoes";
 
-// 1. IMPORTANDO SEUS SERVIÇOS E NORMALIZADORES
-// 🌟 MUDANÇA: Removemos listarTamanhosEntrega daqui
 import { 
   listarEntregas, 
   listarFuncionariosEntrega, 
   listarEpisEntrega 
 } from "../services/entregaService"; 
 
-// 🌟 MUDANÇA: Removemos normalizarTamanho daqui
 import {
   normalizarEpi,
   normalizarFuncionario,
@@ -31,7 +28,13 @@ export function formatarDataBR(data) {
 
 function filtrarEntregasPorPeriodo(lista, inicio, fim) {
   return lista.filter((entrega) => {
-    const data = String(entrega?.dataEntrega || "").substring(0, 10);
+    let data = entrega?.dataEntrega || "";
+    // Conversão rápida para YYYY-MM-DD para o filtro funcionar
+    if (data.includes("/")) {
+        const partes = data.split("/");
+        if (partes.length === 3) data = `${partes[2]}-${partes[1]}-${partes[0]}`;
+    }
+    
     if (!data) return !inicio && !fim;
     if (inicio && data < inicio) return false;
     if (fim && data > fim) return false;
@@ -49,18 +52,15 @@ function totalTiposDaLista(lista) {
   return tipos.size;
 }
 
-// --- COMPONENTE DE RELATÓRIO ---
 const gerarHtmlRelatorio = ({ tipo, funcionario, registros, inicio, fim }) => {
-    // Insira aqui sua string HTML
     return `<html><body><h1>Relatório de Entregas</h1><p>Adicione sua template HTML original aqui.</p></body></html>`;
 };
 
-// --- HOOK PRINCIPAL REFATORADO ---
+// --- HOOK PRINCIPAL ---
 export function useEntregas({ usuarioLogado }) {
   const [entregas, setEntregas] = useState([]);
   const [funcionarios, setFuncionarios] = useState([]);
   const [epis, setEpis] = useState([]);
-  // 🌟 MUDANÇA: Removemos o estado de tamanhos
 
   const [busca, setBusca] = useState("");
   const [dataInicio, setDataInicio] = useState("");
@@ -78,7 +78,6 @@ export function useEntregas({ usuarioLogado }) {
 
   const itensPorPagina = 6;
 
-  // Lógica de Permissões
   const podeVisualizar = !usuarioLogado 
     ? true 
     : temPermissao(usuarioLogado, "visualizar_entregas") || temPermissao(usuarioLogado, "visualizar_estoque");
@@ -90,7 +89,6 @@ export function useEntregas({ usuarioLogado }) {
     setCarregando(true);
     setErroTela("");
     try {
-      // 🌟 MUDANÇA: Poupamos o banco de dados de enviar a lista gigante de tamanhos
       const [resFunc, resEpis, resEntregas] = await Promise.all([
         listarFuncionariosEntrega(),
         listarEpisEntrega(),
@@ -99,7 +97,22 @@ export function useEntregas({ usuarioLogado }) {
 
       setFuncionarios((resFunc || []).map(normalizarFuncionario));
       setEpis((resEpis || []).map(normalizarEpi));
-      setEntregas((resEntregas || []).map(normalizarEntrega));
+
+      console.log("🕵️ 1. RESPOSTA PURA DA API (Entregas):", resEntregas);
+
+      // EXTRATOR UNIVERSAL BLINDADO (acha o array onde ele estiver)
+      let arrayDeEntregas = [];
+      if (Array.isArray(resEntregas)) arrayDeEntregas = resEntregas;
+      else if (Array.isArray(resEntregas?.entregas)) arrayDeEntregas = resEntregas.entregas;
+      else if (Array.isArray(resEntregas?.data)) arrayDeEntregas = resEntregas.data;
+      else if (Array.isArray(resEntregas?.data?.entregas)) arrayDeEntregas = resEntregas.data.entregas;
+
+      console.log("🕵️ 2. ARRAY EXTRAÍDO:", arrayDeEntregas);
+
+      const entregasNormalizadas = arrayDeEntregas.map(normalizarEntrega);
+      console.log("🕵️ 3. DEPOIS DO NORMALIZADOR:", entregasNormalizadas);
+
+      setEntregas(entregasNormalizadas);
 
     } catch (erro) {
       console.error("Erro ao carregar dados:", erro);
@@ -111,47 +124,58 @@ export function useEntregas({ usuarioLogado }) {
 
   useEffect(() => { carregarDados(); }, []);
 
-  // 1. Resolve os relacionamentos
   const entregasResolvidas = useMemo(() => {
-    return entregas.map((entrega) => {
+    const resolvidas = entregas.map((entrega) => {
       const func = funcionarios.find(f => Number(f.id) === Number(entrega.idFuncionario));
       
       return {
         ...entrega,
-        dataEntrega: String(entrega.data_entrega || "").substring(0, 10),
-        funcionario: func,
+        dataEntrega: entrega.dataEntrega, 
+        funcionario: func || entrega.funcionario, 
         itens: (entrega.itens || []).map(item => ({
           ...item,
-          epiNome: item.nome || item.epiNome || "EPI",
+          epiNome: item.epiNome || "EPI",
           quantidade: Number(item.quantidade || 0)
         }))
       };
     });
-  }, [entregas, funcionarios]);
+    
+    console.log("🕵️ 4. DEPOIS DE RESOLVER OS RELACIONAMENTOS:", resolvidas);
+    return resolvidas;
+  }, [entregas, funcionarios])
 
-  // 2. Aplica Filtros e Ordena
   const entregasFiltradas = useMemo(() => {
     const termo = busca.toLowerCase().trim();
-    return entregasResolvidas.filter((ent) => {
+    const filtradas = entregasResolvidas.filter((ent) => {
       const matchTexto = !termo || 
         (ent.funcionario?.nome || "").toLowerCase().includes(termo) ||
         (ent.funcionario?.matricula || "").includes(termo) ||
-        (ent.token_validacao || "").toLowerCase().includes(termo) ||
+        (ent.tokenValidacao || "").toLowerCase().includes(termo) ||
         ent.itens.some(i => i.epiNome.toLowerCase().includes(termo));
 
-      const data = ent.dataEntrega;
-      const matchData = (!dataInicio || data >= dataInicio) && (!dataFim || data <= dataFim);
+      // CORREÇÃO: Converter a data "DD/MM/YYYY" do JSON para "YYYY-MM-DD" para o filtro funcionar
+      let dataComparacao = ent.dataEntrega;
+      if (dataComparacao && dataComparacao.includes("/")) {
+          const partes = dataComparacao.split("/");
+          if (partes.length === 3) dataComparacao = `${partes[2]}-${partes[1]}-${partes[0]}`;
+      }
+
+      const matchData = (!dataInicio || dataComparacao >= dataInicio) && (!dataFim || dataComparacao <= dataFim);
 
       return matchTexto && matchData;
     }).sort((a, b) => {
-      const dataA = a.dataEntrega;
-      const dataB = b.dataEntrega;
+      // Ordenação corrigida e blindada contra dados nulos
+      const dataA = String(a.dataEntrega || "").split("/").reverse().join("");
+      const dataB = String(b.dataEntrega || "").split("/").reverse().join("");
+      
       if (dataA !== dataB) return dataB.localeCompare(dataA);
       return Number(b.id || 0) - Number(a.id || 0);
     });
+
+    console.log("🕵️ 5. LISTA FINAL QUE VAI PRA TELA:", filtradas);
+    return filtradas;
   }, [entregasResolvidas, busca, dataInicio, dataFim]);
 
-  // 3. CÁLCULO DAS ESTATÍSTICAS
   const estatisticasTela = useMemo(() => {
     return {
       totalEntregas: entregasFiltradas.length,
@@ -160,7 +184,6 @@ export function useEntregas({ usuarioLogado }) {
     };
   }, [entregasFiltradas]);
 
-  // 4. Paginação
   const totalPaginas = Math.max(1, Math.ceil(entregasFiltradas.length / itensPorPagina));
   const entregasVisiveis = entregasFiltradas.slice((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina);
 
@@ -198,7 +221,6 @@ export function useEntregas({ usuarioLogado }) {
     setModalAberto(false); 
   };
 
-  // RETORNO DE TUDO QUE A INTERFACE PRECISA
   return {
     busca, setBusca, dataInicio, setDataInicio, dataFim, setDataFim,
     paginaAtual, setPaginaAtual, carregando, erroTela, 
@@ -219,7 +241,6 @@ export function useEntregas({ usuarioLogado }) {
         setModalPeriodoAberto(true);
     },
 
-    // Apenas enviamos Funcionários e EPIs. Os tamanhos o Modal busca sozinho!
     funcionarios,
     epis,
   };

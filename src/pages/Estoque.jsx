@@ -65,30 +65,53 @@ function Estoque({ usuarioLogado }) {
     carregarProdutos();
   }, []);
 
-  // LÓGICA DE FILTRO CORRIGIDA PARA DATAS
- const listaFiltrada = useMemo(() => {
-  const termo = busca.toLowerCase().trim();
-  if (!termo) return entradas;
+  // FUNÇÃO PARA APLICAR FILTRO AO CLICAR NOS CARDS
+  const aplicarFiltroRapido = (tipo, valor) => {
+    setFiltroAtivo(tipo);
+    setBusca(valor);
+    setPaginaAtual(1);
+  };
 
-  return entradas.filter((item) => {
-    if (filtroAtivo === "data_entrada") {
-      if (!item.data_entrada || item.data_entrada === "-") return false;
+  const listaFiltrada = useMemo(() => {
+    const termo = busca.toLowerCase().trim();
+    if (!termo) return entradas;
 
-      // Se a data já vem como "06/04/2026", precisamos inverter para "2026-04-06"
-      // para comparar com o valor do <input type="date">
-      const partes = item.data_entrada.split('/'); // Divide por "/"
-      if (partes.length === 3) {
-        const dataInvertida = `${partes[2]}-${partes[1]}-${partes[0]}`; // Monta YYYY-MM-DD
-        return dataInvertida === termo; // Comparação exata de data
+    return entradas.filter((item) => {
+      // FILTRO ESPECIAL PARA OS CARDS DE QUANTIDADE
+      if (filtroAtivo === "logica_estoque") {
+        const qtd = Number(item.quantidadeAtual || 0);
+        const alerta = Number(item.alertaMinimo || 0);
+        if (termo === "baixo") return qtd > 0 && qtd <= alerta;
+        if (termo === "vazio") return qtd <= 0;
+        if (termo === "disponivel") return qtd > 0;
+        return true;
       }
-      return false;
-    }
 
-    // Filtro para os demais campos de texto
-    const valorCampo = String(item[filtroAtivo] ?? "").toLowerCase();
-    return valorCampo.includes(termo);
-  });
-}, [entradas, busca, filtroAtivo]);
+      // FILTRO DE STATUS DE VALIDADE
+      if (filtroAtivo === "status_validade") {
+        const statusReal = calcularStatusValidade(item.validade);
+        if (termo === "vencido") return statusReal === "vencido";
+        if (termo === "proximo") return statusReal === "proximo" || statusReal === "proximo_vencimento";
+        if (termo === "normal" || termo === "em_dia") return statusReal === "normal";
+        return false;
+      }
+
+      // FILTRO DE DATA DE ENTRADA
+      if (filtroAtivo === "data_entrada") {
+        if (!item.data_entrada || item.data_entrada === "-") return false;
+        const partes = item.data_entrada.split('/');
+        if (partes.length === 3) {
+          const dataInvertida = `${partes[2]}-${partes[1]}-${partes[0]}`;
+          return dataInvertida === termo;
+        }
+        return false;
+      }
+
+      // FILTROS DE TEXTO PADRÃO
+      const valorCampo = String(item[filtroAtivo] ?? "").toLowerCase();
+      return valorCampo.includes(termo);
+    });
+  }, [entradas, busca, filtroAtivo]);
 
   const listaOrdenada = useMemo(() => {
     return [...listaFiltrada].sort((a, b) =>
@@ -136,29 +159,45 @@ function Estoque({ usuarioLogado }) {
             <h2 className="text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
               📦 Controle de Estoque
             </h2>
-            <p className="text-sm text-gray-500">Visualize lotes, tamanhos e datas de entrada.</p>
+            <p className="text-sm text-gray-500">Visualize lotes, tamanhos e validade dos EPIs.</p>
           </div>
         </div>
 
-        {/* CARDS DE RESUMO */}
+        {/* CARDS DE RESUMO CLICÁVEIS */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <span className="text-[11px] uppercase text-slate-500 font-bold block mb-1">Lotes</span>
+          <div 
+            onClick={() => aplicarFiltroRapido("nome", "")}
+            className="rounded-xl border border-slate-200 bg-slate-50 p-4 cursor-pointer hover:shadow-md hover:border-slate-400 transition-all group"
+          >
+            <span className="text-[11px] uppercase text-slate-500 font-bold block mb-1 group-hover:text-slate-700">Lotes (Ver todos)</span>
             <strong className="text-2xl text-slate-800">{carregando ? "--" : resumo.totalLotes}</strong>
           </div>
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+
+          <div 
+            onClick={() => aplicarFiltroRapido("logica_estoque", "disponivel")}
+            className="rounded-xl border border-blue-200 bg-blue-50 p-4 cursor-pointer hover:shadow-md hover:border-blue-400 transition-all group"
+          >
             <span className="text-[11px] uppercase text-blue-600 font-bold block mb-1">Itens em estoque</span>
             <strong className="text-2xl text-blue-800">{carregando ? "--" : resumo.totalItens}</strong>
           </div>
-          <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
-            <span className="text-[11px] uppercase text-yellow-700 font-bold block mb-1">Estoque baixo</span>
+
+          <div 
+            onClick={() => aplicarFiltroRapido("logica_estoque", "baixo")}
+            className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 cursor-pointer hover:shadow-md hover:border-yellow-400 transition-all group"
+          >
+            <span className="text-[11px] uppercase text-yellow-700 font-bold block mb-1">Estoque baixo 🖱️</span>
             <strong className="text-2xl text-yellow-800">{carregando ? "--" : resumo.estoqueBaixo}</strong>
           </div>
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-            <span className="text-[11px] uppercase text-red-700 font-bold block mb-1">Sem estoque</span>
+
+          <div 
+            onClick={() => aplicarFiltroRapido("logica_estoque", "vazio")}
+            className="rounded-xl border border-red-200 bg-red-50 p-4 cursor-pointer hover:shadow-md hover:border-red-400 transition-all group"
+          >
+            <span className="text-[11px] uppercase text-red-700 font-bold block mb-1">Sem estoque 🖱️</span>
             <strong className="text-2xl text-red-800">{carregando ? "--" : resumo.semEstoque}</strong>
           </div>
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
             <span className="text-[11px] uppercase text-emerald-700 font-bold block mb-1">Valor estimado</span>
             <strong className="text-lg md:text-2xl text-emerald-800">{carregando ? "--" : formatarPreco(resumo.valorTotal)}</strong>
           </div>
@@ -177,6 +216,7 @@ function Estoque({ usuarioLogado }) {
               className="appearance-none w-full md:w-48 bg-transparent text-gray-700 py-3 pl-4 pr-10 focus:outline-none font-bold text-xs uppercase tracking-wider cursor-pointer"
             >
               <option value="nome">Nome do EPI</option>
+              <option value="status_validade">Status de Validade</option>
               <option value="data_entrada">Data de Entrada</option>
               <option value="fabricante">Fabricante</option>
               <option value="ca">CA</option>
@@ -186,18 +226,36 @@ function Estoque({ usuarioLogado }) {
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 text-[10px]">▼</div>
           </div>
+          
           <div className="relative flex-1 bg-white">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
-            <input
-              type={filtroAtivo === "data_entrada" ? "date" : "text"}
-              placeholder={`Pesquisar...`}
-              value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setPaginaAtual(1);
-              }}
-              className="w-full pl-10 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm lg:text-base"
-            />
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                {filtroAtivo === "status_validade" ? "🛡️" : "🔍"}
+            </span>
+            
+            {filtroAtivo === "status_validade" ? (
+                <select
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    className="w-full pl-10 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm lg:text-base appearance-none bg-white font-medium text-gray-700"
+                >
+                    <option value="">Selecione um status...</option>
+                    <option value="vencido">❌ Vencidos</option>
+                    <option value="proximo">🟡 Próximos de Vencer</option>
+                    <option value="normal">✅ Dentro da Validade</option>
+                </select>
+            ) : (
+                <input
+                    type={filtroAtivo === "data_entrada" ? "date" : "text"}
+                    placeholder="Pesquisar..."
+                    value={busca}
+                    onChange={(e) => {
+                        setBusca(e.target.value);
+                        setPaginaAtual(1);
+                    }}
+                    className="w-full pl-10 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm lg:text-base"
+                />
+            )}
+
             {busca && (
               <button onClick={() => setBusca("")} className="absolute inset-y-0 right-0 px-3 text-gray-300 hover:text-red-500 transition">✕</button>
             )}
@@ -218,6 +276,7 @@ function Estoque({ usuarioLogado }) {
                     <th className="p-4 font-semibold text-center">Lote / CA</th>
                     <th className="p-4 font-semibold text-center">Tam.</th>
                     <th className="p-4 font-semibold text-center">Preço Unit.</th>
+                    <th className="p-4 font-semibold text-center">Qtd. Inicial</th>
                     <th className="p-4 font-semibold text-center">Qtd. Atual</th>
                     <th className="p-4 font-semibold text-center">Validade</th>
                     <th className="p-4 font-semibold text-center">Ações</th>
@@ -244,6 +303,11 @@ function Estoque({ usuarioLogado }) {
                           <td className="p-4 text-center text-gray-600 text-sm">{item.tamanho}</td>
                           <td className="p-4 text-center text-gray-600 text-sm">{formatarPreco(item.preco)}</td>
                           <td className="p-4 text-center">
+                            <span className="text-sm font-semibold text-slate-500">
+                                {item.quantidadeInicial}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
                             <div className="flex flex-col items-center">
                               <span className={`px-2 py-0.5 rounded font-bold border ${getStatusColor(item.quantidadeAtual, item.alertaMinimo)}`}>
                                 {item.quantidadeAtual}
@@ -268,7 +332,7 @@ function Estoque({ usuarioLogado }) {
                       );
                     })
                   ) : (
-                    <tr><td colSpan="8" className="p-8 text-center text-gray-500">Nenhum item encontrado.</td></tr>
+                    <tr><td colSpan="9" className="p-8 text-center text-gray-500">Nenhum item encontrado.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -284,7 +348,14 @@ function Estoque({ usuarioLogado }) {
                   </div>
                   <div className="grid grid-cols-2 gap-y-2 text-xs">
                     <p><span className="text-gray-400">Lote:</span> {item.lote}</p>
-                    <p><span className="text-gray-400">Qtd:</span> {item.quantidadeAtual}</p>
+                    <p><span className="text-gray-400">Tam:</span> {item.tamanho}</p>
+                    <p><span className="text-gray-400">Qtd. Inicial:</span> {item.quantidadeInicial}</p>
+                    <p>
+                        <span className="text-gray-400">Qtd. Atual:</span> 
+                        <span className={`ml-1 font-bold ${Number(item.quantidadeAtual) <= Number(item.alertaMinimo) ? 'text-red-600' : 'text-slate-700'}`}>
+                            {item.quantidadeAtual}
+                        </span>
+                    </p>
                   </div>
                   <button onClick={() => setItemDetalhe(item)} className="mt-3 w-full py-2 bg-slate-100 text-slate-700 font-bold rounded-lg text-sm">
                     Ver detalhes

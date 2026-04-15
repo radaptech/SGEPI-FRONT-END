@@ -7,7 +7,6 @@ import {
   listarFuncionariosEntrega,
 } from "../services/entregaService";
 import {
-  gerarTokenValidacaoEntrega,
   normalizarEpiEntrega,
   normalizarFuncionarioEntrega,
   normalizarTamanhoEntrega, // 🌟 Normalizer de volta à ativa
