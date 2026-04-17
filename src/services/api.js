@@ -81,9 +81,17 @@ async function lerCorpoResposta(resposta) {
     if (resposta.status === 204) return null;
     const contentType = resposta.headers.get("content-type") || "";
 
+    // 1. Se for JSON
     if (contentType.includes("application/json")) {
         try { return await resposta.json(); } catch { return null; }
     }
+    
+    // 2. 👇 A BLINDAGEM DO PDF E BINÁRIOS 👇
+    if (contentType.includes("application/pdf") || contentType.includes("application/octet-stream")) {
+        try { return await resposta.blob(); } catch { return null; }
+    }
+
+    // 3. O fallback para texto (HTML, erros em texto plano, etc)
     try { return await resposta.text(); } catch { return null; }
 }
 

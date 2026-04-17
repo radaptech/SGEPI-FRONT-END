@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useEntregas } from "../hooks/useEntregas";
 import ModalEntrega from "../components/modals/entregas/ModalEntrega";
 import { api } from "../services/api";
+import { baixarFichaPDF } from "../utils/pdfUtils";
 
 function resumirItens(entrega) {
   const itens = Array.isArray(entrega?.itens) ? entrega.itens : [];
@@ -42,42 +43,22 @@ function Entregas({ usuarioLogado }) {
   // Estado para controlar o loading do botão específico
   const [baixandoPdfId, setBaixandoPdfId] = useState(null);
 
-  // 🌟 FUNÇÃO AJUSTADA PARA RECEBER A MATRÍCULA
-const handleBaixarPDF = async (matricula, idEntrega) => {
-    if (!matricula || matricula === "-") {
-      alert("Matrícula não encontrada para este funcionário.");
-      return;
-    }
-
-    try {
-      setBaixandoPdfId(idEntrega);
-      
-      const response = await api.get(`/gerencial/${matricula}/ficha-pdf/${idEntrega}`, {
-        responseType: 'blob', // Importante para receber o arquivo como Blob
-        },
-      );
-
-      // 👇 O PULO DO GATO: Se o interceptor já tirou o .data, usamos o response direto!
-      const arquivoBlob = response.data ? response.data : response;
-
-      // Garantimos que estamos lidando com os bytes corretos para o PDF
-      const url = window.URL.createObjectURL(new Blob([arquivoBlob], { type: 'application/pdf' }));
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Ficha_EPI_${matricula}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Erro ao baixar o PDF:", error);
-      alert("Não foi possível baixar o PDF desta entrega.");
-    } finally {
-      setBaixandoPdfId(null);
-    }
-  };
+const handleCliqueDownload = async (matricula, idEntrega) => {
+  try {
+    // 1. Inicia o loading
+    setBaixandoPdfId(idEntrega);
+    
+    // 2. Chama a função exportada
+    await baixarFichaPDF(matricula, idEntrega);
+    
+  } catch (error) {
+    // Erros já foram mostrados via alert na função, mas você pode tratar mais coisas aqui se quiser
+    console.log("Falha no download");
+  } finally {
+    // 3. Finaliza o loading independentemente de dar certo ou errado
+    setBaixandoPdfId(null);
+  }
+};
 
   if (!podeVisualizar) {
     return (
@@ -171,7 +152,7 @@ const handleBaixarPDF = async (matricula, idEntrega) => {
                         {/* Botão de PDF Desktop */}
                         <td className="p-4 text-center">
                           <button
-                            onClick={() => handleBaixarPDF(matriculaFunc, entrega.id)}
+                            onClick={() => handleCliqueDownload(matriculaFunc, entrega.id)}
                             disabled={isBaixando}
                             title="Baixar Recibo PDF"
                             className={`p-2 rounded-lg transition-colors border ${
@@ -212,7 +193,7 @@ const handleBaixarPDF = async (matricula, idEntrega) => {
                     
                     {/* Botão de PDF Mobile */}
                     <button
-                      onClick={() => handleBaixarPDF(matriculaFunc, entrega.id)}
+                      onClick={() => handleCliqueDownload(matriculaFunc, entrega.id)}
                       disabled={isBaixando}
                       className={`mt-4 w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border ${
                         isBaixando 
