@@ -25,9 +25,15 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
 
   const [funcionario, setFuncionario] = useState("");
   const [buscaFuncionario, setBuscaFuncionario] = useState("");
-  const [dataEntrega, setDataEntrega] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [dataEntrega, setDataEntrega] = useState(() => {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  // Adiciona o zero à esquerda se for menor que 10
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0'); 
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  
+  return `${ano}-${mes}-${dia}`;
+});
 
   const [itensParaEntregar, setItensParaEntregar] = useState([]);
   const [idEpiTemp, setIdEpiTemp] = useState("");

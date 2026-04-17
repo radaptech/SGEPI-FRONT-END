@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useEntregas } from "../hooks/useEntregas";
 import ModalEntrega from "../components/modals/entregas/ModalEntrega";
-import { api } from "../services/api";
 import { baixarFichaPDF } from "../utils/pdfUtils";
 
 function resumirItens(entrega) {
