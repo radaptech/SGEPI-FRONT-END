@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
+import { api } from "../../services/api";
+import { Eye, EyeOff } from "lucide-react";
 
 function AbaColaboradores() {
+  const [verSenha, setVerSenha] = useState(false);
   const [form, setForm] = useState({
     nome: "",
     email: "",
@@ -26,6 +29,7 @@ function AbaColaboradores() {
       senha: "",
       cargo: "",
     });
+    setVerSenha(false); // Reseta a visualização ao limpar
   }
 
   async function salvarColaborador() {
@@ -54,17 +58,14 @@ function AbaColaboradores() {
     setCarregando(true);
 
     try {
-      const novoUsuario = {
-        id: Date.now(),
-        ...payload,
-      };
+      const novoUsuarioSalvo = await api.post("/cadastro", payload);
 
-      setUsuarios((prev) => [novoUsuario, ...prev]);
+      setUsuarios((prev) => [novoUsuarioSalvo, ...prev]);
       limparFormulario();
       alert("Colaborador cadastrado com sucesso.");
     } catch (erro) {
       console.error(erro);
-      alert("Erro ao cadastrar colaborador.");
+      alert(erro.message || "Erro ao cadastrar colaborador.");
     } finally {
       setCarregando(false);
     }
@@ -135,13 +136,23 @@ function AbaColaboradores() {
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Senha <span className="text-red-500">*</span>
             </label>
-            <input
-              type="password"
-              value={form.senha}
-              onChange={(e) => atualizarCampo("senha", e.target.value)}
-              className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-sm"
-              placeholder="Máximo de 10 caracteres"
-            />
+            <div className="relative">
+              <input
+                type={verSenha ? "text" : "password"}
+                value={form.senha}
+                onChange={(e) => atualizarCampo("senha", e.target.value)}
+                className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-sm pr-10"
+                placeholder="Máximo de 10 caracteres"
+              />
+              <button
+                type="button"
+                onClick={() => setVerSenha(!verSenha)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition"
+                title={verSenha ? "Esconder senha" : "Mostrar senha"}
+              >
+                {verSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
         </div>
 
