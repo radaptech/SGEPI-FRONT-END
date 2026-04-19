@@ -105,7 +105,7 @@ function ModalEntrada({ onClose, onSalvar }) {
       id: Date.now() + Math.random(),
       idEpi: Number(epiId),
       epiNome: epiSelecionadoObj?.nome || "EPI",
-      ca: epiSelecionadoObj?.CA || "-",
+      ca: epiSelecionadoObj?.ca || "-",
       idTamanho: Number(tamanhoTemp),
       tamanhoNome: tamanhoSelecionadoObj?.tamanho || "-",
       quantidade: Number(qtdTemp),
