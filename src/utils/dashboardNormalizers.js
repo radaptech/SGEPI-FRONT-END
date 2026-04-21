@@ -53,42 +53,35 @@ export function normalizarEntrada(item) {
 export function normalizarItemEntregue(item) {
   return {
     id: Number(item?.id ?? 0),
-    idEpi: Number(item?.epi?.id ?? item?.id_epi ?? 0),
-    idTamanho: Number(item?.tamanho?.id ?? item?.id_tamanho ?? 0),
+    // Adicione idEntrega para que o useMemo consiga agrupar!
+    idEntrega: Number(item?.idEntregaCabecalho ?? item?.id_entrega_cabecalho ?? item?.idEntrega ?? 0),
+    idEpi: Number(item?.idEpi ?? item?.id_epi ?? item?.epi?.id ?? 0),
+    idTamanho: Number(item?.idTamanho ?? item?.id_tamanho ?? item?.tamanho?.id ?? 0),
     quantidade: Number(item?.quantidade ?? 0),
-    epiNome: item?.epi?.nome ?? "EPI não identificado",
-    tamanhoNome: item?.tamanho?.tamanho ?? "-",
+    epiNome: item?.epiNome ?? item?.epi?.nome ?? "EPI não identificado",
+    tamanhoTexto: item?.tamanhoTexto ?? item?.tamanho?.tamanho ?? "-",
   };
 }
 
 export function normalizarEntrega(item) {
   const itensOriginais = item?.itens ?? [];
+  
+  // Tenta capturar o ID do funcionário de todas as formas possíveis
+  const idFunc = Number(item?.idFuncionario ?? item?.id_funcionario ?? item?.Idfuncionario ?? item?.funcionario?.id ?? 0);
 
   return {
-    id: Number(item?.id ?? 0),
-    idFuncionario: Number(item?.funcionario?.id ?? 0),
+    id: Number(item?.id ?? item?.Id ?? 0),
+    idFuncionario: idFunc, 
     
-    // Mantém camelCase e snake_case para garantir que o Front leia
-    dataEntrega: item?.data_entrega ?? item?.dataEntrega ?? "",
-    data_entrega: item?.data_entrega ?? item?.dataEntrega ?? "",
+    data_entrega: item?.data_entrega ?? item?.dataEntrega ?? item?.DataEntrega ?? "",
     
-    assinatura: item?.assinatura_digital ?? item?.assinaturaDigital ?? "",
-    
-    tokenValidacao: item?.token_validacao ?? item?.tokenValidacao ?? item?.token ?? "---",
-    token_validacao: item?.token_validacao ?? item?.tokenValidacao ?? item?.token ?? "---",
-    
-    // Objeto funcionário aninhado (Para a Tabela Nova)
+    // Simplificando o objeto funcionário para o Dashboard
     funcionario: {
-      id: Number(item?.funcionario?.id ?? item?.idFuncionario ?? item?.id_funcionario ?? 0),
-      nome: item?.funcionario?.nome ?? item?.nome_funcionario ?? "Não identificado",
-      matricula: String(item?.funcionario?.matricula ?? item?.matricula_funcionario ?? "-")
+      id: idFunc,
+      nome: item?.nomeFuncionario ?? item?.funcionario?.nome ?? "Não identificado",
+      matricula: String(item?.matricula ?? item?.funcionario?.matricula ?? "-")
     },
     
-    // Propriedades planas antigas (Para não quebrar outras telas)
-    nomeFuncionario: item?.funcionario?.nome ?? item?.nome_funcionario ?? "",
-    matriculaFuncionario: String(item?.funcionario?.matricula ?? item?.matricula_funcionario ?? ""),
-    
-    // 👇 Usa a função com o nome atualizado aqui também
     itens: Array.isArray(itensOriginais) 
       ? itensOriginais.map(normalizarItemEntregue) 
       : [],

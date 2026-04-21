@@ -101,20 +101,23 @@ export function useDashboardResumo() {
     );
   }, [funcionarios]);
 
-  const itensEntreguesPorEntrega = useMemo(() => {
-    return itensEntregues.reduce((acc, item) => {
-      const idEntrega = Number(item.idEntrega);
-      if (!acc[idEntrega]) {
-        acc[idEntrega] = [];
-      }
-      acc[idEntrega].push(item);
-      return acc;
-    }, {});
-  }, [itensEntregues]);
+ const itensEntreguesPorEntrega = useMemo(() => {
+  console.log(itensEntregues[0]);
+  return itensEntregues.reduce((acc, item) => {
+    // Agora usamos o campo 'idEntrega' que garantimos no normalizador
+    const idKey = String(item.idEntrega);
+    
+    if (idKey !== "0") {
+      if (!acc[idKey]) acc[idKey] = [];
+      acc[idKey].push(item);
+    }
+    return acc;
+  }, {});
+}, [itensEntregues]);
 
 const estoqueDetalhado = useMemo(() => {
     const mapa = {};
-console.log("📥 Dados brutos recebidos das 'entradas':", entradas);
+    console.log("📥 Dados brutos recebidos das 'entradas':", entradas);
     entradas.forEach((entrada) => {
       // 1. Ajuste para bater com o JSON: IdEpi, IdTamanho, QuantidadeAtual
       const idEpiReal = entrada.idEpi; 
@@ -149,65 +152,84 @@ console.log("📥 Dados brutos recebidos das 'entradas':", entradas);
   }, [entradas, episMap, tamanhosMap]);
 
   // ======= BLOCO CORRIGIDO: entregasHojeDetalhadas =======
-  const entregasHojeDetalhadas = useMemo(() => {
-    const hojeISO = obterHojeISO(); // ex: "2026-03-26"
-    const [ano, mes, dia] = hojeISO.split("-");
-    const hojeBR = `${dia}/${mes}/${ano}`; // ex: "26/03/2026"
+const entregasHojeDetalhadas = useMemo(() => {
+  const hojeISO = obterHojeISO();
+  const linhas = [];
+
+  console.group("🔍 DEBUG DASHBOARD");
+  console.log("1. Data de hoje (ISO):", hojeISO);
+  console.log("2. Total de entregas recebidas:", entregas.length);
+
+  // 1. Filtro de Entregas (ISO ou BR)
+  const entregasDoDia = entregas.filter((entrega) => {
+    const dataRaw = String(entrega.data_entrega || "");
+    if (dataRaw.includes("/")) {
+      const [dia, mes, ano] = dataRaw.split("/");
+      return `${ano}-${mes}-${dia}` === hojeISO;
+    }
+    return dataRaw.substring(0, 10) === hojeISO;
+  });
+
+  console.log("3. Entregas filtradas:", entregasDoDia.length);
+
+  entregasDoDia.forEach((entrega) => {
+    const idEnt = String(entrega.id);
     
-    const linhas = [];
+    // Tenta pegar o ID do funcionário de várias formas (blindagem)
+    const idFunc = String(entrega.idFuncionario || entrega.funcionario?.id || 0);
+    const funcionario = funcionariosMap[idFunc];
+    
+    // IMPORTANTE: Se o array de itens não existir no mapa, tratamos como array vazio
+    const itensDaEntrega = itensEntreguesPorEntrega[idEnt] || [];
 
-    // 1. Filtra as entregas aceitando tanto ISO quanto BR
-    const entregasDoDia = entregas.filter((entrega) => {
-      const dataEntrega = String(entrega.data_entrega || "").substring(0, 10);
-      return dataEntrega === hojeISO || dataEntrega === hojeBR;
-    });
+    console.log(`--- Processando Entrega #${idEnt} ---`);
+    console.log(`> Funcionário: ${funcionario?.nome || "Não encontrado"} (ID: ${idFunc})`);
+    console.log(`> Qtd Itens vinculados: ${itensDaEntrega.length}`);
 
-    // 2. Para cada entrega de hoje...
-    entregasDoDia.forEach((entrega) => {
-      const funcionario = funcionariosMap[Number(entrega.idFuncionario)];
+    // Se a entrega existe mas não tem itens vinculados no banco
+    if (itensDaEntrega.length === 0) {
+      linhas.push({
+        id: `vazio-${idEnt}`,
+        data: entrega.data_entrega,
+        funcionario: funcionario?.nome || "Funcionário ID: " + idFunc,
+        matricula: funcionario?.matricula || "--",
+        item: "⚠️ Nenhum item no banco",
+        tamanho: "-",
+        quantidade: 0,
+      });
+      return;
+    }
+
+    // Se tem itens, mapeia cada um buscando o nome real nos mapas de EPI e Tamanho
+    itensDaEntrega.forEach((item, index) => {
+      const idEpi = String(item.idEpi);
+      const idTam = String(item.idTamanho);
       
-      // Busca os itens que pertencem a esta entrega
-      const itensDaEntrega = itensEntreguesPorEntrega[Number(entrega.id)] || [];
+      const epi = episMap[idEpi];
+      const tam = tamanhosMap[idTam];
 
-      // Se a entrega foi registrada mas nenhum item foi vinculado
-      if (itensDaEntrega.length === 0) {
-        linhas.push({
-          id: `vazio-${entrega.id}`,
-          data: formatarData(entrega.data_entrega),
-          funcionario: funcionario?.nome || "Desconhecido",
-          matricula: funcionario?.matricula || "--",
-          item: "Aguardando item...",
-          tamanho: "-",
-          quantidade: 0,
-        });
-        return; 
-      }
-
-      // Se a entrega tem itens, gera uma linha para CADA item
-      itensDaEntrega.forEach((itemEntregue, index) => {
-        const epi = episMap[Number(itemEntregue.idEpi)];
-        const tamanho = tamanhosMap[Number(itemEntregue.idTamanho)];
-
-        linhas.push({
-          id: `${entrega.id}-item-${index}`,
-          data: formatarData(entrega.data_entrega),
-          funcionario: funcionario?.nome || "Desconhecido",
-          matricula: funcionario?.matricula || "--",
-          item: itemEntregue.epiNome || epi?.nome || `EPI #${itemEntregue.idEpi || "?"}`,
-          tamanho: itemEntregue.tamanhoTexto || tamanho?.tamanho || "?",
-          quantidade: Number(itemEntregue.quantidade || 0),
-        });
+      linhas.push({
+        id: `${idEnt}-item-${index}`,
+        data: entrega.data_entrega,
+        funcionario: funcionario?.nome || "Desconhecido",
+        matricula: funcionario?.matricula || "--",
+        // Prioridade: Mapa de EPIs -> Nome vindo no item -> ID Genérico
+        item: epi?.nome || item.epiNome || `EPI #${idEpi}`,
+        // Prioridade: Mapa de Tamanhos -> Texto vindo no item -> "?"
+        tamanho: tam?.tamanho || item.tamanhoTexto || "?",
+        quantidade: Number(item.quantidade || 0),
       });
     });
+  });
 
-    return linhas.sort((a, b) => a.funcionario.localeCompare(b.funcionario));
-  }, [
-    entregas,
-    funcionariosMap,
-    itensEntreguesPorEntrega,
-    episMap,
-    tamanhosMap,
-  ]);
+  console.log("4. Total de linhas geradas:", linhas.length);
+  console.groupEnd();
+
+  return linhas.sort((a, b) => a.funcionario.localeCompare(b.funcionario));
+}, [entregas, funcionariosMap, itensEntreguesPorEntrega, episMap, tamanhosMap]);
+
+
+
 
   const alertasDetalhados = useMemo(() => {
     return estoqueDetalhado
