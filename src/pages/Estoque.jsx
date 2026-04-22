@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ModalDetalhesEstoque from "../components/modals/ModalDetalhesEstoque";
+import { CancelarEntrada, ValidarRegrasCancelamento}  from "../services/estoqueService";
 import { api } from "../services/api";
 import { temPermissao } from "../utils/permissoes";
 import {
@@ -64,6 +65,32 @@ function Estoque({ usuarioLogado }) {
   useEffect(() => {
     carregarProdutos();
   }, []);
+
+  // FUNÇÃO PARA CANCELAR ENTRADA COM REGRAS DE NEGÓCIO
+// FUNÇÃO PARA CANCELAR ENTRADA COM REGRAS DE NEGÓCIO
+const handleCancelarEntrada = async (item) => {
+    try {
+      // 1. Roda as validações. Se falhar, pula direto pro 'catch' lá embaixo!
+      ValidarRegrasCancelamento(item);
+
+      // 2. Interface UI (Única coisa que fica no React)
+      if (!window.confirm(`ATENÇÃO: Deseja realmente cancelar a entrada do lote ${item.lote} de ${item.nome}? Esta ação subtrairá as quantidades do estoque atual.`)) {
+        return;
+      }
+
+      // 3. Executa a ação
+      setCarregando(true);
+      await CancelarEntrada(item.id);
+      
+      alert("Entrada cancelada e estoque revertido com sucesso!");
+      carregarProdutos(); // Atualiza a tabela com o novo saldo
+
+    } catch (erro) {
+      // Qualquer erro que deu na validação ou na API vai cair aqui
+      alert(erro.message);
+      setCarregando(false);
+    }
+  };
 
   // FUNÇÃO PARA APLICAR FILTRO AO CLICAR NOS CARDS
   const aplicarFiltroRapido = (tipo, valor) => {
@@ -185,7 +212,7 @@ function Estoque({ usuarioLogado }) {
             onClick={() => aplicarFiltroRapido("logica_estoque", "baixo")}
             className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 cursor-pointer hover:shadow-md hover:border-yellow-400 transition-all group"
           >
-            <span className="text-[11px] uppercase text-yellow-700 font-bold block mb-1">Estoque baixo 🖱️</span>
+            <span className="text-[11px] uppercase text-yellow-700 font-bold block mb-1">Estoque baixo</span>
             <strong className="text-2xl text-yellow-800">{carregando ? "--" : resumo.estoqueBaixo}</strong>
           </div>
 
@@ -193,7 +220,7 @@ function Estoque({ usuarioLogado }) {
             onClick={() => aplicarFiltroRapido("logica_estoque", "vazio")}
             className="rounded-xl border border-red-200 bg-red-50 p-4 cursor-pointer hover:shadow-md hover:border-red-400 transition-all group"
           >
-            <span className="text-[11px] uppercase text-red-700 font-bold block mb-1">Sem estoque 🖱️</span>
+            <span className="text-[11px] uppercase text-red-700 font-bold block mb-1">Sem estoque</span>
             <strong className="text-2xl text-red-800">{carregando ? "--" : resumo.semEstoque}</strong>
           </div>
 
@@ -324,9 +351,18 @@ function Estoque({ usuarioLogado }) {
                             </div>
                           </td>
                           <td className="p-4 text-center">
-                            <button onClick={() => setItemDetalhe(item)} className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition">
-                              Ver
-                            </button>
+                            <div className="flex items-center justify-center gap-2">
+                              <button onClick={() => setItemDetalhe(item)} className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition">
+                                Ver
+                              </button>
+                              <button 
+                                onClick={() => handleCancelarEntrada(item)}
+                                title="Cancelar entrada"
+                                className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition border border-red-100"
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -357,9 +393,18 @@ function Estoque({ usuarioLogado }) {
                         </span>
                     </p>
                   </div>
-                  <button onClick={() => setItemDetalhe(item)} className="mt-3 w-full py-2 bg-slate-100 text-slate-700 font-bold rounded-lg text-sm">
-                    Ver detalhes
-                  </button>
+                  <div className="flex gap-2 mt-3">
+                    <button onClick={() => setItemDetalhe(item)} className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg text-sm transition hover:bg-slate-200">
+                      Ver detalhes
+                    </button>
+                    <button 
+                      onClick={() => handleCancelarEntrada(item)} 
+                      title="Cancelar"
+                      className="px-4 py-2 bg-red-50 text-red-600 font-bold rounded-lg text-sm border border-red-100 hover:bg-red-100 transition"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
