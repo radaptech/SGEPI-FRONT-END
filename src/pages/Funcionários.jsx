@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { toast } from "react-toastify";
 import { temPermissao } from "../utils/permissoes";
 import { useFuncionarios } from "../hooks/useFuncionarios";
 import ModalDetalhesFuncionario from "../components/modals/ModalDetalhesFuncionario";
@@ -21,6 +23,12 @@ function Funcionarios({ usuarioLogado }) {
     usuarioLogado,
     "visualizar_departamentos"
   );
+
+  useEffect(() => {
+    if (erroTela) {
+      toast.error(erroTela);
+    }
+  }, [erroTela]);
 
   if (!podeVisualizar) {
     return (
@@ -74,12 +82,6 @@ function Funcionarios({ usuarioLogado }) {
             valorClass="text-emerald-800"
           />
         </div>
-
-        {erroTela && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-            {erroTela}
-          </div>
-        )}
 
         <div className="relative mb-6">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import ModalEntrada from "../components/modals/ModalEntrada";
 import formatarData from "../utils/DatasFormater.js";
 import {
@@ -31,22 +32,27 @@ function Entradas({ usuarioLogado }) {
   const [erroTela, setErroTela] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
   const [busca, setBusca] = useState("");
-  const [filtroAtivo, setFiltroAtivo] = useState("epiNome"); // Critério de busca
+  const [filtroAtivo, setFiltroAtivo] = useState("epiNome");
   const [paginaAtual, setPaginaAtual] = useState(1);
 
   const itensPorPagina = 5;
 
-  const podeVisualizar = !usuarioLogado ? true : temPermissao(usuarioLogado, "visualizar_estoque");
-  const perfilUsuario = usuarioLogado?.perfil || usuarioLogado?.role || "";
-  const podeCadastrar = !usuarioLogado ? true : perfilUsuario === "admin" || perfilUsuario === "gerente";
+  const podeVisualizar = !usuarioLogado
+    ? true
+    : temPermissao(usuarioLogado, "visualizar_estoque");
 
-  // FUNÇÃO PARA GERAR O PDF DA ENTRADA
+  const perfilUsuario = usuarioLogado?.perfil || usuarioLogado?.role || "";
+  const podeCadastrar = !usuarioLogado
+    ? true
+    : perfilUsuario === "admin" || perfilUsuario === "gerente";
+
   const gerarPDFEntrada = (entrada) => {
     const doc = new jsPDF();
-    const total = Number(entrada.quantidade || 0) * Number(entrada.valor_unitario || 0);
+    const total =
+      Number(entrada.quantidade || 0) * Number(entrada.valor_unitario || 0);
 
     doc.setFontSize(18);
-    doc.setTextColor(22, 101, 52); 
+    doc.setTextColor(22, 101, 52);
     doc.text("Comprovante de Entrada de EPI", 14, 20);
 
     doc.setFontSize(10);
@@ -67,35 +73,45 @@ function Entradas({ usuarioLogado }) {
         ["Tamanho", entrada.tamanhoNome || "-"],
         ["Lote", entrada.lote || "-"],
         ["Fornecedor", entrada.fornecedorNome],
-        ["Nota Fiscal", `Nº ${entrada.nota_fiscal_numero || "-"} / Série ${entrada.nota_fiscal_serie || "-"}`],
+        [
+          "Nota Fiscal",
+          `Nº ${entrada.nota_fiscal_numero || "-"} / Série ${
+            entrada.nota_fiscal_serie || "-"
+          }`,
+        ],
         ["Quantidade Adicionada", `${entrada.quantidade} unidades`],
         ["Valor Unitário", formatarMoedaEntrada(entrada.valor_unitario)],
         ["Valor Total da Operação", formatarMoedaEntrada(total)],
       ],
-      theme: 'grid',
-      headStyles: { fillColor: [5, 150, 105] }, 
-      styles: { cellPadding: 4, fontSize: 10 }
+      theme: "grid",
+      headStyles: { fillColor: [5, 150, 105] },
+      styles: { cellPadding: 4, fontSize: 10 },
     });
 
     const finalY = doc.lastAutoTable.finalY + 25;
     doc.setFontSize(9);
     doc.setTextColor(150);
     doc.text(`Responsável pelo Lançamento: ${entrada.usuario}`, 14, finalY);
-    
+
     doc.save(`Entrada_EPI_${entrada.id}_${entrada.lote}.pdf`);
   };
 
   const carregarEntradas = async () => {
     setCarregandoTela(true);
     setErroTela("");
+
     try {
-      const [resFornecedores, resEpis, resTamanhos, resEntradas] = await Promise.all([
-        listarFornecedores(),
-        listarEpis(),
-        listarTamanhos(),
-        listarEntradas(),
-      ]);
-      setFornecedores(extrairLista(resFornecedores).map(normalizarFornecedorEntrada));
+      const [resFornecedores, resEpis, resTamanhos, resEntradas] =
+        await Promise.all([
+          listarFornecedores(),
+          listarEpis(),
+          listarTamanhos(),
+          listarEntradas(),
+        ]);
+
+      setFornecedores(
+        extrairLista(resFornecedores).map(normalizarFornecedorEntrada)
+      );
       setEpis(extrairLista(resEpis).map(normalizarEpiEntrada));
       setTamanhos(extrairLista(resTamanhos).map(normalizarTamanhoEntrada));
       setEntradas(extrairLista(resEntradas).map(normalizarEntrada));
@@ -107,30 +123,49 @@ function Entradas({ usuarioLogado }) {
     }
   };
 
-  useEffect(() => { carregarEntradas(); }, []);
+  useEffect(() => {
+    carregarEntradas();
+  }, []);
+
+  useEffect(() => {
+    if (erroTela) {
+      toast.error(erroTela);
+    }
+  }, [erroTela]);
 
   const entradasResolvidas = useMemo(() => {
     return entradas.map((entrada) => {
-      const epi = epis.find(item => item.id === entrada.IdEpi) || { nome: entrada.epi_nome_back };
-      const tamanhoObj = tamanhos.find(t => t.id === entrada.IdTamanho) || { tamanho: entrada.tamanho_nome_back };
-      const fornecedor = fornecedores.find(f => 
-        (entrada.Idfornecedor > 0 && f.id === entrada.Idfornecedor) ||
-        f.razao_social.toLowerCase() === (entrada.fornecedor_nome_back || "").toLowerCase() ||
-        f.nome_fantasia.toLowerCase() === (entrada.fornecedor_nome_back || "").toLowerCase()
+      const epi = epis.find((item) => item.id === entrada.IdEpi) || {
+        nome: entrada.epi_nome_back,
+      };
+      const tamanhoObj = tamanhos.find((t) => t.id === entrada.IdTamanho) || {
+        tamanho: entrada.tamanho_nome_back,
+      };
+      const fornecedor = fornecedores.find(
+        (f) =>
+          (entrada.Idfornecedor > 0 && f.id === entrada.Idfornecedor) ||
+          f.razao_social.toLowerCase() ===
+            (entrada.fornecedor_nome_back || "").toLowerCase() ||
+          f.nome_fantasia.toLowerCase() ===
+            (entrada.fornecedor_nome_back || "").toLowerCase()
       );
+
       return {
         ...entrada,
         epiNome: epi?.nome || entrada.epi_nome_back || "EPI não identificado",
         epiFabricante: epi?.fabricante || entrada.epi_fabricante_back || "-",
-        epiCA: entrada.epi_ca_back || epi?.ca || "-", 
+        epiCA: entrada.epi_ca_back || epi?.ca || "-",
         tamanhoNome: tamanhoObj?.tamanho || entrada.tamanho_nome_back || "S/T",
-        fornecedorNome: fornecedor?.nome_fantasia || fornecedor?.razao_social || entrada.fornecedor_nome_back || "Fornecedor não identificado",
+        fornecedorNome:
+          fornecedor?.nome_fantasia ||
+          fornecedor?.razao_social ||
+          entrada.fornecedor_nome_back ||
+          "Fornecedor não identificado",
         usuario: entrada.usuario_entrada || "Usuário não identificado",
       };
     });
   }, [entradas, epis, tamanhos, fornecedores]);
 
-  // FILTRAGEM COM LÓGICA DE DATA IGUAL AO ESTOQUE
   const entradasFiltradas = useMemo(() => {
     const termo = busca.toLowerCase().trim();
     if (!termo) return entradasResolvidas;
@@ -138,15 +173,14 @@ function Entradas({ usuarioLogado }) {
     return entradasResolvidas.filter((entrada) => {
       if (filtroAtivo === "data_entrada") {
         if (!entrada.data_entrada) return false;
-        // Inverte DD/MM/YYYY para YYYY-MM-DD para bater com o calendário
-        const partes = entrada.data_entrada.split('/');
+        const partes = entrada.data_entrada.split("/");
         if (partes.length === 3) {
           const dataInvertida = `${partes[2]}-${partes[1]}-${partes[0]}`;
           return dataInvertida === termo;
         }
         return false;
       }
-      
+
       const valorCampo = String(entrada[filtroAtivo] ?? "").toLowerCase();
       return valorCampo.includes(termo);
     });
@@ -154,25 +188,35 @@ function Entradas({ usuarioLogado }) {
 
   const entradasOrdenadas = useMemo(() => {
     return [...entradasFiltradas].sort((a, b) => {
-        // Ordenação por data (descendente) tratando o formato DD/MM/YYYY
-        const toDate = (s) => {
-            const [d, m, y] = s.split('/');
-            return new Date(y, m - 1, d);
-        };
-        return toDate(b.data_entrada) - toDate(a.data_entrada);
+      const toDate = (s) => {
+        const [d, m, y] = s.split("/");
+        return new Date(y, m - 1, d);
+      };
+      return toDate(b.data_entrada) - toDate(a.data_entrada);
     });
   }, [entradasFiltradas]);
 
   const resumoTela = useMemo(() => {
     return {
       totalRegistros: entradasOrdenadas.length,
-      totalItens: entradasOrdenadas.reduce((acc, item) => acc + Number(item.quantidade || 0), 0),
-      valorTotal: entradasOrdenadas.reduce((acc, item) => acc + (Number(item.quantidade || 0) * Number(item.valor_unitario || 0)), 0),
+      totalItens: entradasOrdenadas.reduce(
+        (acc, item) => acc + Number(item.quantidade || 0),
+        0
+      ),
+      valorTotal: entradasOrdenadas.reduce(
+        (acc, item) =>
+          acc +
+          Number(item.quantidade || 0) * Number(item.valor_unitario || 0),
+        0
+      ),
     };
   }, [entradasOrdenadas]);
 
   const totalPaginas = Math.ceil(entradasOrdenadas.length / itensPorPagina) || 1;
-  const entradasVisiveis = entradasOrdenadas.slice((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina);
+  const entradasVisiveis = entradasOrdenadas.slice(
+    (paginaAtual - 1) * itensPorPagina,
+    paginaAtual * itensPorPagina
+  );
 
   if (!podeVisualizar) {
     return (
@@ -192,7 +236,9 @@ function Entradas({ usuarioLogado }) {
             <h2 className="text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
               📥 Registro de Entradas
             </h2>
-            <p className="text-sm text-gray-500">Histórico de entradas de estoque.</p>
+            <p className="text-sm text-gray-500">
+              Histórico de entradas de estoque.
+            </p>
           </div>
           {podeCadastrar && (
             <button
@@ -204,23 +250,33 @@ function Entradas({ usuarioLogado }) {
           )}
         </div>
 
-        {/* CARDS RESUMO */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-            <span className="text-[11px] text-emerald-700 uppercase font-bold block mb-1">Registros</span>
-            <strong className="text-2xl text-emerald-900">{carregandoTela ? "--" : resumoTela.totalRegistros}</strong>
+            <span className="text-[11px] text-emerald-700 uppercase font-bold block mb-1">
+              Registros
+            </span>
+            <strong className="text-2xl text-emerald-900">
+              {carregandoTela ? "--" : resumoTela.totalRegistros}
+            </strong>
           </div>
           <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-            <span className="text-[11px] text-blue-700 uppercase font-bold block mb-1">Qtd Total</span>
-            <strong className="text-2xl text-blue-900">{carregandoTela ? "--" : resumoTela.totalItens}</strong>
+            <span className="text-[11px] text-blue-700 uppercase font-bold block mb-1">
+              Qtd Total
+            </span>
+            <strong className="text-2xl text-blue-900">
+              {carregandoTela ? "--" : resumoTela.totalItens}
+            </strong>
           </div>
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <span className="text-[11px] text-gray-600 uppercase font-bold block mb-1">Valor Total</span>
-            <strong className="text-2xl text-gray-900">{carregandoTela ? "--" : formatarMoedaEntrada(resumoTela.valorTotal)}</strong>
+            <span className="text-[11px] text-gray-600 uppercase font-bold block mb-1">
+              Valor Total
+            </span>
+            <strong className="text-2xl text-gray-900">
+              {carregandoTela ? "--" : formatarMoedaEntrada(resumoTela.valorTotal)}
+            </strong>
           </div>
         </div>
 
-        {/* BARRA DE PESQUISA COM FILTRO POR CATEGORIA */}
         <div className="flex flex-col md:flex-row mb-6 shadow-sm ring-1 ring-gray-200 rounded-lg overflow-hidden">
           <div className="relative bg-gray-50 border-b md:border-b-0 md:border-r border-gray-200">
             <select
@@ -238,25 +294,39 @@ function Entradas({ usuarioLogado }) {
               <option value="lote">Lote</option>
               <option value="nota_fiscal_numero">Nota Fiscal</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 text-[10px]">▼</div>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 text-[10px]">
+              ▼
+            </div>
           </div>
           <div className="relative flex-1 bg-white">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+              🔍
+            </span>
             <input
               type={filtroAtivo === "data_entrada" ? "date" : "text"}
               placeholder="Pesquisar..."
               value={busca}
-              onChange={(e) => { setBusca(e.target.value); setPaginaAtual(1); }}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setPaginaAtual(1);
+              }}
               className="w-full pl-10 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition text-sm lg:text-base"
             />
             {busca && (
-              <button onClick={() => setBusca("")} className="absolute inset-y-0 right-0 px-3 text-gray-300 hover:text-red-500 transition">✕</button>
+              <button
+                onClick={() => setBusca("")}
+                className="absolute inset-y-0 right-0 px-3 text-gray-300 hover:text-red-500 transition"
+              >
+                ✕
+              </button>
             )}
           </div>
         </div>
 
         {carregandoTela ? (
-          <div className="border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">Carregando...</div>
+          <div className="border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">
+            Carregando...
+          </div>
         ) : (
           <>
             <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200">
@@ -281,25 +351,44 @@ function Entradas({ usuarioLogado }) {
                     </tr>
                   ) : (
                     entradasVisiveis.map((entrada) => {
-                      const total = Number(entrada.quantidade || 0) * Number(entrada.valor_unitario || 0);
+                      const total =
+                        Number(entrada.quantidade || 0) *
+                        Number(entrada.valor_unitario || 0);
+
                       return (
                         <tr key={entrada.id} className="hover:bg-gray-50 transition">
-                          <td className="p-4 text-gray-600 font-mono text-sm">{entrada.data_entrada}</td>
-                          <td className="p-4">
-                            <div className="font-medium text-gray-800">{entrada.epiNome}</div>
-                            <div className="text-xs text-gray-400">CA: {entrada.epiCA}</div>
+                          <td className="p-4 text-gray-600 font-mono text-sm">
+                            {entrada.data_entrada}
                           </td>
-                          <td className="p-4 text-center text-gray-600">{entrada.tamanhoNome}</td>
+                          <td className="p-4">
+                            <div className="font-medium text-gray-800">
+                              {entrada.epiNome}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              CA: {entrada.epiCA}
+                            </div>
+                          </td>
+                          <td className="p-4 text-center text-gray-600">
+                            {entrada.tamanhoNome}
+                          </td>
                           <td className="p-4 text-center">
-                            <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">+{entrada.quantidade}</span>
+                            <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">
+                              +{entrada.quantidade}
+                            </span>
                           </td>
                           <td className="p-4 text-sm text-gray-600">
-                            <div className="font-bold truncate max-w-[150px]">{entrada.fornecedorNome}</div>
-                            <div className="text-xs text-gray-400">Lote: {entrada.lote}</div>
+                            <div className="font-bold truncate max-w-[150px]">
+                              {entrada.fornecedorNome}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              Lote: {entrada.lote}
+                            </div>
                           </td>
-                          <td className="p-4 text-right text-emerald-700 font-bold font-mono text-sm">{formatarMoedaEntrada(total)}</td>
+                          <td className="p-4 text-right text-emerald-700 font-bold font-mono text-sm">
+                            {formatarMoedaEntrada(total)}
+                          </td>
                           <td className="p-4 text-center">
-                            <button 
+                            <button
                               onClick={() => gerarPDFEntrada(entrada)}
                               className="bg-gray-100 hover:bg-emerald-50 text-emerald-700 p-2 rounded-lg transition"
                               title="Baixar Comprovante"
@@ -315,36 +404,50 @@ function Entradas({ usuarioLogado }) {
               </table>
             </div>
 
-            {/* MOBILE */}
             <div className="lg:hidden space-y-4">
               {entradasVisiveis.map((entrada) => (
-                <div key={entrada.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative">
+                <div
+                  key={entrada.id}
+                  className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative"
+                >
                   <div className="flex justify-between mb-2">
-                    <span className="text-xs font-mono text-gray-500">{entrada.data_entrada}</span>
-                    <button onClick={() => gerarPDFEntrada(entrada)} className="text-emerald-600 text-sm font-bold">📥 PDF</button>
+                    <span className="text-xs font-mono text-gray-500">
+                      {entrada.data_entrada}
+                    </span>
+                    <button
+                      onClick={() => gerarPDFEntrada(entrada)}
+                      className="text-emerald-600 text-sm font-bold"
+                    >
+                      📥 PDF
+                    </button>
                   </div>
                   <h3 className="font-bold text-gray-800">{entrada.epiNome}</h3>
                   <div className="flex justify-between mt-2 items-center">
-                    <span className="text-sm text-gray-600">Lote: {entrada.lote}</span>
-                    <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">+{entrada.quantidade} un</span>
+                    <span className="text-sm text-gray-600">
+                      Lote: {entrada.lote}
+                    </span>
+                    <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">
+                      +{entrada.quantidade} un
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* PAGINAÇÃO */}
             {totalPaginas > 1 && (
               <div className="flex justify-between items-center mt-6">
                 <button
-                  onClick={() => setPaginaAtual(p => Math.max(p - 1, 1))}
+                  onClick={() => setPaginaAtual((p) => Math.max(p - 1, 1))}
                   disabled={paginaAtual === 1}
                   className="px-4 py-2 rounded text-sm font-bold border disabled:opacity-50"
                 >
                   ← Anterior
                 </button>
-                <span className="text-sm text-gray-600">Pág. {paginaAtual} de {totalPaginas}</span>
+                <span className="text-sm text-gray-600">
+                  Pág. {paginaAtual} de {totalPaginas}
+                </span>
                 <button
-                  onClick={() => setPaginaAtual(p => Math.min(p + 1, totalPaginas))}
+                  onClick={() => setPaginaAtual((p) => Math.min(p + 1, totalPaginas))}
                   disabled={paginaAtual === totalPaginas}
                   className="px-4 py-2 rounded text-sm font-bold border disabled:opacity-50"
                 >
@@ -367,6 +470,7 @@ function Entradas({ usuarioLogado }) {
             setModalAberto(false);
             await carregarEntradas();
             setPaginaAtual(1);
+            toast.success("Entrada cadastrada com sucesso!");
           }}
         />
       )}

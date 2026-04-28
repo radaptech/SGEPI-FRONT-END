@@ -7,11 +7,14 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
 
   const perfilUsuario = useMemo(() => {
     return (
+      usuario?.tipo ||
       usuario?.perfil ||
       usuario?.role ||
+      usuario?.nivelAcesso ||
+      usuario?.usuario?.tipo ||
       usuario?.usuario?.perfil ||
       usuario?.usuario?.role ||
-      "colaborador"
+      "FUNCIONARIO"
     );
   }, [usuario]);
 
@@ -19,7 +22,20 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
     return usuario?.nome || usuario?.usuario?.nome || "Usuário";
   }, [usuario]);
 
-  const isAdmin = perfilUsuario === "admin";
+  const perfilNormalizado = String(perfilUsuario).toUpperCase();
+
+  const isSuperAdmin =
+    perfilNormalizado === "SUPER_ADMIN" ||
+    perfilNormalizado === "MASTER" ||
+    perfilNormalizado === "ADMIN_MASTER";
+
+  const isAdminEmpresa =
+    perfilNormalizado === "ADMIN_EMPRESA" ||
+    perfilNormalizado === "ADMIN";
+
+  const isFuncionario =
+    perfilNormalizado === "FUNCIONARIO" ||
+    perfilNormalizado === "COLABORADOR";
 
   useEffect(() => {
     function handleClickFora(event) {
@@ -63,148 +79,263 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
     );
   }
 
-  const todosItens = [
+  const IconDashboard = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+      />
+    </svg>
+  );
+
+  const IconEstoque = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+      />
+    </svg>
+  );
+
+  const IconFuncionarios = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M17 20h5v-1a4 4 0 00-5-3.87M9 20H4v-1a4 4 0 015-3.87m8-6.13a4 4 0 11-8 0 4 4 0 018 0zm6 2a3 3 0 11-6 0 3 3 0 016 0zM6 10a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
+
+  const IconDepartamentos = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"
+      />
+    </svg>
+  );
+
+  const IconFornecedores = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
+    </svg>
+  );
+
+  const IconEntradas = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 3v12m0 0l4-4m-4 4l-4-4M5 21h14"
+      />
+    </svg>
+  );
+
+  const IconEntregas = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 13l4 4L19 7"
+      />
+    </svg>
+  );
+
+  const IconDevolucoes = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9M4.582 9H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2M19.419 15H15"
+      />
+    </svg>
+  );
+
+  const IconAdmin = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11.983 5.5a1.5 1.5 0 013.034 0l.18 1.271a1.5 1.5 0 001.19 1.25l1.26.252a1.5 1.5 0 01.597 2.69l-1.02.78a1.5 1.5 0 00-.5 1.683l.41 1.218a1.5 1.5 0 01-2.198 1.77l-1.116-.666a1.5 1.5 0 00-1.54 0l-1.116.666a1.5 1.5 0 01-2.198-1.77l.41-1.218a1.5 1.5 0 00-.5-1.683l-1.02-.78a1.5 1.5 0 01.597-2.69l1.26-.252a1.5 1.5 0 001.19-1.25l.18-1.271zM13.5 13a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
+      />
+    </svg>
+  );
+
+  const IconEmpresa = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1"
+      />
+    </svg>
+  );
+
+  const IconFinanceiro = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+
+  const IconPlanos = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-4-2-3 2-3-2-4 2V6a2 2 0 012-2z"
+      />
+    </svg>
+  );
+
+  const IconUsuario = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5.121 17.804A9 9 0 1118.879 6.196M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
+
+  const itensSuperAdmin = [
+    {
+      label: "Painel Master",
+      nome: "DashboardMaster",
+      principal: true,
+      icon: IconDashboard,
+    },
+    {
+      label: "Empresas",
+      nome: "Empresas",
+      principal: true,
+      icon: IconEmpresa,
+    },
+    {
+      label: "Mensalidades",
+      nome: "Mensalidades",
+      principal: true,
+      icon: IconFinanceiro,
+    },
+    {
+      label: "Planos",
+      nome: "Planos",
+      principal: true,
+      icon: IconPlanos,
+    },
+    {
+      label: "Usuários",
+      nome: "UsuariosMaster",
+      principal: true,
+      icon: IconUsuario,
+    },
+  ];
+
+  const itensAdminEmpresa = [
     {
       label: "Dashboard",
       nome: "Dashboard",
       principal: true,
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-          />
-        </svg>
-      ),
+      icon: IconDashboard,
     },
     {
       label: "Estoque",
       nome: "Estoque",
       principal: true,
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-          />
-        </svg>
-      ),
+      icon: IconEstoque,
     },
     {
       label: "Funcionários",
       nome: "Funcionários",
       principal: true,
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 20h5v-1a4 4 0 00-5-3.87M9 20H4v-1a4 4 0 015-3.87m8-6.13a4 4 0 11-8 0 4 4 0 018 0zm6 2a3 3 0 11-6 0 3 3 0 016 0zM6 10a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      ),
+      icon: IconFuncionarios,
     },
     {
       label: "Departamentos",
       nome: "Departamentos",
       principal: true,
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"
-          />
-        </svg>
-      ),
+      icon: IconDepartamentos,
     },
     {
       label: "Fornecedores",
       nome: "Fornecedores",
       principal: true,
-      somenteAdmin: true,
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-          />
-        </svg>
-      ),
+      icon: IconFornecedores,
     },
     {
       label: "Entradas",
       nome: "Entradas",
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v12m0 0l4-4m-4 4l-4-4M5 21h14"
-          />
-        </svg>
-      ),
+      icon: IconEntradas,
     },
     {
       label: "Entregas",
       nome: "Entregas",
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
-      ),
+      icon: IconEntregas,
     },
     {
       label: "Devoluções",
       nome: "Devoluções",
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9M4.582 9H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2M19.419 15H15"
-          />
-        </svg>
-      ),
+      icon: IconDevolucoes,
     },
     {
       label: "Administração",
       nome: "Administracao",
-      somenteAdmin: true,
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M11.983 5.5a1.5 1.5 0 013.034 0l.18 1.271a1.5 1.5 0 001.19 1.25l1.26.252a1.5 1.5 0 01.597 2.69l-1.02.78a1.5 1.5 0 00-.5 1.683l.41 1.218a1.5 1.5 0 01-2.198 1.77l-1.116-.666a1.5 1.5 0 00-1.54 0l-1.116.666a1.5 1.5 0 01-2.198-1.77l.41-1.218a1.5 1.5 0 00-.5-1.683l-1.02-.78a1.5 1.5 0 01.597-2.69l1.26-.252a1.5 1.5 0 001.19-1.25l.18-1.271zM13.5 13a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
-          />
-        </svg>
-      ),
+      icon: IconAdmin,
+    },
+  ];
+
+  const itensFuncionario = [
+    {
+      label: "Dashboard",
+      nome: "Dashboard",
+      principal: true,
+      icon: IconDashboard,
+    },
+    {
+      label: "Entregas",
+      nome: "Entregas",
+      principal: true,
+      icon: IconEntregas,
+    },
+    {
+      label: "Devoluções",
+      nome: "Devoluções",
+      principal: true,
+      icon: IconDevolucoes,
     },
   ];
 
   const navItems = useMemo(() => {
-    return todosItens.filter((item) => {
-      if (item.somenteAdmin && !isAdmin) return false;
-      return true;
-    });
-  }, [isAdmin]);
+    if (isSuperAdmin) return itensSuperAdmin;
+    if (isAdminEmpresa) return itensAdminEmpresa;
+    if (isFuncionario) return itensFuncionario;
+
+    return itensFuncionario;
+  }, [isSuperAdmin, isAdminEmpresa, isFuncionario]);
 
   const menuPrincipal = navItems.filter((item) => item.principal);
   const menuSecundario = navItems.filter((item) => !item.principal);
@@ -229,9 +360,11 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
             </div>
 
             <div className="leading-tight">
-              <h1 className="text-lg xl:text-xl font-bold tracking-tight">SGEPI</h1>
+              <h1 className="text-lg xl:text-xl font-bold tracking-tight">
+                SGEPI
+              </h1>
               <p className="hidden xl:block text-[10px] text-blue-300 uppercase tracking-[0.22em] font-semibold mt-0.5">
-                Gestão de Estoque
+                {isSuperAdmin ? "Painel Master" : "Gestão de Estoque"}
               </p>
             </div>
           </div>
@@ -316,7 +449,7 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
                 Olá, <b>{nomeUsuario}</b>
               </span>
               <span className="text-[11px] uppercase tracking-[0.18em] text-blue-300 mt-0.5">
-                {perfilUsuario}
+                {perfilNormalizado}
               </span>
             </div>
 
@@ -346,7 +479,7 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
             <div className="leading-tight">
               <h1 className="text-lg font-bold tracking-tight">SGEPI</h1>
               <p className="text-[10px] text-blue-300 uppercase tracking-[0.22em] font-semibold mt-0.5">
-                Gestão de Estoque
+                {isSuperAdmin ? "Painel Master" : "Gestão de Estoque"}
               </p>
             </div>
           </div>
@@ -375,7 +508,7 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
                 Olá, <b>{nomeUsuario}</b>
               </p>
               <p className="text-[11px] uppercase tracking-[0.18em] text-blue-300 mt-1">
-                Perfil: {perfilUsuario}
+                Perfil: {perfilNormalizado}
               </p>
             </div>
 

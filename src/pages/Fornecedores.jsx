@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { temPermissao } from "../utils/permissoes";
 import { listarFornecedores } from "../services/fornecedorService";
 import { normalizarFornecedor } from "../utils/fornecedorNormalizer";
@@ -41,6 +42,12 @@ function Fornecedores({ usuarioLogado }) {
   useEffect(() => {
     carregarFornecedores();
   }, []);
+
+  useEffect(() => {
+    if (erroTela) {
+      toast.error(erroTela);
+    }
+  }, [erroTela]);
 
   const fornecedoresFiltrados = useMemo(() => {
     const termo = busca.toLowerCase().trim();
@@ -162,12 +169,6 @@ function Fornecedores({ usuarioLogado }) {
             </p>
           </div>
         </div>
-
-        {erroTela && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-            {erroTela}
-          </div>
-        )}
 
         <div className="relative mb-6">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -331,7 +332,12 @@ function Fornecedores({ usuarioLogado }) {
       <ModalCriarFornecedor
         aberto={modalCriarAberto}
         onClose={() => setModalCriarAberto(false)}
-        onSucesso={carregarFornecedores}
+        onSucesso={async () => {
+          setModalCriarAberto(false);
+          await carregarFornecedores();
+          setPaginaAtual(1);
+          toast.success("Fornecedor cadastrado com sucesso!");
+        }}
       />
     </>
   );

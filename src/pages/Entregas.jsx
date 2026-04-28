@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { useEntregas } from "../hooks/useEntregas";
 import ModalEntrega from "../components/modals/entregas/ModalEntrega";
 import { baixarFichaPDF } from "../utils/pdfUtils";
@@ -6,7 +7,7 @@ import { baixarFichaPDF } from "../utils/pdfUtils";
 function resumirItens(entrega) {
   const itens = Array.isArray(entrega?.itens) ? entrega.itens : [];
   if (itens.length === 0) return "Sem itens";
-  
+
   return itens
     .map((item) => {
       const tamanho = item.tamanhoNome || item.tamanho || "-";
@@ -16,7 +17,10 @@ function resumirItens(entrega) {
 }
 
 function totalItensEntrega(entrega) {
-  return (entrega?.itens || []).reduce((acc, item) => acc + Number(item.quantidade || 0), 0);
+  return (entrega?.itens || []).reduce(
+    (acc, item) => acc + Number(item.quantidade || 0),
+    0
+  );
 }
 
 function Entregas({ usuarioLogado }) {
@@ -36,28 +40,38 @@ function Entregas({ usuarioLogado }) {
     aoSalvarEntrega,
     estatisticasTela = { totalEntregas: 0, totalItens: 0, totalTipos: 0 },
     funcionarios,
-    epis
+    epis,
   } = useEntregas({ usuarioLogado });
 
-  // Estado para controlar o loading do botão específico
   const [baixandoPdfId, setBaixandoPdfId] = useState(null);
 
-const handleCliqueDownload = async (matricula, idEntrega) => {
-  try {
-    // 1. Inicia o loading
-    setBaixandoPdfId(idEntrega);
-    
-    // 2. Chama a função exportada
-    await baixarFichaPDF(matricula, idEntrega);
-    
-  } catch (error) {
-    // Erros já foram mostrados via alert na função, mas você pode tratar mais coisas aqui se quiser
-    console.log("Falha no download");
-  } finally {
-    // 3. Finaliza o loading independentemente de dar certo ou errado
-    setBaixandoPdfId(null);
-  }
-};
+  useEffect(() => {
+    if (erroTela) {
+      toast.error(erroTela);
+    }
+  }, [erroTela]);
+
+  const handleCliqueDownload = async (matricula, idEntrega) => {
+    try {
+      setBaixandoPdfId(idEntrega);
+      await baixarFichaPDF(matricula, idEntrega);
+    } catch (error) {
+      console.log("Falha no download");
+      toast.error("Não foi possível baixar o PDF da entrega.");
+    } finally {
+      setBaixandoPdfId(null);
+    }
+  };
+
+  const handleSalvarEntrega = async (novaEntrega) => {
+    try {
+      await aoSalvarEntrega(novaEntrega);
+      setModalAberto(false);
+      toast.success("Entrega cadastrada com sucesso!");
+    } catch (error) {
+      toast.error(error?.message || "Não foi possível cadastrar a entrega.");
+    }
+  };
 
   if (!podeVisualizar) {
     return (
@@ -72,13 +86,14 @@ const handleCliqueDownload = async (matricula, idEntrega) => {
   return (
     <>
       <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 max-w-full">
-        {/* Cabeçalho */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
           <div>
             <h2 className="text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
               📤 Registro de Entregas
             </h2>
-            <p className="text-sm text-gray-500">Controle das entregas realizadas para os colaboradores.</p>
+            <p className="text-sm text-gray-500">
+              Controle das entregas realizadas para os colaboradores.
+            </p>
           </div>
 
           {podeCadastrar && (
@@ -91,16 +106,31 @@ const handleCliqueDownload = async (matricula, idEntrega) => {
           )}
         </div>
 
-        {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          <StatCard label="Entregas encontradas" value={estatisticasTela.totalEntregas} color="blue" loading={carregando} />
-          <StatCard label="Itens distribuídos" value={estatisticasTela.totalItens} color="emerald" loading={carregando} />
-          <StatCard label="Tipos de EPI" value={estatisticasTela.totalTipos} color="slate" loading={carregando} />
+          <StatCard
+            label="Entregas encontradas"
+            value={estatisticasTela.totalEntregas}
+            color="blue"
+            loading={carregando}
+          />
+          <StatCard
+            label="Itens distribuídos"
+            value={estatisticasTela.totalItens}
+            color="emerald"
+            loading={carregando}
+          />
+          <StatCard
+            label="Tipos de EPI"
+            value={estatisticasTela.totalTipos}
+            color="slate"
+            loading={carregando}
+          />
         </div>
 
-        {/* Campo de Busca */}
         <div className="relative mb-6">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+            🔍
+          </span>
           <input
             type="text"
             placeholder="Buscar por funcionário, matrícula, token ou itens..."
@@ -110,10 +140,10 @@ const handleCliqueDownload = async (matricula, idEntrega) => {
           />
         </div>
 
-        {erroTela && <div className="mb-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{erroTela}</div>}
-
         {carregando ? (
-          <div className="border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">Carregando dados...</div>
+          <div className="border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">
+            Carregando dados...
+          </div>
         ) : (
           <>
             <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200">
@@ -129,38 +159,53 @@ const handleCliqueDownload = async (matricula, idEntrega) => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {entregasVisiveis.map((entrega) => {
-                    const nomeFunc = entrega.funcionario?.nome || entrega.nomeFuncionario || "Não identificado";
-                    const matriculaFunc = entrega.funcionario?.matricula || entrega.matriculaFuncionario || "-";
+                    const nomeFunc =
+                      entrega.funcionario?.nome ||
+                      entrega.nomeFuncionario ||
+                      "Não identificado";
+                    const matriculaFunc =
+                      entrega.funcionario?.matricula ||
+                      entrega.matriculaFuncionario ||
+                      "-";
                     const isBaixando = baixandoPdfId === entrega.id;
 
                     return (
                       <tr key={entrega.id} className="hover:bg-gray-50 transition">
-                        <td className="p-4 text-gray-600 font-mono text-sm">{entrega.dataEntrega}</td>
+                        <td className="p-4 text-gray-600 font-mono text-sm">
+                          {entrega.dataEntrega}
+                        </td>
                         <td className="p-4">
-                          <div className="font-medium text-gray-800">{nomeFunc}</div>
-                          <div className="text-xs text-gray-400">Matrícula: {matriculaFunc}</div>
+                          <div className="font-medium text-gray-800">
+                            {nomeFunc}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Matrícula: {matriculaFunc}
+                          </div>
                         </td>
                         <td className="p-4 text-gray-600 text-sm max-w-[400px]">
-                          <span className="line-clamp-2">{resumirItens(entrega)}</span>
+                          <span className="line-clamp-2">
+                            {resumirItens(entrega)}
+                          </span>
                         </td>
                         <td className="p-4 text-center">
                           <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
                             {totalItensEntrega(entrega)}
                           </span>
                         </td>
-                        {/* Botão de PDF Desktop */}
                         <td className="p-4 text-center">
                           <button
-                            onClick={() => handleCliqueDownload(matriculaFunc, entrega.id)}
+                            onClick={() =>
+                              handleCliqueDownload(matriculaFunc, entrega.id)
+                            }
                             disabled={isBaixando}
                             title="Baixar Recibo PDF"
                             className={`p-2 rounded-lg transition-colors border ${
-                              isBaixando 
-                                ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-wait' 
-                                : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'
+                              isBaixando
+                                ? "bg-gray-100 border-gray-200 text-gray-400 cursor-wait"
+                                : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
                             }`}
                           >
-                            {isBaixando ? '⏳' : '📄 PDF'}
+                            {isBaixando ? "⏳" : "📄 PDF"}
                           </button>
                         </td>
                       </tr>
@@ -170,15 +215,23 @@ const handleCliqueDownload = async (matricula, idEntrega) => {
               </table>
             </div>
 
-            {/* MOBILE VIEW */}
             <div className="lg:hidden space-y-4">
               {entregasVisiveis.map((entrega) => {
-                const nomeFunc = entrega.funcionario?.nome || entrega.nomeFuncionario || "Não identificado";
-                const matriculaFunc = entrega.funcionario?.matricula || entrega.matriculaFuncionario || "-";
+                const nomeFunc =
+                  entrega.funcionario?.nome ||
+                  entrega.nomeFuncionario ||
+                  "Não identificado";
+                const matriculaFunc =
+                  entrega.funcionario?.matricula ||
+                  entrega.matriculaFuncionario ||
+                  "-";
                 const isBaixando = baixandoPdfId === entrega.id;
 
                 return (
-                  <div key={entrega.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative">
+                  <div
+                    key={entrega.id}
+                    className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative"
+                  >
                     <div className="flex justify-between mb-2">
                       <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 rounded">
                         {entrega.dataEntrega}
@@ -187,20 +240,24 @@ const handleCliqueDownload = async (matricula, idEntrega) => {
                         {totalItensEntrega(entrega)} itens
                       </span>
                     </div>
+
                     <h3 className="font-bold text-gray-800 pr-10">{nomeFunc}</h3>
-                    <p className="text-gray-600 text-sm italic mt-1">{resumirItens(entrega)}</p>
-                    
-                    {/* Botão de PDF Mobile */}
+                    <p className="text-gray-600 text-sm italic mt-1">
+                      {resumirItens(entrega)}
+                    </p>
+
                     <button
-                      onClick={() => handleCliqueDownload(matriculaFunc, entrega.id)}
+                      onClick={() =>
+                        handleCliqueDownload(matriculaFunc, entrega.id)
+                      }
                       disabled={isBaixando}
                       className={`mt-4 w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border ${
-                        isBaixando 
-                          ? 'bg-gray-100 border-gray-200 text-gray-400' 
-                          : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                        isBaixando
+                          ? "bg-gray-100 border-gray-200 text-gray-400"
+                          : "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
                       }`}
                     >
-                      {isBaixando ? '⏳ Gerando...' : '📄 Baixar PDF'}
+                      {isBaixando ? "⏳ Gerando..." : "📄 Baixar PDF"}
                     </button>
                   </div>
                 );
@@ -209,16 +266,18 @@ const handleCliqueDownload = async (matricula, idEntrega) => {
 
             {totalPaginas > 1 && (
               <div className="flex justify-between items-center mt-6">
-                <PaginationButton 
-                  label="← Anterior" 
-                  disabled={paginaAtual === 1} 
-                  onClick={() => setPaginaAtual(p => p - 1)} 
+                <PaginationButton
+                  label="← Anterior"
+                  disabled={paginaAtual === 1}
+                  onClick={() => setPaginaAtual((p) => p - 1)}
                 />
-                <span className="text-sm text-gray-600">Pág. <b>{paginaAtual}</b> de <b>{totalPaginas}</b></span>
-                <PaginationButton 
-                  label="Próxima →" 
-                  disabled={paginaAtual === totalPaginas} 
-                  onClick={() => setPaginaAtual(p => p + 1)} 
+                <span className="text-sm text-gray-600">
+                  Pág. <b>{paginaAtual}</b> de <b>{totalPaginas}</b>
+                </span>
+                <PaginationButton
+                  label="Próxima →"
+                  disabled={paginaAtual === totalPaginas}
+                  onClick={() => setPaginaAtual((p) => p + 1)}
                 />
               </div>
             )}
@@ -227,9 +286,9 @@ const handleCliqueDownload = async (matricula, idEntrega) => {
       </div>
 
       {modalAberto && (
-        <ModalEntrega 
-          onClose={() => setModalAberto(false)} 
-          onSalvar={aoSalvarEntrega} 
+        <ModalEntrega
+          onClose={() => setModalAberto(false)}
+          onSalvar={handleSalvarEntrega}
           funcionarios={funcionarios}
           epis={epis}
         />
@@ -253,8 +312,12 @@ const StatCard = ({ label, value, color, loading }) => {
 
   return (
     <div className={`rounded-xl border p-4 ${borderBgClasses}`}>
-      <span className={`text-[11px] uppercase font-bold block mb-1 ${labelClass}`}>{label}</span>
-      <strong className={`text-2xl ${valueClass}`}>{loading ? "--" : value}</strong>
+      <span className={`text-[11px] uppercase font-bold block mb-1 ${labelClass}`}>
+        {label}
+      </span>
+      <strong className={`text-2xl ${valueClass}`}>
+        {loading ? "--" : value}
+      </strong>
     </div>
   );
 };
@@ -264,7 +327,9 @@ const PaginationButton = ({ label, disabled, onClick }) => (
     onClick={onClick}
     disabled={disabled}
     className={`px-4 py-2 rounded text-sm font-bold border ${
-      disabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-blue-700 hover:bg-blue-50 border-blue-200"
+      disabled
+        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+        : "bg-white text-blue-700 hover:bg-blue-50 border-blue-200"
     }`}
   >
     {label}
