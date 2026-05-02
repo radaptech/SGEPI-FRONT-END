@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 
+// 👇 NOVIDADE AQUI 1: Importações do Toastify
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Login from "./pages/Login";
 import Header from "./components/Header";
 
@@ -254,8 +258,14 @@ function App() {
     );
   }
 
+  // 👇 NOVIDADE AQUI 2: O ToastContainer para a tela de Login (se der erro ao logar)
   if (!usuario) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <>
+        <Login onLogin={handleLogin} />
+        <ToastContainer position="top-right" autoClose={4000} theme="colored" />
+      </>
+    );
   }
 
   return (
@@ -270,6 +280,13 @@ function App() {
       <main className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
         {renderizarPagina()}
       </main>
+
+      {/* 👇 NOVIDADE AQUI 3: O ToastContainer para todo o sistema logado */}
+      <ToastContainer 
+        position="top-right" 
+        autoClose={4000} 
+        theme="colored" 
+      />
     </div>
   );
 }

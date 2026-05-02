@@ -76,8 +76,18 @@ function Estoque({ usuarioLogado }) {
     }
   }, [erroTela]);
 
-  const handleCancelarEntrada = async (item) => {
+const handleCancelarEntrada = async (item) => {
+    // 1. Garantir que estamos pegando o ID independente de como o normalizer ou o Go mandou
+    const idParaApagar = item?.id || item?.Id || item?.ID;
+
+    if (!idParaApagar) {
+      toast.error("Erro interno: O item selecionado não possui um ID válido.");
+      console.error("Item com falha:", item);
+      return;
+    }
+
     try {
+      // 2. Validação local (Se ela lançar um erro, cai direto no catch abaixo)
       ValidarRegrasCancelamento(item);
 
       if (
@@ -89,12 +99,22 @@ function Estoque({ usuarioLogado }) {
       }
 
       setCarregando(true);
-      await CancelarEntrada(item.id);
+      
+      // 3. Chamada de exclusão
+      await CancelarEntrada(idParaApagar);
 
       toast.success("Entrada cancelada e estoque revertido com sucesso!");
-      await carregarProdutos();
+      
+      // O carregarProdutos já faz o setCarregando(false) no finally dele
+      await carregarProdutos(); 
+      
     } catch (erro) {
-      toast.error(erro.message || "Não foi possível cancelar a entrada.");
+      console.error("Erro na exclusão:", erro);
+      
+      // 4. Capturar o erro real vindo do Backend Go ou da validação
+    toast.error(erro.message || "Não foi possível cancelar a entrada.");
+    } finally {
+
       setCarregando(false);
     }
   };
@@ -143,10 +163,34 @@ function Estoque({ usuarioLogado }) {
     });
   }, [entradas, busca, filtroAtivo]);
 
-  const listaOrdenada = useMemo(() => {
-    return [...listaFiltrada].sort((a, b) =>
-      (a.nome || "").localeCompare(b.nome || "")
-    );
+const listaOrdenada = useMemo(() => {
+    return [...listaFiltrada].sort((a, b) => {
+      // Função auxiliar para converter a data em número (timestamp)
+      const parseData = (dataStr) => {
+        // Retorna 0 para datas vazias, assim elas vão pro final da lista
+        if (!dataStr || dataStr === "-") return 0; 
+        
+        // Formato brasileiro DD/MM/YYYY
+        if (dataStr.includes('/')) {
+          const [dia, mes, ano] = dataStr.split('/');
+          return new Date(ano, mes - 1, dia).getTime();
+        }
+        
+        // Formato padrão ISO (YYYY-MM-DD)
+        return new Date(dataStr).getTime();
+      };
+
+      const dataA = parseData(a.data_entrada);
+      const dataB = parseData(b.data_entrada);
+
+      // Ordenação Primária: Maior data (mais nova) vem primeiro
+      if (dataA !== dataB) {
+        return dataB - dataA; // <--- A MÁGICA DA INVERSÃO ESTÁ AQUI
+      }
+
+      // Ordenação Secundária (Desempate): Se entraram no mesmo dia, ordena por Nome
+      return (a.nome || "").localeCompare(b.nome || "");
+    });
   }, [listaFiltrada]);
 
   const resumo = useMemo(() => {

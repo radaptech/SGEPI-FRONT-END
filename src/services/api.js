@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 const DEFAULT_BASE_URL = "https://homolog.radaptech.com.br/api";
 
 // 1. BLINDAGEM DA URL: Garante que sempre tenha https:// e evita URLs relativas
@@ -97,10 +98,19 @@ async function lerCorpoResposta(resposta) {
 
 async function tratarResposta(resposta, rota, mensagemErroPadrao) {
     const dados = await lerCorpoResposta(resposta);
+    
     if (!resposta.ok) {
         const fallback = `${mensagemErroPadrao} ${rota}`;
-        throw new Error(extrairMensagemErro(dados, fallback));
+        const mensagemFinal = extrairMensagemErro(dados, fallback);
+        
+        // DISPARA O ERRO GLOBALMENTE AQUI
+        toast.error(mensagemFinal);
+        
+        // Mantemos o throw para que os componentes saibam que deu erro 
+        // e possam desligar os loadings (setCarregando(false))
+        throw new Error(mensagemFinal);
     }
+    
     return dados;
 }
 
