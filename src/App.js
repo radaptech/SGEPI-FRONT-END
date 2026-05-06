@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 
-// 👇 NOVIDADE AQUI 1: Importações do Toastify
+// Importações do Toastify
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./pages/Login";
 import Header from "./components/Header";
+
+// Importação da tela de Redefinir Senha
+import RedefinirSenha from "./pages/RedefinirSenha"; 
 
 import Dashboard from "./pages/Dashboard";
 import Estoque from "./pages/Estoque";
@@ -28,6 +31,11 @@ function App() {
   const [usuario, setUsuario] = useState(null);
   const [paginaAtual, setPaginaAtual] = useState("Dashboard");
   const [carregandoSessao, setCarregandoSessao] = useState(true);
+  
+  // Estado já nasce sabendo se o usuário quer redefinir a senha lendo a URL
+  const [isRedefinindoSenha, setIsRedefinindoSenha] = useState(
+    window.location.pathname === "/redefinir-senha"
+  );
 
   const obterTipoUsuario = (usuarioLogado) => {
     const tipo =
@@ -258,7 +266,24 @@ function App() {
     );
   }
 
-  // 👇 NOVIDADE AQUI 2: O ToastContainer para a tela de Login (se der erro ao logar)
+  // 👇 PRIORIDADE MÁXIMA: Intercepta tudo se a URL for /redefinir-senha
+  // Fica ANTES de checar se o usuário está logado!
+  if (isRedefinindoSenha) {
+    return (
+      <>
+        <RedefinirSenha 
+          onIrParaLogin={() => {
+            setIsRedefinindoSenha(false);
+            // Limpa a URL do navegador voltando para a raiz "/"
+            window.history.pushState({}, '', '/'); 
+          }} 
+        />
+        <ToastContainer position="top-right" autoClose={4000} theme="colored" />
+      </>
+    );
+  }
+
+  // Se não for redefinição, verifica se está deslogado e mostra o Login normal
   if (!usuario) {
     return (
       <>
@@ -268,6 +293,7 @@ function App() {
     );
   }
 
+  // Se passou por tudo e tem usuário, mostra o sistema por dentro (Dashboard)
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       <Header
@@ -281,7 +307,7 @@ function App() {
         {renderizarPagina()}
       </main>
 
-      {/* 👇 NOVIDADE AQUI 3: O ToastContainer para todo o sistema logado */}
+      {/* O ToastContainer para todo o sistema logado */}
       <ToastContainer 
         position="top-right" 
         autoClose={4000} 

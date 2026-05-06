@@ -1,21 +1,18 @@
 import { useState } from "react";
 import { api } from "../services/api";
+import EsqueciSenha from "./EsqueciSenha"; // <-- Importamos o componente novo aqui!
 
 function Login({ onLogin }) {
+  // Estado para controlar qual tela mostrar
+  const [mostrarEsqueciSenha, setMostrarEsqueciSenha] = useState(false);
+
   const [login, setLogin] = useState("");
   const [senha, setSenha] = useState("");
-
-  const [emailRecuperacao, setEmailRecuperacao] = useState("");
-
   const [erro, setErro] = useState("");
-  const [sucesso, setSucesso] = useState("");
   const [carregando, setCarregando] = useState(false);
-
-  const [mostrarEsqueciSenha, setMostrarEsqueciSenha] = useState(false);
 
   const limparMensagens = () => {
     setErro("");
-    setSucesso("");
   };
 
   const fazerLoginLocalDeTeste = (loginLimpo, senhaLimpa) => {
@@ -81,8 +78,8 @@ function Login({ onLogin }) {
         senha: senhaLimpa,
       });
 
-      const token = resposta.token;
-      const usuario = resposta.usuario;
+      const token = resposta.data?.token || resposta.token;
+      const usuario = resposta.data?.usuario || resposta.usuario;
 
       if (!token) {
         throw new Error("Token de acesso não retornado pelo servidor.");
@@ -102,53 +99,18 @@ function Login({ onLogin }) {
         });
       }
     } catch (err) {
-      setErro(err?.message || "Erro ao realizar login.");
+      setErro(err?.response?.data?.error || err?.message || "Erro ao realizar login.");
     } finally {
       setCarregando(false);
     }
   };
 
-  const handleEsqueciSenha = async (e) => {
-    e.preventDefault();
-    limparMensagens();
+  // Se o estado for true, ele renderiza o componente EsqueciSenha ao invés do Login
+  if (mostrarEsqueciSenha) {
+    return <EsqueciSenha onVoltar={() => setMostrarEsqueciSenha(false)} />;
+  }
 
-    const emailLimpo = emailRecuperacao.trim();
-
-    if (!emailLimpo) {
-      setErro("Informe seu e-mail ou login para recuperar a senha.");
-      return;
-    }
-
-    try {
-      setCarregando(true);
-
-      await api.post("/esqueci-senha", {
-        email: emailLimpo,
-      });
-
-      setSucesso(
-        "Se o e-mail estiver cadastrado, enviaremos as instruções para redefinir sua senha."
-      );
-
-      setEmailRecuperacao("");
-    } catch (err) {
-      setErro(err?.message || "Erro ao solicitar recuperação de senha.");
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  const abrirEsqueciSenha = () => {
-    limparMensagens();
-    setMostrarEsqueciSenha(true);
-  };
-
-  const voltarParaLogin = () => {
-    limparMensagens();
-    setMostrarEsqueciSenha(false);
-    setEmailRecuperacao("");
-  };
-
+  // Se for false, ele mostra a tela normal de Login
   return (
     <div className="min-h-screen flex items-center justify-center transition-colors duration-500 p-4 bg-slate-900">
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-[380px] animate-fade-in relative overflow-hidden">
@@ -160,7 +122,7 @@ function Login({ onLogin }) {
           </h1>
 
           <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mt-1">
-            {mostrarEsqueciSenha ? "Recuperação de Senha" : "Login de Acesso"}
+            Login de Acesso
           </p>
         </div>
 
@@ -170,108 +132,57 @@ function Login({ onLogin }) {
           </div>
         )}
 
-        {sucesso && (
-          <div className="mb-6 p-3 bg-green-50 text-green-700 text-xs rounded-lg border border-green-100 flex items-center gap-2 font-medium">
-            ✅ {sucesso}
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">
+              Login
+            </label>
+            <input
+              type="text"
+              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-500 outline-none transition"
+              placeholder="Digite seu login"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              autoComplete="username"
+            />
           </div>
-        )}
 
-        {!mostrarEsqueciSenha ? (
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">
-                Login
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-500 outline-none transition"
-                placeholder="Digite seu login"
-                value={login}
-                onChange={(e) => setLogin(e.target.value)}
-                autoComplete="username"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">
+              Senha de Acesso
+            </label>
+            <input
+              type="password"
+              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-500 outline-none transition text-center text-xl tracking-widest"
+              placeholder="••••••••"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">
-                Senha de Acesso
-              </label>
-              <input
-                type="password"
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-500 outline-none transition text-center text-xl tracking-widest"
-                placeholder="••••••••"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                autoComplete="current-password"
-              />
-            </div>
-
-            <div className="flex justify-end -mt-3">
-              <button
-                type="button"
-                onClick={abrirEsqueciSenha}
-                className="text-xs font-bold text-slate-500 hover:text-slate-800 transition"
-              >
-                Esqueci minha senha
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              disabled={carregando}
-              className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg transition transform hover:-translate-y-0.5 ${
-                carregando
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-slate-800 hover:bg-slate-700"
-              }`}
-            >
-              {carregando ? "Entrando..." : "Entrar"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleEsqueciSenha} className="space-y-6">
-            <div className="text-center -mt-2 mb-2">
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Informe seu e-mail ou login cadastrado. Enviaremos as instruções
-                para redefinir sua senha.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">
-                E-mail ou Login
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-500 outline-none transition"
-                placeholder="Digite seu e-mail ou login"
-                value={emailRecuperacao}
-                onChange={(e) => setEmailRecuperacao(e.target.value)}
-                autoComplete="email"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={carregando}
-              className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg transition transform hover:-translate-y-0.5 ${
-                carregando
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-slate-800 hover:bg-slate-700"
-              }`}
-            >
-              {carregando ? "Enviando..." : "Enviar instruções"}
-            </button>
-
+          <div className="flex justify-end -mt-3">
             <button
               type="button"
-              onClick={voltarParaLogin}
-              className="w-full py-3 rounded-xl border border-gray-200 text-gray-500 font-bold text-sm hover:bg-gray-50 hover:text-gray-700 transition"
+              onClick={() => setMostrarEsqueciSenha(true)}
+              className="text-xs font-bold text-slate-500 hover:text-slate-800 transition"
             >
-              Voltar para o login
+              Esqueci minha senha
             </button>
-          </form>
-        )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={carregando}
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg transition transform hover:-translate-y-0.5 ${
+              carregando
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-slate-800 hover:bg-slate-700"
+            }`}
+          >
+            {carregando ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
 
         <div className="mt-10 text-center border-t pt-4">
           <p className="text-[10px] text-gray-300 font-bold uppercase">
