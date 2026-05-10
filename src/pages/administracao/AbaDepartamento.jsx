@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-// Ajuste o caminho da importação da api dependendo da sua estrutura de pastas
-import { api } from "../../services/api"; 
+import { api } from "../../services/api";
 
 export default function AbaDepartamentos() {
   const [departamentos, setDepartamentos] = useState([]);
@@ -8,70 +7,126 @@ export default function AbaDepartamentos() {
   const [carregando, setCarregando] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
 
-  // --- NOVOS ESTADOS PARA PAGINAÇÃO ---
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itensPorPagina = 7;
+
+  const [erros, setErros] = useState({});
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     carregarDepartamentos();
   }, []);
 
+  const mostrarToast = (mensagem, tipo = "sucesso") => {
+    setToast({ mensagem, tipo });
+
+    setTimeout(() => {
+      setToast(null);
+    }, 3500);
+  };
+
+  const campoComErro = () => {
+    return erros.departamento
+      ? "border-red-400 focus:ring-red-400"
+      : "border-slate-200 focus:ring-slate-500";
+  };
+
+  const limparErroCampo = () => {
+    if (!erros.departamento) return;
+
+    setErros({});
+  };
+
   const carregarDepartamentos = async () => {
     try {
       const resposta = await api.get("/departamentos");
-      
-      // Pega a lista direto da chave 'departamentos', ou usa [] se falhar
+
       setDepartamentos(resposta?.departamentos || []);
-      
     } catch (erro) {
       console.error("Erro ao carregar departamentos:", erro);
-      setDepartamentos([]); 
+
+      setDepartamentos([]);
+      mostrarToast("Erro ao carregar departamentos.", "erro");
     }
   };
 
-  // --- LÓGICA DE PAGINAÇÃO ---
   const totalPaginas = Math.ceil(departamentos.length / itensPorPagina);
 
   const departamentosPaginados = useMemo(() => {
     const inicio = (paginaAtual - 1) * itensPorPagina;
     const fim = inicio + itensPorPagina;
+
     return departamentos.slice(inicio, fim);
   }, [departamentos, paginaAtual]);
 
-  // Substitua a função adicionarDepartamento por esta:
+  const validarFormulario = () => {
+    const novosErros = {};
+
+    if (!novoDepto.trim()) {
+      novosErros.departamento = "Informe o nome do departamento.";
+    }
+
+    setErros(novosErros);
+
+    return Object.keys(novosErros).length === 0;
+  };
+
+  const limparFormulario = () => {
+    setNovoDepto("");
+    setEditandoId(null);
+    setErros({});
+  };
+
   const salvarDepartamento = async () => {
-    if (!novoDepto.trim()) return;
+    const formularioValido = validarFormulario();
+
+    if (!formularioValido) return;
 
     try {
       setCarregando(true);
-      
+
+      const payload = {
+        departamento: novoDepto.trim(),
+      };
+
+      const estavaEditando = Boolean(editandoId);
+
       if (editandoId) {
-        // Se tem ID, é edição (PUT)
-        await api.put(`/gerencial/departamento/${editandoId}`, { departamento: novoDepto });
+        await api.put(`/gerencial/departamento/${editandoId}`, payload);
       } else {
-        // Se não tem ID, é cadastro novo (POST)
-        await api.post("/gerencial/cadastro-departamento", { departamento: novoDepto }); 
+        await api.post("/gerencial/cadastro-departamento", payload);
       }
-      
-      setNovoDepto("");
-      setEditandoId(null); // Sai do modo de edição
-      carregarDepartamentos(); 
+
+      limparFormulario();
+
+      await carregarDepartamentos();
+
+      mostrarToast(
+        estavaEditando
+          ? "Departamento atualizado com sucesso!"
+          : "Departamento cadastrado com sucesso!",
+        "sucesso"
+      );
     } catch (erro) {
-      alert(erro?.message || "Erro ao salvar departamento.");
+      console.error("Erro ao salvar departamento:", erro);
+
+      mostrarToast(
+        "Não foi possível salvar o departamento. Verifique os dados informados.",
+        "erro"
+      );
     } finally {
       setCarregando(false);
     }
   };
 
-  // Crie esta função curtinha para jogar os dados no input:
   const iniciarEdicao = (depto) => {
-    setNovoDepto(depto.departamento);
+    setNovoDepto(depto.departamento || "");
     setEditandoId(depto.id);
+    setErros({});
   };
 
   const cancelarEdicao = () => {
-    setNovoDepto("");
-    setEditandoId(null);
+    limparFormulario();
   };
 
   const removerDepartamento = async (id) => {
@@ -79,55 +134,110 @@ export default function AbaDepartamentos() {
 
     try {
       await api.delete(`/gerencial/departamento/${id}`);
-      carregarDepartamentos(); // Atualiza a tela
+
+      await carregarDepartamentos();
+
+      mostrarToast("Departamento excluído com sucesso!", "sucesso");
     } catch (erro) {
-      alert(erro?.message || "Erro ao remover departamento.");
+      console.error("Erro ao remover departamento:", erro);
+
+      mostrarToast("Erro ao remover departamento.", "erro");
     }
   };
 
   return (
     <div className="animate-fade-in">
-      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6 flex flex-col md:flex-row gap-3 items-end">
-        <div className="flex-1 w-full">
-          <label className="text-xs text-slate-500 mb-1 block">
-            {editandoId ? "✏️ Editando Departamento" : "Nome do Departamento"}
-          </label>
-          <input
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-500 outline-none text-sm"
-            value={novoDepto}
-            onChange={(e) => setNovoDepto(e.target.value)}
-            placeholder="Ex: Produção"
-          />
-        </div>
+      {toast && (
+        <div
+          className={`fixed top-5 left-1/2 z-[9999] w-[90%] max-w-sm -translate-x-1/2 rounded-xl border px-5 py-4 shadow-2xl animate-fade-in sm:left-auto sm:right-5 sm:translate-x-0 ${
+            toast.tipo === "sucesso"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-red-50 border-red-200 text-red-800"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div className="text-xl">
+              {toast.tipo === "sucesso" ? "✅" : "⚠️"}
+            </div>
 
-        {/* Agrupamos os botões para organizar o Cancelar e o Salvar */}
-        <div className="flex gap-2 w-full md:w-auto">
-          {editandoId && (
+            <div>
+              <p className="text-sm font-bold">
+                {toast.tipo === "sucesso" ? "Sucesso!" : "Atenção!"}
+              </p>
+
+              <p className="text-sm mt-0.5">{toast.mensagem}</p>
+            </div>
+
             <button
-              onClick={cancelarEdicao}
-              disabled={carregando}
-              className="px-4 py-2 text-slate-500 hover:text-slate-700 font-bold rounded transition text-sm disabled:opacity-50"
+              onClick={() => setToast(null)}
+              className="ml-auto text-lg leading-none opacity-60 hover:opacity-100"
             >
-              Cancelar
+              ×
             </button>
-          )}
-          
-          <button
-            // Atenção: Mude para a sua nova função que faz POST ou PUT
-            onClick={salvarDepartamento} 
-            disabled={carregando}
-            className={`w-full md:w-auto px-6 text-white font-bold py-2 rounded transition text-sm disabled:opacity-50 ${
-              editandoId 
-                ? "bg-blue-600 hover:bg-blue-700" // Fica Azul na edição
-                : "bg-emerald-600 hover:bg-emerald-700" // Fica Verde no cadastro
-            }`}
-          >
-            {carregando 
-              ? "Salvando..." 
-              : editandoId 
-              ? "Salvar Alteração" 
-              : "+ Adicionar"}
-          </button>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
+        <h3 className="text-xs font-bold text-slate-500 uppercase mb-3">
+          {editandoId ? "✏️ Editando Departamento" : "Novo Departamento"}
+        </h3>
+
+        <p className="text-xs text-slate-500 mb-4">
+          Campos marcados com <span className="text-red-500">*</span> são
+          obrigatórios.
+        </p>
+
+        <div className="flex flex-col md:flex-row gap-3 md:items-start">
+          <div className="flex-1 w-full">
+            <label className="text-xs text-slate-500 mb-1 block">
+              Nome do Departamento <span className="text-red-500">*</span>
+            </label>
+
+            <input
+              className={`w-full p-2 border rounded focus:ring-2 outline-none text-sm ${campoComErro()}`}
+              value={novoDepto}
+              onChange={(e) => {
+                setNovoDepto(e.target.value);
+                limparErroCampo();
+              }}
+              placeholder="Ex: Produção"
+            />
+
+            {erros.departamento && (
+              <p className="text-xs text-red-500 mt-1">
+                {erros.departamento}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto md:pt-6">
+            {editandoId && (
+              <button
+                onClick={cancelarEdicao}
+                disabled={carregando}
+                className="px-4 py-2 text-slate-500 hover:text-slate-700 font-bold rounded transition text-sm disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+            )}
+
+            <button
+              onClick={salvarDepartamento}
+              disabled={carregando}
+              className={`w-full md:w-auto px-6 text-white font-bold py-2 rounded transition text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                editandoId
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-emerald-600 hover:bg-emerald-700"
+              }`}
+            >
+              {carregando
+                ? "Salvando..."
+                : editandoId
+                ? "Salvar Alteração"
+                : "+ Adicionar"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -146,7 +256,6 @@ export default function AbaDepartamentos() {
                 {d.departamento}
               </span>
 
-              {/* Botões de Ação do Card */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => iniciarEdicao(d)}
@@ -155,6 +264,7 @@ export default function AbaDepartamentos() {
                 >
                   Editar
                 </button>
+
                 <button
                   onClick={() => removerDepartamento(d.id)}
                   className="text-slate-300 hover:text-red-500 font-bold transition"
@@ -168,7 +278,6 @@ export default function AbaDepartamentos() {
         )}
       </div>
 
-      {/* --- CONTROLES DE PAGINAÇÃO --- */}
       {totalPaginas > 1 && (
         <div className="flex items-center justify-between mt-6 bg-slate-50 p-3 rounded-lg border border-slate-200">
           <button
@@ -178,13 +287,15 @@ export default function AbaDepartamentos() {
           >
             ← Anterior
           </button>
-          
+
           <span className="text-xs font-bold text-slate-500">
             Página {paginaAtual} de {totalPaginas}
           </span>
 
           <button
-            onClick={() => setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))}
+            onClick={() =>
+              setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))
+            }
             disabled={paginaAtual === totalPaginas}
             className="px-3 py-1 rounded border bg-white text-slate-600 disabled:opacity-50 text-sm font-bold hover:bg-slate-50 transition"
           >
