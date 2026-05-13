@@ -22,4 +22,4 @@ RUN npm install -g serve
 EXPOSE 3000
 
 # 8. Inicia o servidor estático rodando APENAS a pasta "build" otimizada
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["serve", "-s", "build", "-l", "tcp://0.0.0.0:3000"]
