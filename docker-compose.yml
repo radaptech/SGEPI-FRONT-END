@@ -9,7 +9,9 @@ services:
       - "3000:3000"
     env_file:
       - .env
-    # --- ADICIONE AS LINHAS ABAIXO ---
+    # --- A MÁGICA ACONTECE AQUI ---
+    command: npm start # Sobrescreve o "serve" do Dockerfile apenas no seu PC
+    # ------------------------------
     volumes:
       - .:/app
       - /app/node_modules

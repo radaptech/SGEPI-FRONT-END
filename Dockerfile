@@ -1,20 +1,25 @@
-# 1. Usa uma imagem leve do Node (como se fosse o "Windows" do container)
+# 1. Usa a mesma imagem leve do Node
 FROM node:20-alpine
 
-# 2. Cria uma pasta dentro do container para colocar seu app
+# 2. Cria a pasta do app
 WORKDIR /app
 
-# 3. Copia os arquivos de dependência primeiro (para aproveitar o cache)
+# 3. Copia os arquivos e instala as dependências
 COPY package.json package-lock.json ./
-
-# 4. Instala as dependências DENTRO do container
 RUN npm install
 
-# 5. Copia todo o resto do seu código para dentro do container
+# 4. Copia o resto do código
 COPY . .
 
-# 6. Expõe a porta 3000 (onde o React roda)
+# 5. GERA A VERSÃO DE PRODUÇÃO (O segredo está aqui!)
+# Isso cria uma pasta chamada "build" com o código otimizado e sem WebSockets
+RUN npm run build
+
+# 6. Instala um servidor estático super leve globalmente
+RUN npm install -g serve
+
+# 7. Expõe a mesma porta 3000
 EXPOSE 3000
 
-# 7. O comando para iniciar o projeto 
-CMD ["npm", "start"]
+# 8. Inicia o servidor estático rodando APENAS a pasta "build" otimizada
+CMD ["serve", "-s", "build", "-l", "3000"]
