@@ -291,7 +291,7 @@ function Dashboard({ usuarioLogado }) {
               Olá, <span className="text-blue-600">{nomeExibicao}</span> 👋
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Aqui está o resumo geral do sistema hoje.
+              Aqui está o resumo geral do sistema.
             </p>
           </div>
 
@@ -302,7 +302,7 @@ function Dashboard({ usuarioLogado }) {
             <div className="flex items-center gap-2 mt-1">
               <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
               <span className="text-sm font-semibold text-gray-700">
-                {carregandoResumo ? "Carregando..." : "Operacional"}
+                {carregandoResumo ? "Carregando..." : "Online"}
               </span>
             </div>
           </div>
