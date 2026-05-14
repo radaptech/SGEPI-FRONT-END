@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
-
+import { formatarDataParaGo } from "../../utils/entradaHelpers";
 // Componentes
 import Toast from "../Toast"; // Ajuste o caminho conforme sua pasta
 
@@ -23,6 +23,8 @@ const MOTIVOS_PADRAO = [
   "Vencimento do EPI / CA",
   "Desligamento da empresa",
   "Troca de função",
+  "Tamanho Incorreto / Diferente", // NOVO
+  "Defeito de Fabricação",        // NOVO
   "Outros",
 ];
 
@@ -32,6 +34,8 @@ function ModalBaixa({ onClose, onSalvar }) {
   // Estados de UI e Notificação
   const [mostrandoAddMotivo, setMostrandoAddMotivo] = useState(false);
   const [novoMotivoNome, setNovoMotivoNome] = useState("");
+  // NOVO: Estado para controlar se o novo motivo gerado destrói o EPI ou volta pro estoque
+  const [geraDescarteNovoMotivo, setGeraDescarteNovoMotivo] = useState(false); 
   const [salvandoNovoMotivo, setSalvandoNovoMotivo] = useState(false);
   const [notificacao, setNotificacao] = useState({ exibir: false, type: "success", message: "" });
 
@@ -95,9 +99,10 @@ async function handleAddNovoMotivo() {
   try {
     setSalvandoNovoMotivo(true);
     
-    // 1. Faz a requisição
+    // 1. Faz a requisição (MODIFICADO para enviar a flag de descarte)
     const response = await api.post("/cadastrar-motivo-devolucao", { 
-      motivo: novoMotivoNome 
+      motivo: novoMotivoNome,
+      gera_descarte: geraDescarteNovoMotivo
     });
 
     // 2. Extrai os dados (Tratando a estrutura do Axios e do Go)
@@ -120,8 +125,9 @@ async function handleAddNovoMotivo() {
       // Seleciona automaticamente o que acabou de criar
       setIdMotivo(novoId);
       
-      // Limpa o campo e volta para o select
+      // Limpa os campos e volta para o select
       setNovoMotivoNome("");
+      setGeraDescarteNovoMotivo(false); // Reseta o estado do checkbox
       setMostrandoAddMotivo(false);
 
       // 4. FEEDBACK DE SUCESSO (Garante que o catch não seja chamado)
@@ -166,7 +172,7 @@ async function handleAddNovoMotivo() {
       idEpi: Number(idEpi),
       idMotivo: Number(idMotivo),
       houve_troca: houveTroca,
-      data_devolucao: dataDevolucao,
+      data_devolucao: formatarDataParaGo(dataDevolucao),
       idTamanho: Number(idTamanho),
       quantidadeADevolver: Number(quantidadeADevolver),
       idEpiNovo: houveTroca ? Number(idEpiNovo) : null,
@@ -177,14 +183,13 @@ async function handleAddNovoMotivo() {
     };
 
     try {
-      await salvarEmAlgumaRota(["/devolucao", "/baixa"], payload);
+      await salvarEmAlgumaRota(["/devolucao"], payload);
       setNotificacao({ exibir: true, type: "success", message: "Baixa realizada com sucesso!" });
       
-      if (onSalvar) await onSalvar();
-      
-      setTimeout(() => {
+      setTimeout(async() => {
+        if (onSalvar) await onSalvar();
         onClose();
-      }, 1500);
+      }, 2000);
     } catch (erro) {
       setNotificacao({ exibir: true, type: "error", message: "Erro ao processar a baixa no servidor." });
     } finally {
@@ -325,7 +330,10 @@ async function handleAddNovoMotivo() {
               <div className="md:col-span-2">
                 <label className="flex justify-between items-center text-sm font-medium mb-1">
                   <span>Motivo <span className="text-red-500">*</span></span>
-                  <button type="button" onClick={() => setMostrandoAddMotivo(!mostrandoAddMotivo)} className="text-[11px] text-red-600 font-bold hover:underline">
+                  <button type="button" onClick={() => {
+                      setMostrandoAddMotivo(!mostrandoAddMotivo);
+                      setGeraDescarteNovoMotivo(false); // Reseta ao fechar/abrir
+                    }} className="text-[11px] text-red-600 font-bold hover:underline">
                     {mostrandoAddMotivo ? "✕ Cancelar" : "+ Cadastrar Novo"}
                   </button>
                 </label>
@@ -336,14 +344,27 @@ async function handleAddNovoMotivo() {
                     {motivos.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
                   </select>
                 ) : (
-                  <div className="flex gap-2 animate-fade-in">
-                    <select autoFocus value={novoMotivoNome} onChange={(e) => setNovoMotivoNome(e.target.value)} className="flex-1 p-2.5 border-2 border-red-200 rounded-lg outline-none text-sm bg-red-50">
-                      <option value="">Escolha uma sugestão...</option>
-                      {MOTIVOS_PADRAO.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                    <button type="button" onClick={handleAddNovoMotivo} disabled={salvandoNovoMotivo || !novoMotivoNome} className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-sm hover:bg-red-700 transition-colors disabled:opacity-50">
-                      {salvandoNovoMotivo ? "..." : "Add"}
-                    </button>
+                  <div className="flex flex-col gap-2 animate-fade-in w-full">
+                    {/* Bloco de Select e Botão */}
+                    <div className="flex gap-2">
+                      <select autoFocus value={novoMotivoNome} onChange={(e) => setNovoMotivoNome(e.target.value)} className="flex-1 p-2.5 border-2 border-red-200 rounded-lg outline-none text-sm bg-red-50">
+                        <option value="">Escolha uma sugestão...</option>
+                        {MOTIVOS_PADRAO.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                      <button type="button" onClick={handleAddNovoMotivo} disabled={salvandoNovoMotivo || !novoMotivoNome} className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-sm hover:bg-red-700 transition-colors disabled:opacity-50">
+                        {salvandoNovoMotivo ? "..." : "Add"}
+                      </button>
+                    </div>
+                    {/* NOVO: Checkbox para informar se o motivo descarta ou não o EPI */}
+                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600 mt-1 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={geraDescarteNovoMotivo} 
+                        onChange={(e) => setGeraDescarteNovoMotivo(e.target.checked)} 
+                        className="rounded border-gray-300 text-red-600 focus:ring-red-500" 
+                      />
+                      Marque se este motivo INUTILIZA o EPI (Não retorna para o estoque)
+                    </label>
                   </div>
                 )}
               </div>
