@@ -45,7 +45,7 @@ function AssinaturaPreview({
               <img
                 src={assinaturaPreview}
                 alt="Assinatura do colaborador"
-                className="max-w-full max-h-[160px] object-contain bg-white -rotate-90"
+                className="block max-w-full max-h-[160px] object-contain bg-white"
               />
             </div>
 

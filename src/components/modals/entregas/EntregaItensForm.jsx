@@ -2,8 +2,8 @@ import TabelaItens from "./TabelaItens";
 
 function EntregaItensForm({
   epis,
-  tamanhos = [], // 🌟 Garante que seja um array para evitar erro de .map
-  carregandoTamanhos, // 🌟 Recebe o status de carregamento do hook
+  tamanhos = [], 
+  carregandoTamanhos, 
   idEpiTemp,
   setIdEpiTemp,
   idTamanhoTemp,

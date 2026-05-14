@@ -53,11 +53,14 @@ export function encontrarLimitesDesenho(canvas) {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const i = (y * width + x) * 4;
+
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
       const a = data[i + 3];
-      const pixelEhBranco = r === 255 && g === 255 && b === 255 && a === 255;
+
+      const pixelEhBranco =
+        r === 255 && g === 255 && b === 255 && a === 255;
 
       if (!pixelEhBranco) {
         if (x < minX) minX = x;
@@ -73,34 +76,109 @@ export function encontrarLimitesDesenho(canvas) {
   return { minX, minY, maxX, maxY };
 }
 
+function rotacionarCanvas90AntiHorario(canvasOrigem) {
+  const canvasRotacionado = document.createElement("canvas");
+
+  canvasRotacionado.width = canvasOrigem.height;
+  canvasRotacionado.height = canvasOrigem.width;
+
+  const ctx = canvasRotacionado.getContext("2d");
+  if (!ctx) return canvasOrigem;
+
+  preencherCanvasBranco(
+    ctx,
+    canvasRotacionado.width,
+    canvasRotacionado.height
+  );
+
+  ctx.translate(0, canvasRotacionado.height);
+  ctx.rotate(-Math.PI / 2);
+  ctx.drawImage(canvasOrigem, 0, 0);
+
+  return canvasRotacionado;
+}
+
 export function gerarAssinaturaAjustada(canvasOriginal) {
   const limites = encontrarLimitesDesenho(canvasOriginal);
   if (!limites) return "";
 
-  const padding = 22;
+  const paddingRecorte = 22;
 
-  const sx = Math.max(0, limites.minX - padding);
-  const sy = Math.max(0, limites.minY - padding);
+  const sx = Math.max(0, limites.minX - paddingRecorte);
+  const sy = Math.max(0, limites.minY - paddingRecorte);
+
   const sw = Math.min(
     canvasOriginal.width - sx,
-    limites.maxX - limites.minX + padding * 2
+    limites.maxX - limites.minX + paddingRecorte * 2
   );
+
   const sh = Math.min(
     canvasOriginal.height - sy,
-    limites.maxY - limites.minY + padding * 2
+    limites.maxY - limites.minY + paddingRecorte * 2
   );
 
   if (sw <= 0 || sh <= 0) return "";
 
+  const canvasRecortado = document.createElement("canvas");
+  canvasRecortado.width = sw;
+  canvasRecortado.height = sh;
+
+  const ctxRecortado = canvasRecortado.getContext("2d");
+  if (!ctxRecortado) return "";
+
+  preencherCanvasBranco(ctxRecortado, sw, sh);
+
+  ctxRecortado.drawImage(
+    canvasOriginal,
+    sx,
+    sy,
+    sw,
+    sh,
+    0,
+    0,
+    sw,
+    sh
+  );
+
+  let canvasBase = canvasRecortado;
+
+  const assinaturaSaiuEmPe =
+    canvasRecortado.height > canvasRecortado.width * 1.15;
+
+  if (assinaturaSaiuEmPe) {
+    canvasBase = rotacionarCanvas90AntiHorario(canvasRecortado);
+  }
+
+  const larguraFinal = 1000;
+  const alturaFinal = 280;
+
+  const paddingHorizontal = 36;
+  const paddingVertical = 28;
+
   const canvasFinal = document.createElement("canvas");
-  canvasFinal.width = sw;
-  canvasFinal.height = sh;
+  canvasFinal.width = larguraFinal;
+  canvasFinal.height = alturaFinal;
 
   const ctxFinal = canvasFinal.getContext("2d");
   if (!ctxFinal) return "";
 
-  preencherCanvasBranco(ctxFinal, sw, sh);
-  ctxFinal.drawImage(canvasOriginal, sx, sy, sw, sh, 0, 0, sw, sh);
+  preencherCanvasBranco(ctxFinal, larguraFinal, alturaFinal);
+
+  const areaUtilLargura = larguraFinal - paddingHorizontal * 2;
+  const areaUtilAltura = alturaFinal - paddingVertical * 2;
+
+  const escala = Math.min(
+    areaUtilLargura / canvasBase.width,
+    areaUtilAltura / canvasBase.height
+  );
+
+  const larguraDesenho = canvasBase.width * escala;
+  const alturaDesenho = canvasBase.height * escala;
+
+  const dx = (larguraFinal - larguraDesenho) / 2;
+  const dy = (alturaFinal - alturaDesenho) / 2;
+
+  ctxFinal.drawImage(canvasBase, dx, dy, larguraDesenho, alturaDesenho);
 
   return canvasFinal.toDataURL("image/png");
 }

@@ -14,29 +14,23 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
     assinaturaPreview: assinatura.assinaturaPreview,
     onClose,
     onSalvar,
-    funcionarios, 
-  });
-
-  // 🔍 LOG DE DIAGNÓSTICO: Se isso imprimir 'undefined', o erro está no 'return' do useModalEntrega.js
-  console.log("Estado atual do hook 'entrega':", {
-    tamanhos: entrega.tamanhosFiltrados,
-    carregando: entrega.carregandoTamanhos
+    funcionarios,
   });
 
   const handleMudancaEpi = (valor) => {
     entrega.setIdEpiTemp(valor);
-    entrega.setIdTamanhoTemp(""); 
+    entrega.setIdTamanhoTemp("");
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm text-slate-700">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden animate-fade-in flex flex-col max-h-[95vh]">
           <EntregaHeader onClose={onClose} />
 
-          <div className="p-6 overflow-y-auto space-y-6">
+          <div className="p-6 overflow-y-auto space-y-5">
             <EntregaForm
-              carregandoDados={false} 
+              carregandoDados={false}
               buscaFuncionario={entrega.buscaFuncionario}
               setBuscaFuncionario={entrega.setBuscaFuncionario}
               funcionariosFiltrados={entrega.funcionariosFiltrados}
@@ -51,11 +45,9 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
             />
 
             <EntregaItensForm
-              epis={epis} 
-              // 🌟 GARANTA QUE O NOME AQUI SEJA 'tamanhosFiltrados' (igual ao return do seu hook)
-              tamanhos={entrega.tamanhosFiltrados || []} 
+              epis={epis}
+              tamanhos={entrega.tamanhosFiltrados || []}
               carregandoTamanhos={entrega.carregandoTamanhos}
-              
               idEpiTemp={entrega.idEpiTemp}
               setIdEpiTemp={handleMudancaEpi}
               idTamanhoTemp={entrega.idTamanhoTemp}
