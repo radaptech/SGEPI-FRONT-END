@@ -147,6 +147,12 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
       return;
     }
 
+    // Trava de segurança extra no botão "Adicionar"
+    if (tamanhoSelecionadoObj?.saldo_atual !== undefined && qtdTemp > tamanhoSelecionadoObj.saldo_atual) {
+      alert(`Você só tem ${tamanhoSelecionadoObj.saldo_atual} unidades deste tamanho no estoque.`);
+      return;
+    }
+
     const novoItem = montarItemEntrega(
       { idEpi: idEpiTemp, idTamanho: idTamanhoTemp, quantidade: qtdTemp },
       epiSelecionadoObj,
@@ -218,6 +224,7 @@ export function useModalEntrega({ assinaturaPreview, onClose, onSalvar }) {
     carregandoDados,
     funcionarioSelecionado,
     funcionariosFiltrados,
+    tamanhoSelecionadoObj, // 🌟 EXPORTADO AQUI PARA A TELA USAR
     adicionarItem,
     removerItem,
     salvarEntrega,

@@ -37,15 +37,19 @@ export function normalizarEpi(item) {
   return {
     id: Number(item?.id ?? 0),
     nome: item?.nome ?? "",
-    tamanhos: Array.isArray(item?.tamanhos) ? item.tamanhos : []
+    tamanhos: Array.isArray(item?.tamanhos) ? item.tamanhos : [],
+    // NOVO: Pegando o saldo que veio na raiz do EPI
+    saldo_atual: Number(item?.saldoAtual ?? item?.saldo_atual ?? item?.SaldoAtual ?? 0) 
   };
 }
 
 export function normalizarTamanho(item) {
-  return {
+  const normalizado = {
     id: Number(item?.id ?? 0),
     tamanho: String(item?.tamanho ?? ""),
   };
+
+  return normalizado;
 }
 
 export function normalizarMotivo(item) {

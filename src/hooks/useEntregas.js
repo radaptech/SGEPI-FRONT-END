@@ -126,15 +126,20 @@ export function useEntregas({ usuarioLogado }) {
 
   const entregasResolvidas = useMemo(() => {
     const resolvidas = entregas.map((entrega) => {
-      const func = funcionarios.find(f => Number(f.id) === Number(entrega.idFuncionario));
+      // 🌟 BUSCA BLINDADA DO FUNCIONÁRIO
+      const idBuscado = entrega.idFuncionario || entrega.funcionario?.id;
+      const func = funcionarios.find(f => Number(f.id) === Number(idBuscado));
       
       return {
         ...entrega,
-        dataEntrega: entrega.dataEntrega, 
+        // 🌟 CORREÇÃO DA DATA: Lê o snake_case que vem do Go
+        dataEntrega: entrega.data_entrega || entrega.dataEntrega || entrega.DataEntrega || "--", 
         funcionario: func || entrega.funcionario, 
         itens: (entrega.itens || []).map(item => ({
           ...item,
-          epiNome: item.epiNome || "EPI",
+          // 🌟 CORREÇÃO DO NOME DO EPI E TAMANHO: Lê de dentro do objeto se vier aninhado
+          epiNome: item.epiNome || item.epi?.nome || "EPI",
+          tamanhoNome: item.tamanhoNome || item.tamanho?.tamanho || item.tamanho || "-",
           quantidade: Number(item.quantidade || 0)
         }))
       };
@@ -150,10 +155,10 @@ export function useEntregas({ usuarioLogado }) {
       const matchTexto = !termo || 
         (ent.funcionario?.nome || "").toLowerCase().includes(termo) ||
         (ent.funcionario?.matricula || "").includes(termo) ||
-        (ent.tokenValidacao || "").toLowerCase().includes(termo) ||
+        (ent.tokenValidacao || ent.token_validacao || "").toLowerCase().includes(termo) ||
         ent.itens.some(i => i.epiNome.toLowerCase().includes(termo));
 
-      // CORREÇÃO: Converter a data "DD/MM/YYYY" do JSON para "YYYY-MM-DD" para o filtro funcionar
+      // Conversão a data "DD/MM/YYYY" do JSON para "YYYY-MM-DD" para o filtro funcionar
       let dataComparacao = ent.dataEntrega;
       if (dataComparacao && dataComparacao.includes("/")) {
           const partes = dataComparacao.split("/");
@@ -194,7 +199,7 @@ export function useEntregas({ usuarioLogado }) {
   // Handlers
   const confirmarGeracaoRelatorio = () => {
     const base = tipoRelatorioModal === "funcionario" 
-      ? entregasResolvidas.filter(e => Number(e.idFuncionario) === Number(funcionarioSelecionado?.id))
+      ? entregasResolvidas.filter(e => Number(e.funcionario?.id) === Number(funcionarioSelecionado?.id))
       : entregasResolvidas;
 
     const filtradas = filtrarEntregasPorPeriodo(base, periodoRelatorioInicio, periodoRelatorioFim);

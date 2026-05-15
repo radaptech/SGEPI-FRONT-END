@@ -14,16 +14,19 @@ export function normalizarEpiEntrega(item) {
 }
 
 export function normalizarTamanhoEntrega(item) {
-  return {
-    // Garante que o ID seja sempre um número, independente se vier id ou ID
-    id: Number(item?.id ?? item?.ID ?? 0),
-    
-    // Pega o texto do tamanho (ex: "34", "G", "M")
-    tamanho: String(item?.tamanho ?? item?.Tamanho ?? ""),
-    
-    // Mapeia todas as variações possíveis que o banco ou o Go podem enviar
-    idEpi: Number(item?.id_epi ?? item?.Id_epi ?? item?.idEpi ?? item?.epi_id ?? 0),
+  const normalizado = {
+    id: Number(item?.id ?? 0),
+    tamanho: String(item?.tamanho ?? ""),
   };
+
+  // Puxa o saldo do JSON do Go
+  const saldo = item?.quantidade_atual ?? item?.quantidadeAtual ?? item?.saldo_atual;
+  
+  if (saldo !== undefined && saldo !== null) {
+    normalizado.saldo_atual = Number(saldo);
+  }
+
+  return normalizado;
 }
 
 function normalizarItemEntrega(item) {
