@@ -57,6 +57,8 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
               adicionarItem={entrega.adicionarItem}
               itensParaEntregar={entrega.itensParaEntregar}
               removerItem={entrega.removerItem}
+              // 🌟 NOVO: Passando o objeto selecionado para o formulário travar a tela
+              tamanhoSelecionadoObj={entrega.tamanhoSelecionadoObj}
             />
           </div>
 

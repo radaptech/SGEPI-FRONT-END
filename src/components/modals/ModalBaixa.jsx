@@ -93,70 +93,70 @@ function ModalBaixa({ onClose, onSalvar }) {
 
   // --- Funções de Ação ---
 
-async function handleAddNovoMotivo() {
-  if (!novoMotivoNome) return;
-  
-  try {
-    setSalvandoNovoMotivo(true);
+  async function handleAddNovoMotivo() {
+    if (!novoMotivoNome) return;
     
-    // 1. Faz a requisição (MODIFICADO para enviar a flag de descarte)
-    const response = await api.post("/cadastrar-motivo-devolucao", { 
-      motivo: novoMotivoNome,
-      gera_descarte: geraDescarteNovoMotivo
-    });
-
-    // 2. Extrai os dados (Tratando a estrutura do Axios e do Go)
-    const dados = response.data || response;
-    
-    // Buscamos o ID e o Texto (ajustado para suas structs Go)
-    const novoId = dados?.id || dados?.Id;
-    const textoMotivo = dados?.motivo || novoMotivoNome;
-
-    if (novoId) {
-      // 3. ATUALIZAÇÃO LOCAL (Resolve o problema de precisar recarregar a página)
-      const novoItem = { 
-        id: Number(novoId), 
-        nome: textoMotivo 
-      };
+    try {
+      setSalvandoNovoMotivo(true);
       
-      // Adicionamos ao array existente sem apagar o que já tem
-      setMotivos(prev => [...prev, novoItem]);
-      
-      // Seleciona automaticamente o que acabou de criar
-      setIdMotivo(novoId);
-      
-      // Limpa os campos e volta para o select
-      setNovoMotivoNome("");
-      setGeraDescarteNovoMotivo(false); // Reseta o estado do checkbox
-      setMostrandoAddMotivo(false);
-
-      // 4. FEEDBACK DE SUCESSO (Garante que o catch não seja chamado)
-      setNotificacao({
-        exibir: true,
-        type: "success",
-        message: "Motivo cadastrado com sucesso!"
+      // 1. Faz a requisição (MODIFICADO para enviar a flag de descarte)
+      const response = await api.post("/cadastrar-motivo-devolucao", { 
+        motivo: novoMotivoNome,
+        gera_descarte: geraDescarteNovoMotivo
       });
 
-    } else {
-      // Se não tem ID, algo deu errado no servidor
-      throw new Error("O servidor não retornou o ID do registro.");
-    }
+      // 2. Extrai os dados (Tratando a estrutura do Axios e do Go)
+      const dados = response.data || response;
+      
+      // Buscamos o ID e o Texto (ajustado para suas structs Go)
+      const novoId = dados?.id || dados?.Id;
+      const textoMotivo = dados?.motivo || novoMotivoNome;
 
-  } catch (err) {
-    // Só entrará aqui se a API falhar ou o 'throw' acima for disparado
-    console.error("Erro ao cadastrar:", err);
-    
-    const msgErro = err.response?.data?.error || "Erro ao salvar novo motivo.";
-    
-    setNotificacao({
-      exibir: true,
-      type: "error",
-      message: msgErro
-    });
-  } finally {
-    setSalvandoNovoMotivo(false);
+      if (novoId) {
+        // 3. ATUALIZAÇÃO LOCAL (Resolve o problema de precisar recarregar a página)
+        const novoItem = { 
+          id: Number(novoId), 
+          nome: textoMotivo 
+        };
+        
+        // Adicionamos ao array existente sem apagar o que já tem
+        setMotivos(prev => [...prev, novoItem]);
+        
+        // Seleciona automaticamente o que acabou de criar
+        setIdMotivo(novoId);
+        
+        // Limpa os campos e volta para o select
+        setNovoMotivoNome("");
+        setGeraDescarteNovoMotivo(false); // Reseta o estado do checkbox
+        setMostrandoAddMotivo(false);
+
+        // 4. FEEDBACK DE SUCESSO (Garante que o catch não seja chamado)
+        setNotificacao({
+          exibir: true,
+          type: "success",
+          message: "Motivo cadastrado com sucesso!"
+        });
+
+      } else {
+        // Se não tem ID, algo deu errado no servidor
+        throw new Error("O servidor não retornou o ID do registro.");
+      }
+
+    } catch (err) {
+      // Só entrará aqui se a API falhar ou o 'throw' acima for disparado
+      console.error("Erro ao cadastrar:", err);
+      
+      const msgErro = err.response?.data?.error || "Erro ao salvar novo motivo.";
+      
+      setNotificacao({
+        exibir: true,
+        type: "error",
+        message: msgErro
+      });
+    } finally {
+      setSalvandoNovoMotivo(false);
+    }
   }
-}
 
   async function salvarBaixa() {
     if (!idFuncionario || !idEpi || !idMotivo || !dataDevolucao || !idTamanho) {
@@ -289,7 +289,7 @@ async function handleAddNovoMotivo() {
                   {funcionariosFiltrados.map((f) => (
                     <button
                       key={f.id}
-                      onClick={() => { setIdFuncionario(f.id); setIdEpi(""); setIdTamanho(""); }}
+                      onClick={() => { setIdFuncionario(f.id); setIdEpi(""); setIdTamanho(""); setQuantidadeADevolver(1); }}
                       className={`w-full text-left p-2.5 border-b last:border-0 ${Number(idFuncionario) === Number(f.id) ? "bg-red-100 text-red-800 font-medium" : "text-slate-600 hover:bg-red-50"}`}
                     >
                       <span className="font-mono text-xs text-slate-400 mr-2">[{f.matricula}]</span> {f.nome}
@@ -301,24 +301,46 @@ async function handleAddNovoMotivo() {
               {/* Item e Tamanho */}
               <div>
                 <label className="block text-sm font-medium mb-1">Item devolvido *</label>
-                <select className="w-full p-2.5 border rounded-lg outline-none bg-white text-sm" value={idEpi} onChange={(e) => { setIdEpi(e.target.value); setIdTamanho(""); }} disabled={!idFuncionario}>
+                <select className="w-full p-2.5 border rounded-lg outline-none bg-white text-sm" value={idEpi} onChange={(e) => { setIdEpi(e.target.value); setIdTamanho(""); setQuantidadeADevolver(1); }} disabled={!idFuncionario}>
                   <option value="">{idFuncionario ? "Selecione..." : "Selecione funcionário primeiro"}</option>
-                  {epis.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                  {epis.map(e => (
+                    <option key={e.id} value={e.id}>
+                      {/* NOVO: Exibindo o saldo no seletor de EPI */}
+                      {e.nome} {e.saldo_atual > 0 ? `(Saldo: ${e.saldo_atual})` : ""}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Tamanho *</label>
-                <select className="w-full p-2.5 border rounded-lg outline-none bg-white text-sm" value={idTamanho} onChange={(e) => setIdTamanho(e.target.value)} disabled={!idEpi}>
+                <select className="w-full p-2.5 border rounded-lg outline-none bg-white text-sm" value={idTamanho} onChange={(e) => { setIdTamanho(e.target.value); setQuantidadeADevolver(1); }} disabled={!idEpi}>
                   <option value="">{idEpi ? "Selecione..." : "Selecione item primeiro"}</option>
-                  {tamanhosFiltrados.map(t => <option key={t.id} value={t.id}>{t.tamanho}</option>)}
+                  {tamanhosFiltrados.map(t => (
+                     <option key={t.id} value={t.id}>
+                        {t.tamanho}
+                     </option>
+                  ))}
                 </select>
               </div>
 
               {/* Qtd e Data */}
               <div>
                 <label className="block text-sm font-medium mb-1">Quantidade *</label>
-                <input type="number" min="1" className="w-full p-2.5 border rounded-lg outline-none text-sm" value={quantidadeADevolver} onChange={(e) => setQuantidadeADevolver(e.target.value)} />
+                {/* NOVO: Trava de max={} aplicada lendo o saldo do EPI */}
+                <input 
+                  type="number" 
+                  min="1" 
+                  max={epiSelecionado?.saldo_atual || 1}
+                  className="w-full p-2.5 border rounded-lg outline-none text-sm" 
+                  value={quantidadeADevolver} 
+                  onChange={(e) => {
+                     let val = parseInt(e.target.value) || 1;
+                     const max = epiSelecionado?.saldo_atual || 1;
+                     if(val > max) val = max;
+                     setQuantidadeADevolver(val);
+                  }} 
+                />
               </div>
 
               <div>

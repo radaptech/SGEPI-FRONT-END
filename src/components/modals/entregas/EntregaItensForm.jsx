@@ -13,10 +13,10 @@ function EntregaItensForm({
   adicionarItem,
   itensParaEntregar,
   removerItem,
-
- 
+  tamanhoSelecionadoObj // 🌟 NOVO: Recebendo o objeto do tamanho selecionado
 }) {
   console.log("DEBUG: Lista 'tamanhos' recebida no Form:", tamanhos);
+  
   return (
     <div className="space-y-4">
       <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
@@ -52,7 +52,10 @@ function EntregaItensForm({
             <select
               className="w-full p-2.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-600 outline-none bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
               value={idTamanhoTemp}
-              onChange={(e) => setIdTamanhoTemp(e.target.value)}
+              onChange={(e) => {
+                setIdTamanhoTemp(e.target.value);
+                setQtdTemp(1); // 🌟 Reseta a quantidade para 1 ao trocar de tamanho
+              }}
               // 🌟 Desabilita se não tiver EPI selecionado ou se estiver buscando no Go
               disabled={!idEpiTemp || carregandoTamanhos}
             >
@@ -67,8 +70,9 @@ function EntregaItensForm({
 
               {tamanhos.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {/* 🌟 BLINDAGEM: Tenta ler 'tamanho' minúsculo (JS) ou 'Tamanho' maiúsculo (Go) */}
-                  {item.tamanho || item.Tamanho || "Sem nome"}
+                  {/* 🌟 MOSTRANDO O ESTOQUE NO SELECT */}
+                  {item.tamanho || item.Tamanho || "Sem nome"}{" "}
+                  {item.saldo_atual !== undefined ? `(Estoque: ${item.saldo_atual})` : ""}
                 </option>
               ))}
             </select>
@@ -82,9 +86,22 @@ function EntregaItensForm({
             <input
               type="number"
               min="1"
+              // 🌟 Trava o máximo HTML com base no saldo
+              max={tamanhoSelecionadoObj?.saldo_atual || ""}
               className="w-full p-2.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-600 outline-none"
               value={qtdTemp}
-              onChange={(e) => setQtdTemp(e.target.value)}
+              onChange={(e) => {
+                let val = parseInt(e.target.value) || 1;
+                
+                // 🌟 Trava de segurança no JS: Impede de digitar um número maior que o estoque
+                const max = tamanhoSelecionadoObj?.saldo_atual;
+                if (max !== undefined && val > max) {
+                  val = max;
+                }
+                
+                setQtdTemp(val);
+              }}
+              disabled={!idTamanhoTemp} // Desabilita se não escolheu o tamanho ainda
             />
           </div>
 
