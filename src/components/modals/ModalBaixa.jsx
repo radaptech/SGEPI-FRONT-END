@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
 import { formatarDataParaGo } from "../../utils/entradaHelpers";
 // Componentes
-import Toast from "../Toast"; // Ajuste o caminho conforme sua pasta
+import Toast from "../Toast"; 
 
 // Importações dos Helpers e Hooks refatorados
 import {
@@ -23,8 +23,8 @@ const MOTIVOS_PADRAO = [
   "Vencimento do EPI / CA",
   "Desligamento da empresa",
   "Troca de função",
-  "Tamanho Incorreto / Diferente", // NOVO
-  "Defeito de Fabricação",        // NOVO
+  "Tamanho Incorreto / Diferente",
+  "Defeito de Fabricação",
   "Outros",
 ];
 
@@ -34,14 +34,14 @@ function ModalBaixa({ onClose, onSalvar }) {
   // Estados de UI e Notificação
   const [mostrandoAddMotivo, setMostrandoAddMotivo] = useState(false);
   const [novoMotivoNome, setNovoMotivoNome] = useState("");
-  // NOVO: Estado para controlar se o novo motivo gerado destrói o EPI ou volta pro estoque
   const [geraDescarteNovoMotivo, setGeraDescarteNovoMotivo] = useState(false); 
   const [salvandoNovoMotivo, setSalvandoNovoMotivo] = useState(false);
   const [notificacao, setNotificacao] = useState({ exibir: false, type: "success", message: "" });
 
   // Estados de Dados
   const [funcionarios, setFuncionarios] = useState([]);
-  const [epis, setEpis] = useState([]);
+  const [episFuncionario, setEpisFuncionario] = useState([]); // EPIs que ele vai devolver
+  const [episEstoque, setEpisEstoque] = useState([]);         // EPIs do catálogo para troca
   const [tamanhos, setTamanhos] = useState([]);
   const [motivos, setMotivos] = useState([]);
 
@@ -59,6 +59,10 @@ function ModalBaixa({ onClose, onSalvar }) {
   const [idEpiNovo, setIdEpiNovo] = useState("");
   const [idTamanhoNovo, setIdTamanhoNovo] = useState("");
   const [quantidadeNova, setQuantidadeNova] = useState(1);
+  
+  // 🌟 NOVO: Estados para controlar o estoque da troca
+  const [tamanhosEstoqueNovo, setTamanhosEstoqueNovo] = useState([]);
+  const [carregandoTamanhosNovo, setCarregandoTamanhosNovo] = useState(false);
 
   const [carregando, setCarregando] = useState(false);
 
@@ -74,7 +78,7 @@ function ModalBaixa({ onClose, onSalvar }) {
       ]);
 
       setFuncionarios(listaF.map(normalizarFuncionario));
-      setEpis(listaE.map(normalizarEpi));
+      setEpisEstoque(listaE.map(normalizarEpi)); // Catálogo completo para as trocas!
       setTamanhos(listaT.map(normalizarTamanho));
       setMotivos(listaM.map(normalizarMotivo));
     }
@@ -84,75 +88,78 @@ function ModalBaixa({ onClose, onSalvar }) {
   useEffect(() => {
     if (!idFuncionario) {
       setIdEpi("");
+      setEpisFuncionario([]);
       return;
     }
     buscarPrimeiraLista([`/funcionarios/${idFuncionario}/epis`]).then((lista) => {
-      setEpis(lista.map(normalizarEpi));
+      setEpisFuncionario(lista.map(normalizarEpi));
     });
   }, [idFuncionario]);
+
+  // 🌟 NOVO: Busca tamanhos com estoque quando seleciona um Novo EPI na troca
+  useEffect(() => {
+    let ativo = true;
+    async function buscarTamanhosNovoEpi() {
+      if (!idEpiNovo || !houveTroca) {
+        setTamanhosEstoqueNovo([]);
+        return;
+      }
+      try {
+        setCarregandoTamanhosNovo(true);
+        const response = await api.get(`/tamanhos-id-epi/${idEpiNovo}`);
+        if (!ativo) return;
+        
+        const dadosBrutos = response?.data || response || [];
+        // Normalização rápida blindada para extrair o saldo
+        const dadosNormalizados = Array.isArray(dadosBrutos) 
+          ? dadosBrutos.map(item => ({
+              id: Number(item?.id || 0),
+              tamanho: String(item?.tamanho || item?.Tamanho || ""),
+              saldo_atual: Number(item?.quantidade_atual ?? item?.quantidadeAtual ?? item?.saldo_atual ?? 0)
+            }))
+          : [];
+
+        setTamanhosEstoqueNovo(dadosNormalizados);
+      } catch (err) {
+        console.error("Erro ao buscar tamanhos do novo EPI:", err);
+        setTamanhosEstoqueNovo([]);
+      } finally {
+        if (ativo) setCarregandoTamanhosNovo(false);
+      }
+    }
+    buscarTamanhosNovoEpi();
+    return () => { ativo = false; };
+  }, [idEpiNovo, houveTroca]);
 
   // --- Funções de Ação ---
 
   async function handleAddNovoMotivo() {
     if (!novoMotivoNome) return;
-    
     try {
       setSalvandoNovoMotivo(true);
-      
-      // 1. Faz a requisição (MODIFICADO para enviar a flag de descarte)
       const response = await api.post("/cadastrar-motivo-devolucao", { 
         motivo: novoMotivoNome,
         gera_descarte: geraDescarteNovoMotivo
       });
 
-      // 2. Extrai os dados (Tratando a estrutura do Axios e do Go)
       const dados = response.data || response;
-      
-      // Buscamos o ID e o Texto (ajustado para suas structs Go)
       const novoId = dados?.id || dados?.Id;
       const textoMotivo = dados?.motivo || novoMotivoNome;
 
       if (novoId) {
-        // 3. ATUALIZAÇÃO LOCAL (Resolve o problema de precisar recarregar a página)
-        const novoItem = { 
-          id: Number(novoId), 
-          nome: textoMotivo 
-        };
-        
-        // Adicionamos ao array existente sem apagar o que já tem
+        const novoItem = { id: Number(novoId), nome: textoMotivo };
         setMotivos(prev => [...prev, novoItem]);
-        
-        // Seleciona automaticamente o que acabou de criar
         setIdMotivo(novoId);
-        
-        // Limpa os campos e volta para o select
         setNovoMotivoNome("");
-        setGeraDescarteNovoMotivo(false); // Reseta o estado do checkbox
+        setGeraDescarteNovoMotivo(false);
         setMostrandoAddMotivo(false);
-
-        // 4. FEEDBACK DE SUCESSO (Garante que o catch não seja chamado)
-        setNotificacao({
-          exibir: true,
-          type: "success",
-          message: "Motivo cadastrado com sucesso!"
-        });
-
+        setNotificacao({ exibir: true, type: "success", message: "Motivo cadastrado com sucesso!" });
       } else {
-        // Se não tem ID, algo deu errado no servidor
         throw new Error("O servidor não retornou o ID do registro.");
       }
-
     } catch (err) {
-      // Só entrará aqui se a API falhar ou o 'throw' acima for disparado
-      console.error("Erro ao cadastrar:", err);
-      
       const msgErro = err.response?.data?.error || "Erro ao salvar novo motivo.";
-      
-      setNotificacao({
-        exibir: true,
-        type: "error",
-        message: msgErro
-      });
+      setNotificacao({ exibir: true, type: "error", message: msgErro });
     } finally {
       setSalvandoNovoMotivo(false);
     }
@@ -161,6 +168,10 @@ function ModalBaixa({ onClose, onSalvar }) {
   async function salvarBaixa() {
     if (!idFuncionario || !idEpi || !idMotivo || !dataDevolucao || !idTamanho) {
       return setNotificacao({ exibir: true, type: "warning", message: "Preencha todos os campos obrigatórios." });
+    }
+    // Proteção extra se houver troca:
+    if (houveTroca && (!idEpiNovo || !idTamanhoNovo || !quantidadeNova)) {
+      return setNotificacao({ exibir: true, type: "warning", message: "Preencha os dados da Troca (EPI Novo, Tamanho e Quantidade)." });
     }
     if (!sig.assinaturaPreview) {
       return setNotificacao({ exibir: true, type: "warning", message: "A assinatura do colaborador é obrigatória." });
@@ -185,7 +196,6 @@ function ModalBaixa({ onClose, onSalvar }) {
     try {
       await salvarEmAlgumaRota(["/devolucao"], payload);
       setNotificacao({ exibir: true, type: "success", message: "Baixa realizada com sucesso!" });
-      
       setTimeout(async() => {
         if (onSalvar) await onSalvar();
         onClose();
@@ -206,7 +216,7 @@ function ModalBaixa({ onClose, onSalvar }) {
       : funcionarios;
   }, [funcionarios, buscaFuncionario]);
 
-  const epiSelecionado = useMemo(() => epis.find(e => Number(e.id) === Number(idEpi)), [epis, idEpi]);
+  const epiSelecionado = useMemo(() => episFuncionario.find(e => Number(e.id) === Number(idEpi)), [episFuncionario, idEpi]);
 
   const tamanhosFiltrados = useMemo(() => {
     if (!epiSelecionado) return [];
@@ -214,10 +224,12 @@ function ModalBaixa({ onClose, onSalvar }) {
     return itens.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
   }, [epiSelecionado]);
 
-  const epiNovoSelecionado = useMemo(() => epis.find(e => Number(e.id) === Number(idEpiNovo)), [epis, idEpiNovo]);
-  const tamanhosNovosFiltrados = useMemo(() => epiNovoSelecionado ? epiNovoSelecionado.tamanhos.map(normalizarTamanho) : [], [epiNovoSelecionado]);
+  // 🌟 NOVO: Busca o objeto do tamanho novo para sabermos o saldo e travar o input
+  const tamanhoNovoSelecionadoObj = useMemo(() => {
+    return tamanhosEstoqueNovo.find(t => Number(t.id) === Number(idTamanhoNovo)) || null;
+  }, [tamanhosEstoqueNovo, idTamanhoNovo]);
 
-  // --- Renderização de Auxiliares Assinatura ---
+  // --- Renderização de Auxiliares Assinatura (MANTIDO IGUAL) ---
 
   function renderBotoesSidebarMobile() {
     return (
@@ -298,15 +310,14 @@ function ModalBaixa({ onClose, onSalvar }) {
                 </div>
               </div>
 
-              {/* Item e Tamanho */}
+              {/* Item e Tamanho (DEVOLUÇÃO) */}
               <div>
                 <label className="block text-sm font-medium mb-1">Item devolvido *</label>
                 <select className="w-full p-2.5 border rounded-lg outline-none bg-white text-sm" value={idEpi} onChange={(e) => { setIdEpi(e.target.value); setIdTamanho(""); setQuantidadeADevolver(1); }} disabled={!idFuncionario}>
                   <option value="">{idFuncionario ? "Selecione..." : "Selecione funcionário primeiro"}</option>
-                  {epis.map(e => (
+                  {episFuncionario.map(e => (
                     <option key={e.id} value={e.id}>
-                      {/* NOVO: Exibindo o saldo no seletor de EPI */}
-                      {e.nome} {e.saldo_atual > 0 ? `(Saldo: ${e.saldo_atual})` : ""}
+                      {e.nome} {e.saldo_atual > 0 ? `(Com ele: ${e.saldo_atual})` : ""}
                     </option>
                   ))}
                 </select>
@@ -327,7 +338,6 @@ function ModalBaixa({ onClose, onSalvar }) {
               {/* Qtd e Data */}
               <div>
                 <label className="block text-sm font-medium mb-1">Quantidade *</label>
-                {/* NOVO: Trava de max={} aplicada lendo o saldo do EPI */}
                 <input 
                   type="number" 
                   min="1" 
@@ -354,7 +364,7 @@ function ModalBaixa({ onClose, onSalvar }) {
                   <span>Motivo <span className="text-red-500">*</span></span>
                   <button type="button" onClick={() => {
                       setMostrandoAddMotivo(!mostrandoAddMotivo);
-                      setGeraDescarteNovoMotivo(false); // Reseta ao fechar/abrir
+                      setGeraDescarteNovoMotivo(false); 
                     }} className="text-[11px] text-red-600 font-bold hover:underline">
                     {mostrandoAddMotivo ? "✕ Cancelar" : "+ Cadastrar Novo"}
                   </button>
@@ -367,7 +377,6 @@ function ModalBaixa({ onClose, onSalvar }) {
                   </select>
                 ) : (
                   <div className="flex flex-col gap-2 animate-fade-in w-full">
-                    {/* Bloco de Select e Botão */}
                     <div className="flex gap-2">
                       <select autoFocus value={novoMotivoNome} onChange={(e) => setNovoMotivoNome(e.target.value)} className="flex-1 p-2.5 border-2 border-red-200 rounded-lg outline-none text-sm bg-red-50">
                         <option value="">Escolha uma sugestão...</option>
@@ -377,7 +386,6 @@ function ModalBaixa({ onClose, onSalvar }) {
                         {salvandoNovoMotivo ? "..." : "Add"}
                       </button>
                     </div>
-                    {/* NOVO: Checkbox para informar se o motivo descarta ou não o EPI */}
                     <label className="flex items-center gap-2 text-xs font-medium text-slate-600 mt-1 cursor-pointer">
                       <input 
                         type="checkbox" 
@@ -400,27 +408,49 @@ function ModalBaixa({ onClose, onSalvar }) {
               </label>
             </div>
 
-            {/* Campos de Troca */}
+            {/* 🌟 Campos de Troca REFORMULADOS COM ESTOQUE */}
             {houveTroca && (
               <div className="bg-red-50 border border-red-100 rounded-xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
                 <div className="md:col-span-3 text-sm font-bold text-red-700">Dados do Novo EPI</div>
+                
                 <div>
                   <label className="block text-xs font-bold mb-1">Novo EPI</label>
-                  <select className="w-full p-2 border rounded-lg bg-white text-sm" value={idEpiNovo} onChange={(e) => { setIdEpiNovo(e.target.value); setIdTamanhoNovo(""); }}>
+                  <select className="w-full p-2 border rounded-lg bg-white text-sm" value={idEpiNovo} onChange={(e) => { setIdEpiNovo(e.target.value); setIdTamanhoNovo(""); setQuantidadeNova(1); }}>
                     <option value="">Selecione...</option>
-                    {epis.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                    {/* Aqui nós usamos episEstoque (O catálogo completo) */}
+                    {episEstoque.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
                   </select>
                 </div>
+                
                 <div>
                   <label className="block text-xs font-bold mb-1">Novo Tamanho</label>
-                  <select className="w-full p-2 border rounded-lg bg-white text-sm" value={idTamanhoNovo} onChange={(e) => setIdTamanhoNovo(e.target.value)} disabled={!idEpiNovo}>
-                    <option value="">Selecione...</option>
-                    {tamanhosNovosFiltrados.map(t => <option key={t.id} value={t.id}>{t.tamanho}</option>)}
+                  <select className="w-full p-2 border rounded-lg bg-white text-sm disabled:bg-slate-100" value={idTamanhoNovo} onChange={(e) => { setIdTamanhoNovo(e.target.value); setQuantidadeNova(1); }} disabled={!idEpiNovo || carregandoTamanhosNovo}>
+                    <option value="">{carregandoTamanhosNovo ? "Carregando..." : "Selecione..."}</option>
+                    {/* Aqui nós mostramos o estoque do item novo! */}
+                    {tamanhosEstoqueNovo.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.tamanho} {t.saldo_atual !== undefined ? `(Estoque: ${t.saldo_atual})` : ""}
+                      </option>
+                    ))}
                   </select>
                 </div>
+                
                 <div>
                   <label className="block text-xs font-bold mb-1">Qtd Nova</label>
-                  <input type="number" className="w-full p-2 border rounded-lg text-sm" value={quantidadeNova} onChange={(e) => setQuantidadeNova(e.target.value)} />
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max={tamanhoNovoSelecionadoObj?.saldo_atual || 1}
+                    className="w-full p-2 border rounded-lg text-sm" 
+                    value={quantidadeNova} 
+                    onChange={(e) => {
+                      let val = parseInt(e.target.value) || 1;
+                      const max = tamanhoNovoSelecionadoObj?.saldo_atual;
+                      if (max !== undefined && val > max) val = max; // Trava o máximo
+                      setQuantidadeNova(val);
+                    }} 
+                    disabled={!idTamanhoNovo}
+                  />
                 </div>
               </div>
             )}
