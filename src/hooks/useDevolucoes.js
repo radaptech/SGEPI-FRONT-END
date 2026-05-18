@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buscarDadosDevolucoes } from "../services/devolucoesService";
 import {
-  normalizarDevolucao,
   normalizarEpi,
   normalizarFuncionario,
   normalizarMotivo,
   normalizarTamanho,
-  resolverDevolucoes,
 } from "../utils/devolucoes";
 
 export function useDevolucoes() {
@@ -30,7 +28,11 @@ export function useDevolucoes() {
       setEpis(dados.epis.map(normalizarEpi));
       setTamanhos(dados.tamanhos.map(normalizarTamanho));
       setMotivos(dados.motivos.map(normalizarMotivo));
-      setDevolucoes(dados.devolucoes.map(normalizarDevolucao));
+      
+      // 🌟 O GO JÁ MANDOU PERFEITO! 
+      // Não precisamos mais do "resolverDevolucoes".
+      setDevolucoes(dados.devolucoes);
+
     } catch (error) {
       console.error("Erro ao carregar devoluções:", error);
       setErro(error?.message || "Não foi possível carregar os registros de devolução.");
@@ -43,19 +45,15 @@ export function useDevolucoes() {
     carregar();
   }, [carregar]);
 
+  // Mantemos o mesmo nome da variável para não quebrar a sua tela Devolucoes.jsx
   const devolucoesResolvidas = useMemo(() => {
-    return resolverDevolucoes(devolucoes, funcionarios, epis, tamanhos, motivos);
-  }, [devolucoes, funcionarios, epis, tamanhos, motivos]);
+    return devolucoes;
+  }, [devolucoes]);
 
   const salvarLocal = useCallback((novaDevolucao) => {
-    const itemLocal = normalizarDevolucao({
-      id: novaDevolucao?.id ?? Date.now(),
-      ...novaDevolucao,
-    });
-
     setDevolucoes((prev) => {
-      const semDuplicado = prev.filter((item) => Number(item.id) !== Number(itemLocal.id));
-      return [itemLocal, ...semDuplicado];
+      const semDuplicado = prev.filter((item) => Number(item.id) !== Number(novaDevolucao.id));
+      return [novaDevolucao, ...semDuplicado];
     });
   }, []);
 
@@ -63,7 +61,7 @@ export function useDevolucoes() {
     carregando,
     erro,
     devolucoes,
-    devolucoesResolvidas,
+    devolucoesResolvidas, // Repassando os dados que vieram do Go
     funcionarios,
     epis,
     tamanhos,

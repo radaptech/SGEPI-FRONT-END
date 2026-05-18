@@ -163,20 +163,22 @@ export function obterDataMenosDiasISO(dias) {
   return dataLocalParaISO(data);
 }
 
+// (Dentro do utils/devolucoes.js)
 export function formatarData(data) {
   if (!data) return "--";
-
-  const texto = String(data).substring(0, 10);
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
-    const [ano, mes, dia] = texto.split("-");
-    return `${dia}/${mes}/${ano}`;
+  
+  // Se a data já vier formatada bonitinha do Go como DD/MM/YYYY
+  if (data.includes("/")) {
+     return data.substring(0, 10); 
   }
-
-  const dataObj = new Date(data);
-  if (Number.isNaN(dataObj.getTime())) return "--";
-
-  return dataObj.toLocaleDateString("pt-BR");
+  
+  // Se vier como ISO (2026-05-18)
+  const partes = data.substring(0,10).split("-");
+  if (partes.length === 3) {
+     return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+  
+  return data;
 }
 
 export function obterTextoPeriodo(inicio, fim) {

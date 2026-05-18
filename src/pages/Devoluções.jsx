@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify"; 
+import { api } from "../services/api";  
+
 import ModalBaixa from "../components/modals/ModalBaixa";
 import ModalPeriodoRelatorioDevolucao from "../components/modals/ModalPeriodoRelatorioDevolucao";
+import ModalDetalhesTroca from "../components/modals/ModalDetalhesTroca"; // 🌟 NOVO: Import do modal separado
 import { useDevolucoes } from "../hooks/useDevolucoes";
 import { temPermissao } from "../utils/permissoes";
 import {
@@ -23,6 +27,8 @@ function Devolucoes({ usuarioLogado }) {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [paginaAtual, setPaginaAtual] = useState(1);
+  
+  const [filtroTroca, setFiltroTroca] = useState("todos");
 
   const [modalPeriodoAberto, setModalPeriodoAberto] = useState(false);
   const [tipoRelatorioModal, setTipoRelatorioModal] = useState("geral");
@@ -30,6 +36,12 @@ function Devolucoes({ usuarioLogado }) {
   const [periodoRelatorioInicio, setPeriodoRelatorioInicio] = useState("");
   const [periodoRelatorioFim, setPeriodoRelatorioFim] = useState("");
   const [erroPeriodoModal, setErroPeriodoModal] = useState("");
+
+  const [baixandoPdfId, setBaixandoPdfId] = useState(null);
+
+  // Estados para o Modal de Detalhes da Troca
+  const [modalTrocaAberto, setModalTrocaAberto] = useState(false);
+  const [devolucaoParaTroca, setDevolucaoParaTroca] = useState(null);
 
   const itensPorPagina = 5;
 
@@ -46,7 +58,37 @@ function Devolucoes({ usuarioLogado }) {
     setPaginaAtual(1);
   };
 
-  const devolucoesFiltradas = useMemo(() => {
+  const handleBaixarPdf = async (idDevolucao) => {
+    try {
+      setBaixandoPdfId(idDevolucao);
+      
+      const response = await api.get(`/devolucoes/${idDevolucao}/pdf`, {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `comprovante_devolucao_${idDevolucao}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Erro ao baixar PDF da devolução:", error);
+      toast.error("Não foi possível gerar o PDF desta devolução.");
+    } finally {
+      setBaixandoPdfId(null);
+    }
+  };
+
+  const abrirModalTroca = (devolucao) => {
+    setDevolucaoParaTroca(devolucao);
+    setModalTrocaAberto(true);
+  };
+
+  const devolucoesPreFiltroTroca = useMemo(() => {
     const termo = busca.toLowerCase().trim();
 
     return devolucoesResolvidas.filter((d) => {
@@ -71,6 +113,25 @@ function Devolucoes({ usuarioLogado }) {
     });
   }, [devolucoesResolvidas, busca, dataInicio, dataFim]);
 
+  const resumoTela = useMemo(() => {
+    const totalDevolucoes = devolucoesPreFiltroTroca.length;
+    const totalTrocas = devolucoesPreFiltroTroca.filter((item) => item.houveTroca).length;
+
+    return {
+      totalDevolucoes,
+      totalTrocas,
+      totalSemTroca: totalDevolucoes - totalTrocas,
+    };
+  }, [devolucoesPreFiltroTroca]);
+
+  const devolucoesFiltradas = useMemo(() => {
+    return devolucoesPreFiltroTroca.filter((d) => {
+      if (filtroTroca === "com_troca") return d.houveTroca === true;
+      if (filtroTroca === "sem_troca") return d.houveTroca === false;
+      return true; 
+    });
+  }, [devolucoesPreFiltroTroca, filtroTroca]);
+
   const devolucoesOrdenadas = useMemo(() => {
     return [...devolucoesFiltradas].sort((a, b) => {
       if (a.data_devolucao < b.data_devolucao) return 1;
@@ -78,17 +139,6 @@ function Devolucoes({ usuarioLogado }) {
       return 0;
     });
   }, [devolucoesFiltradas]);
-
-  const resumoTela = useMemo(() => {
-    const totalDevolucoes = devolucoesOrdenadas.length;
-    const totalTrocas = devolucoesOrdenadas.filter((item) => item.houveTroca).length;
-
-    return {
-      totalDevolucoes,
-      totalTrocas,
-      totalSemTroca: totalDevolucoes - totalTrocas,
-    };
-  }, [devolucoesOrdenadas]);
 
   useEffect(() => {
     const total = Math.max(1, Math.ceil(devolucoesOrdenadas.length / itensPorPagina));
@@ -152,24 +202,6 @@ function Devolucoes({ usuarioLogado }) {
     setErroPeriodoModal("");
   };
 
-  const abrirModalRelatorioGeral = () => {
-    setTipoRelatorioModal("geral");
-    setFuncionarioSelecionado(null);
-    setPeriodoRelatorioInicio(dataInicio || "");
-    setPeriodoRelatorioFim(dataFim || "");
-    setErroPeriodoModal("");
-    setModalPeriodoAberto(true);
-  };
-
-  const abrirModalRelatorioFuncionario = (funcionario) => {
-    setTipoRelatorioModal("funcionario");
-    setFuncionarioSelecionado(funcionario || null);
-    setPeriodoRelatorioInicio(dataInicio || "");
-    setPeriodoRelatorioFim(dataFim || "");
-    setErroPeriodoModal("");
-    setModalPeriodoAberto(true);
-  };
-
   const confirmarGeracaoRelatorio = () => {
     if (
       periodoRelatorioInicio &&
@@ -220,25 +252,18 @@ function Devolucoes({ usuarioLogado }) {
   }
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 max-w-full">
+    <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 max-w-full relative">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
             🔄 Devoluções e Trocas
           </h2>
           <p className="text-sm text-gray-500">
-            Registre, filtre e imprima relatórios de devoluções.
+            Registre, filtre e gerencie devoluções de EPIs.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-          <button
-            onClick={abrirModalRelatorioGeral}
-            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition shadow-sm border border-gray-300 flex items-center gap-2 justify-center w-full sm:w-auto"
-          >
-            <span>🖨️</span> Relatório
-          </button>
-
           {podeCadastrar && (
             <button
               onClick={() => setModalAberto(true)}
@@ -251,32 +276,53 @@ function Devolucoes({ usuarioLogado }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <div className="rounded-xl border border-red-100 bg-red-50 p-4">
-          <span className="text-[11px] text-red-700 uppercase font-bold tracking-wide block mb-1">
-            Devoluções visíveis
+        <button
+          onClick={() => { setFiltroTroca("todos"); setPaginaAtual(1); }}
+          className={`rounded-xl border p-4 text-left transition-all duration-200 outline-none ${
+            filtroTroca === "todos"
+              ? "border-red-300 bg-red-100 shadow-md ring-2 ring-red-500 ring-opacity-30 scale-[1.02]"
+              : "border-red-100 bg-red-50 hover:bg-red-100/70"
+          }`}
+        >
+          <span className={`text-[11px] uppercase font-bold tracking-wide block mb-1 ${filtroTroca === "todos" ? "text-red-800" : "text-red-700"}`}>
+            Todas visíveis
           </span>
-          <strong className="text-2xl text-red-900">
+          <strong className={`text-2xl ${filtroTroca === "todos" ? "text-red-950" : "text-red-900"}`}>
             {carregando ? "--" : resumoTela.totalDevolucoes}
           </strong>
-        </div>
+        </button>
 
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-          <span className="text-[11px] text-emerald-700 uppercase font-bold tracking-wide block mb-1">
+        <button
+          onClick={() => { setFiltroTroca("com_troca"); setPaginaAtual(1); }}
+          className={`rounded-xl border p-4 text-left transition-all duration-200 outline-none ${
+            filtroTroca === "com_troca"
+              ? "border-emerald-300 bg-emerald-100 shadow-md ring-2 ring-emerald-500 ring-opacity-30 scale-[1.02]"
+              : "border-emerald-100 bg-emerald-50 hover:bg-emerald-100/70"
+          }`}
+        >
+          <span className={`text-[11px] uppercase font-bold tracking-wide block mb-1 ${filtroTroca === "com_troca" ? "text-emerald-800" : "text-emerald-700"}`}>
             Com troca
           </span>
-          <strong className="text-2xl text-emerald-900">
+          <strong className={`text-2xl ${filtroTroca === "com_troca" ? "text-emerald-950" : "text-emerald-900"}`}>
             {carregando ? "--" : resumoTela.totalTrocas}
           </strong>
-        </div>
+        </button>
 
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <span className="text-[11px] text-gray-600 uppercase font-bold tracking-wide block mb-1">
+        <button
+          onClick={() => { setFiltroTroca("sem_troca"); setPaginaAtual(1); }}
+          className={`rounded-xl border p-4 text-left transition-all duration-200 outline-none ${
+            filtroTroca === "sem_troca"
+              ? "border-gray-400 bg-gray-200 shadow-md ring-2 ring-gray-400 ring-opacity-30 scale-[1.02]"
+              : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+          }`}
+        >
+          <span className={`text-[11px] uppercase font-bold tracking-wide block mb-1 ${filtroTroca === "sem_troca" ? "text-gray-800" : "text-gray-600"}`}>
             Sem troca
           </span>
-          <strong className="text-2xl text-gray-900">
+          <strong className={`text-2xl ${filtroTroca === "sem_troca" ? "text-gray-950" : "text-gray-900"}`}>
             {carregando ? "--" : resumoTela.totalSemTroca}
           </strong>
-        </div>
+        </button>
       </div>
 
       {erro && (
@@ -287,7 +333,7 @@ function Devolucoes({ usuarioLogado }) {
 
       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
         <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">
-          Filtros do Relatório
+          Filtros de Busca
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -338,14 +384,20 @@ function Devolucoes({ usuarioLogado }) {
         <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-200 flex-col md:flex-row gap-3">
           <span className="text-xs text-gray-500 w-full md:w-auto text-center md:text-left">
             Mostrando <b>{devolucoesOrdenadas.length}</b> registros
+            {filtroTroca !== "todos" && (
+              <span className="ml-1 text-red-500 font-medium">
+                (Filtro de botões ativo)
+              </span>
+            )}
           </span>
 
-          {(busca || dataInicio || dataFim) && (
+          {(busca || dataInicio || dataFim || filtroTroca !== "todos") && (
             <button
               onClick={() => {
                 setBusca("");
                 setDataInicio("");
                 setDataFim("");
+                setFiltroTroca("todos");
                 setPaginaAtual(1);
               }}
               className="text-xs text-red-500 font-bold hover:underline px-3 py-2"
@@ -372,13 +424,14 @@ function Devolucoes({ usuarioLogado }) {
                   <th className="p-4 font-semibold">Motivo</th>
                   <th className="p-4 font-semibold text-center">Troca?</th>
                   <th className="p-4 font-semibold text-center">Assinatura</th>
+                  <th className="p-4 font-semibold text-center">Ações</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-gray-200">
                 {devolucoesVisiveis.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-gray-500">
+                    <td colSpan="7" className="p-8 text-center text-gray-500">
                       Nenhuma devolução encontrada no banco de dados.
                     </td>
                   </tr>
@@ -390,27 +443,14 @@ function Devolucoes({ usuarioLogado }) {
                       </td>
 
                       <td className="p-4">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            abrirModalRelatorioFuncionario({
-                              id: d.idFuncionario,
-                              nome: d.funcionarioNome,
-                              matricula: d.funcionarioMatricula,
-                            })
-                          }
-                          className="text-left group"
-                        >
-                          <div className="font-bold text-red-700 group-hover:text-red-900 group-hover:underline transition">
+                        <div className="text-left">
+                          <div className="font-bold text-gray-800">
                             {d.funcionarioNome}
                           </div>
                           <div className="text-xs text-gray-400">
                             Mat: {d.funcionarioMatricula}
                           </div>
-                          <div className="text-[11px] text-red-600 mt-1 opacity-90">
-                            Clique para selecionar período e imprimir
-                          </div>
-                        </button>
+                        </div>
                       </td>
 
                       <td className="p-4 text-gray-700">
@@ -423,12 +463,6 @@ function Devolucoes({ usuarioLogado }) {
                         <div className="text-xs text-gray-400">
                           Quantidade: {d.quantidadeADevolver}
                         </div>
-                        {d.houveTroca && (
-                          <div className="text-xs text-green-700 mt-1">
-                            Troca por: <b>{d.epiNovoNome}</b> ({d.tamanhoNovoNome}) x
-                            {d.quantidadeNova || 0}
-                          </div>
-                        )}
                       </td>
 
                       <td className="p-4 text-sm">
@@ -438,15 +472,20 @@ function Devolucoes({ usuarioLogado }) {
                       </td>
 
                       <td className="p-4 text-center">
-                        {d.houveTroca ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">
-                            ✅ SIM
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-bold border border-gray-200">
-                            ❌ NÃO
-                          </span>
-                        )}
+                        <button 
+                          onClick={() => abrirModalTroca(d)}
+                          className="outline-none hover:scale-105 transition-transform"
+                        >
+                          {d.houveTroca ? (
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200 shadow-sm hover:bg-green-200 transition-colors">
+                              🔄 VER TROCA
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-xs font-bold border border-gray-200 shadow-sm hover:bg-gray-200 transition-colors">
+                              ❌ NÃO
+                            </span>
+                          )}
+                        </button>
                       </td>
 
                       <td className="p-4 text-center">
@@ -460,6 +499,21 @@ function Devolucoes({ usuarioLogado }) {
                         ) : (
                           <span className="text-xs text-gray-400">-</span>
                         )}
+                      </td>
+
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => handleBaixarPdf(d.id)}
+                          disabled={baixandoPdfId === d.id}
+                          title="Baixar Recibo PDF"
+                          className={`p-2 rounded-lg transition-colors border ${
+                            baixandoPdfId === d.id
+                              ? "bg-gray-100 border-gray-200 text-gray-400 cursor-wait"
+                              : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
+                          }`}
+                        >
+                          {baixandoPdfId === d.id ? "⏳" : "📄 PDF"}
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -481,40 +535,29 @@ function Devolucoes({ usuarioLogado }) {
                         {formatarData(d.data_devolucao)}
                       </span>
 
-                      {d.houveTroca ? (
-                        <span className="text-[10px] text-green-600 font-bold bg-green-50 px-1 py-0.5 rounded border border-green-100">
-                          🔄 Troca
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-gray-400 font-bold bg-gray-50 px-1 py-0.5 rounded border border-gray-100">
-                          ↩️ Devolução
-                        </span>
-                      )}
+                      <button onClick={() => abrirModalTroca(d)} className="outline-none">
+                        {d.houveTroca ? (
+                          <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-1 rounded border border-green-200 hover:bg-green-100 shadow-sm transition-colors">
+                            🔄 Ver Troca
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 shadow-sm transition-colors">
+                            ↩️ Sem Troca
+                          </span>
+                        )}
+                      </button>
                     </div>
                   </div>
 
                   <div className="mb-3">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        abrirModalRelatorioFuncionario({
-                          id: d.idFuncionario,
-                          nome: d.funcionarioNome,
-                          matricula: d.funcionarioMatricula,
-                        })
-                      }
-                      className="text-left"
-                    >
-                      <h3 className="font-bold text-red-700 text-lg hover:underline">
+                    <div className="text-left">
+                      <h3 className="font-bold text-gray-800 text-lg">
                         {d.funcionarioNome}
                       </h3>
                       <span className="text-xs text-gray-500 block">
                         Matrícula: {d.funcionarioMatricula}
                       </span>
-                      <span className="text-[11px] text-red-600 block mt-1">
-                        Toque para selecionar período e imprimir
-                      </span>
-                    </button>
+                    </div>
                   </div>
 
                   <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 space-y-2">
@@ -538,18 +581,19 @@ function Devolucoes({ usuarioLogado }) {
                         {d.motivoNome}
                       </span>
                     </div>
-
-                    {d.houveTroca && (
-                      <div className="pt-2 border-t border-gray-200">
-                        <span className="block text-[10px] text-gray-400 font-bold uppercase mb-1">
-                          Item da troca
-                        </span>
-                        <span className="text-sm text-green-700 font-semibold">
-                          {d.epiNovoNome} ({d.tamanhoNovoNome}) x {d.quantidadeNova || 0}
-                        </span>
-                      </div>
-                    )}
                   </div>
+
+                  <button
+                    onClick={() => handleBaixarPdf(d.id)}
+                    disabled={baixandoPdfId === d.id}
+                    className={`mt-4 w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border ${
+                      baixandoPdfId === d.id
+                        ? "bg-gray-100 border-gray-200 text-gray-400"
+                        : "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                    }`}
+                  >
+                    {baixandoPdfId === d.id ? "⏳ Gerando..." : "📄 Baixar PDF"}
+                  </button>
                 </div>
               ))
             ) : (
@@ -595,6 +639,14 @@ function Devolucoes({ usuarioLogado }) {
         </>
       )}
 
+      {/* 🌟 AQUI ESTÁ O NOVO COMPONENTE DE MODAL SEPARADO */}
+      <ModalDetalhesTroca
+        aberto={modalTrocaAberto}
+        devolucao={devolucaoParaTroca}
+        onClose={() => setModalTrocaAberto(false)}
+      />
+
+      {/* Mantive o ModalPeriodoRelatorio escondido por código caso você queira ativar via prop, mas os botões de disparo foram removidos */}
       <ModalPeriodoRelatorioDevolucao
         aberto={modalPeriodoAberto}
         tipo={tipoRelatorioModal}

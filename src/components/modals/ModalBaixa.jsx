@@ -194,7 +194,7 @@ function ModalBaixa({ onClose, onSalvar }) {
     };
 
     try {
-      await salvarEmAlgumaRota(["/devolucao"], payload);
+      await salvarEmAlgumaRota(["/cadastro-devolucao"], payload);
       setNotificacao({ exibir: true, type: "success", message: "Baixa realizada com sucesso!" });
       setTimeout(async() => {
         if (onSalvar) await onSalvar();
