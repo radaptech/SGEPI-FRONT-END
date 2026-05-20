@@ -58,29 +58,31 @@ function Devolucoes({ usuarioLogado }) {
     setPaginaAtual(1);
   };
 
-  const handleBaixarPdf = async (idDevolucao) => {
-    try {
-      setBaixandoPdfId(idDevolucao);
-      
-      const response = await api.get(`/devolucoes/${idDevolucao}/pdf`, {
-        responseType: "blob",
-      });
+  const handleBaixarPdf = async (id) => {
+  try {
+    const response = await api.get(`/gerencial/devolucoes/${id}/pdf`);
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `comprovante_devolucao_${idDevolucao}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Erro ao baixar PDF da devolução:", error);
-      toast.error("Não foi possível gerar o PDF desta devolução.");
-    } finally {
-      setBaixandoPdfId(null);
-    }
+    // 👇 O PULO DO GATO mantido
+    const arquivoByte = response.data ? response.data : response;
+
+    const url = window.URL.createObjectURL(new Blob([arquivoByte], { type: 'application/pdf' }));
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Ficha_TROCA_EPI_${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    return true; // Sucesso!
+    
+  } catch (error) {
+    console.error("Erro ao baixar o PDF:", error);
+    alert("Não foi possível baixar o PDF desta entrega.");
+    throw error; // Repassa o erro para quem chamou a função poder tratar
+  }
   };
 
   const abrirModalTroca = (devolucao) => {
