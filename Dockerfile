@@ -1,25 +1,30 @@
-# 1. Usa a mesma imagem leve do Node
-FROM node:20-alpine
+# =================================================================
+# ETAPA 1: BUILD (Compilando o React)
+# =================================================================
+FROM node:18-alpine AS builder
 
-# 2. Cria a pasta do app
 WORKDIR /app
 
-# 3. Copia os arquivos e instala as dependências
-COPY package.json package-lock.json ./
+# Copia os arquivos de dependência e instala
+COPY SGEEPI-FRONT-END/package*.json ./
 RUN npm install
 
-# 4. Copia o resto do código
-COPY . .
+# Copia o restante do código do front
+COPY SGEEPI-FRONT-END/ .
 
-# 5. GERA A VERSÃO DE PRODUÇÃO (O segredo está aqui!)
-# Isso cria uma pasta chamada "build" com o código otimizado e sem WebSockets
+# Roda o comando que gera os arquivos estáticos na pasta /build
 RUN npm run build
 
-# 6. Instala um servidor estático super leve globalmente
-RUN npm install -g serve
+# =================================================================
+# ETAPA 2: NGINX (Servindo o React e roteando a API)
+# =================================================================
+FROM nginx:alpine
 
-# 7. Expõe a mesma porta 3000
-EXPOSE 3000
+# Copia o arquivo de configuração do Nginx que está lá no backend!
+COPY gestao-de-epi--backEnd/nginx.prod.conf /etc/nginx/nginx.conf
 
-# 8. Inicia o servidor estático rodando APENAS a pasta "build" otimizada
-CMD ["serve", "-s", "build", "-l", "tcp://0.0.0.0:3000"]
+# Pega os arquivos estáticos gerados na ETAPA 1 e joga na pasta padrão do Nginx
+COPY --from=builder /app/build /usr/share/nginx/html
+
+# A porta 80 do container já fica exposta automaticamente pela imagem do Nginx
+CMD ["nginx", "-g", "daemon off;"]
