@@ -1,51 +1,60 @@
 import React, { useMemo, useState } from "react";
+import ModalNovoUsuario from "../../components/modals/master/ModalNovoUsuario";
+import ModalEditarUsuario from "../../components/modals/master/ModalEditarUsuario";
+import ModalConfirmarBloqueioUsuario from "../../components/modals/master/ModalConfirmarBloqueioUsuario";
+
+const usuariosIniciais = [
+  {
+    id: 1,
+    nome: "Paloma Brito",
+    email: "rickmanbrown.dev@gmail.com",
+    tipo: "SUPER_ADMIN",
+    empresa: "SGEPI Plataforma",
+    status: "Ativo",
+    ultimoAcesso: "Hoje, 10:30",
+  },
+  {
+    id: 2,
+    nome: "Administrador Alfa",
+    email: "admin@alfaseguranca.com",
+    tipo: "ADMIN_EMPRESA",
+    empresa: "Alfa Segurança do Trabalho",
+    status: "Ativo",
+    ultimoAcesso: "Hoje, 09:42",
+  },
+  {
+    id: 3,
+    nome: "Usuário Beta",
+    email: "usuario@betaconstrucoes.com",
+    tipo: "USUARIO_EMPRESA",
+    empresa: "Beta Construções",
+    status: "Ativo",
+    ultimoAcesso: "Ontem, 16:10",
+  },
+  {
+    id: 4,
+    nome: "Carlos Mendes",
+    email: "admin@campoforte.com",
+    tipo: "ADMIN_EMPRESA",
+    empresa: "Metalúrgica Campo Forte",
+    status: "Bloqueado",
+    ultimoAcesso: "20/04/2026",
+  },
+];
 
 function UsuariosMaster() {
   const [busca, setBusca] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("Todos");
+  const [usuarios, setUsuarios] = useState(usuariosIniciais);
 
-  const usuarios = [
-    {
-      id: 1,
-      nome: "Paloma Brito",
-      email: "rickmanbrown.dev@gmail.com",
-      tipo: "SUPER_ADMIN",
-      empresa: "SGEPI Plataforma",
-      status: "Ativo",
-      ultimoAcesso: "Hoje, 10:30",
-    },
-    {
-      id: 2,
-      nome: "Administrador Alfa",
-      email: "admin@alfaseguranca.com",
-      tipo: "ADMIN_EMPRESA",
-      empresa: "Alfa Segurança do Trabalho",
-      status: "Ativo",
-      ultimoAcesso: "Hoje, 09:42",
-    },
-    {
-      id: 3,
-      nome: "Usuário Beta",
-      email: "usuario@betaconstrucoes.com",
-      tipo: "USUARIO_EMPRESA",
-      empresa: "Beta Construções",
-      status: "Ativo",
-      ultimoAcesso: "Ontem, 16:10",
-    },
-    {
-      id: 4,
-      nome: "Carlos Mendes",
-      email: "admin@campoforte.com",
-      tipo: "ADMIN_EMPRESA",
-      empresa: "Metalúrgica Campo Forte",
-      status: "Bloqueado",
-      ultimoAcesso: "20/04/2026",
-    },
-  ];
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState(null);
+  const [modalNovoAberto, setModalNovoAberto] = useState(false);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  const [modalBloqueioAberto, setModalBloqueioAberto] = useState(false);
 
   const usuariosFiltrados = useMemo(() => {
     return usuarios.filter((usuario) => {
-      const termo = busca.toLowerCase();
+      const termo = busca.toLowerCase().trim();
 
       const combinaBusca =
         usuario.nome.toLowerCase().includes(termo) ||
@@ -57,7 +66,55 @@ function UsuariosMaster() {
 
       return combinaBusca && combinaTipo;
     });
-  }, [busca, tipoFiltro]);
+  }, [usuarios, busca, tipoFiltro]);
+
+  const abrirEditar = (usuario) => {
+    setUsuarioSelecionado(usuario);
+    setModalEditarAberto(true);
+  };
+
+  const abrirBloqueio = (usuario) => {
+    setUsuarioSelecionado(usuario);
+    setModalBloqueioAberto(true);
+  };
+
+  const fecharModais = () => {
+    setUsuarioSelecionado(null);
+    setModalNovoAberto(false);
+    setModalEditarAberto(false);
+    setModalBloqueioAberto(false);
+  };
+
+  const salvarNovoUsuario = (novoUsuario) => {
+    setUsuarios((prev) => [novoUsuario, ...prev]);
+    fecharModais();
+  };
+
+  const salvarEdicaoUsuario = (usuarioAtualizado) => {
+    setUsuarios((prev) =>
+      prev.map((usuario) =>
+        usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario
+      )
+    );
+
+    fecharModais();
+  };
+
+  const confirmarBloqueioUsuario = (usuarioSelecionado) => {
+    setUsuarios((prev) =>
+      prev.map((usuario) =>
+        usuario.id === usuarioSelecionado.id
+          ? {
+              ...usuario,
+              status:
+                usuario.status === "Bloqueado" ? "Ativo" : "Bloqueado",
+            }
+          : usuario
+      )
+    );
+
+    fecharModais();
+  };
 
   const getTipoLabel = (tipo) => {
     switch (tipo) {
@@ -115,6 +172,7 @@ function UsuariosMaster() {
 
         <button
           type="button"
+          onClick={() => setModalNovoAberto(true)}
           className="px-5 py-3 rounded-xl bg-slate-800 text-white text-sm font-bold hover:bg-slate-700 transition shadow-sm"
         >
           + Novo usuário
@@ -157,62 +215,74 @@ function UsuariosMaster() {
             </thead>
 
             <tbody className="divide-y divide-slate-100">
-              {usuariosFiltrados.map((usuario) => (
-                <tr key={usuario.id} className="hover:bg-slate-50 transition">
-                  <td className="px-6 py-4">
-                    <p className="font-black text-slate-700">{usuario.nome}</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {usuario.email}
-                    </p>
-                  </td>
+              {usuariosFiltrados.map((usuario) => {
+                const bloqueado = usuario.status === "Bloqueado";
 
-                  <td className="px-6 py-4 font-bold text-slate-600">
-                    {usuario.empresa}
-                  </td>
+                return (
+                  <tr key={usuario.id} className="hover:bg-slate-50 transition">
+                    <td className="px-6 py-4">
+                      <p className="font-black text-slate-700">
+                        {usuario.nome}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {usuario.email}
+                      </p>
+                    </td>
 
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`inline-flex px-3 py-1 rounded-full border text-xs font-black ${getTipoClass(
-                        usuario.tipo
-                      )}`}
-                    >
-                      {getTipoLabel(usuario.tipo)}
-                    </span>
-                  </td>
+                    <td className="px-6 py-4 font-bold text-slate-600">
+                      {usuario.empresa}
+                    </td>
 
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`inline-flex px-3 py-1 rounded-full border text-xs font-black ${getStatusClass(
-                        usuario.status
-                      )}`}
-                    >
-                      {usuario.status}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 text-center font-bold text-slate-500">
-                    {usuario.ultimoAcesso}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="flex justify-center gap-2">
-                      <button
-                        type="button"
-                        className="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition"
+                    <td className="px-6 py-4 text-center">
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full border text-xs font-black ${getTipoClass(
+                          usuario.tipo
+                        )}`}
                       >
-                        Editar
-                      </button>
+                        {getTipoLabel(usuario.tipo)}
+                      </span>
+                    </td>
 
-                      <button
-                        type="button"
-                        className="px-3 py-2 rounded-lg bg-red-50 text-red-700 border border-red-100 text-xs font-bold hover:bg-red-100 transition"
+                    <td className="px-6 py-4 text-center">
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full border text-xs font-black ${getStatusClass(
+                          usuario.status
+                        )}`}
                       >
-                        Bloquear
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {usuario.status}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 text-center font-bold text-slate-500">
+                      {usuario.ultimoAcesso}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => abrirEditar(usuario)}
+                          className="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition"
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => abrirBloqueio(usuario)}
+                          className={`px-3 py-2 rounded-lg border text-xs font-bold transition ${
+                            bloqueado
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
+                              : "bg-red-50 text-red-700 border-red-100 hover:bg-red-100"
+                          }`}
+                        >
+                          {bloqueado ? "Desbloquear" : "Bloquear"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
 
               {usuariosFiltrados.length === 0 && (
                 <tr>
@@ -228,6 +298,26 @@ function UsuariosMaster() {
           </table>
         </div>
       </div>
+
+      <ModalNovoUsuario
+        aberto={modalNovoAberto}
+        onFechar={fecharModais}
+        onSalvar={salvarNovoUsuario}
+      />
+
+      <ModalEditarUsuario
+        aberto={modalEditarAberto}
+        usuario={usuarioSelecionado}
+        onFechar={fecharModais}
+        onSalvar={salvarEdicaoUsuario}
+      />
+
+      <ModalConfirmarBloqueioUsuario
+        aberto={modalBloqueioAberto}
+        usuario={usuarioSelecionado}
+        onFechar={fecharModais}
+        onConfirmar={confirmarBloqueioUsuario}
+      />
     </div>
   );
 }

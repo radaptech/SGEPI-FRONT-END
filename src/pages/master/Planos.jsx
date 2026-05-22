@@ -1,64 +1,121 @@
-import React from "react";
+import React, { useState } from "react";
+import ModalNovoPlano from "../../components/modals/master/ModalNovoPlano";
+import ModalEditarPlano from "../../components/modals/master/ModalEditarPlano";
+
+const planosIniciais = [
+  {
+    id: 1,
+    nome: "Básico",
+    preco: 250,
+    descricao: "Ideal para empresas pequenas que estão começando.",
+    limiteFuncionarios: 50,
+    limiteUsuarios: 1,
+    limiteEpis: 200,
+    recursos: [
+      "Controle de funcionários",
+      "Controle de EPIs",
+      "Registro de entregas",
+      "Relatório simples",
+    ],
+    status: "Ativo",
+  },
+  {
+    id: 2,
+    nome: "Profissional",
+    preco: 450,
+    descricao: "Para empresas em crescimento com maior volume de controle.",
+    limiteFuncionarios: 300,
+    limiteUsuarios: 5,
+    limiteEpis: "Ilimitado",
+    recursos: [
+      "Todos os recursos do Básico",
+      "Relatórios avançados",
+      "Múltiplos usuários",
+      "Controle de fornecedores",
+      "Assinatura digital",
+    ],
+    status: "Ativo",
+  },
+  {
+    id: 3,
+    nome: "Premium",
+    preco: 750,
+    descricao: "Para empresas maiores que precisam de gestão completa.",
+    limiteFuncionarios: "Ilimitado",
+    limiteUsuarios: "Ilimitado",
+    limiteEpis: "Ilimitado",
+    recursos: [
+      "Todos os recursos do Profissional",
+      "Suporte prioritário",
+      "Dashboard completo",
+      "Auditoria de ações",
+      "Acesso multiunidade",
+    ],
+    status: "Ativo",
+  },
+];
 
 function Planos() {
-  const planos = [
-    {
-      id: 1,
-      nome: "Básico",
-      preco: 250,
-      descricao: "Ideal para empresas pequenas que estão começando.",
-      limiteFuncionarios: 50,
-      limiteUsuarios: 1,
-      limiteEpis: 200,
-      recursos: [
-        "Controle de funcionários",
-        "Controle de EPIs",
-        "Registro de entregas",
-        "Relatório simples",
-      ],
-      status: "Ativo",
-    },
-    {
-      id: 2,
-      nome: "Profissional",
-      preco: 450,
-      descricao: "Para empresas em crescimento com maior volume de controle.",
-      limiteFuncionarios: 300,
-      limiteUsuarios: 5,
-      limiteEpis: "Ilimitado",
-      recursos: [
-        "Todos os recursos do Básico",
-        "Relatórios avançados",
-        "Múltiplos usuários",
-        "Controle de fornecedores",
-        "Assinatura digital",
-      ],
-      status: "Ativo",
-    },
-    {
-      id: 3,
-      nome: "Premium",
-      preco: 750,
-      descricao: "Para empresas maiores que precisam de gestão completa.",
-      limiteFuncionarios: "Ilimitado",
-      limiteUsuarios: "Ilimitado",
-      limiteEpis: "Ilimitado",
-      recursos: [
-        "Todos os recursos do Profissional",
-        "Suporte prioritário",
-        "Dashboard completo",
-        "Auditoria de ações",
-        "Acesso multiunidade",
-      ],
-      status: "Ativo",
-    },
-  ];
+  const [planos, setPlanos] = useState(planosIniciais);
+  const [modalNovoAberto, setModalNovoAberto] = useState(false);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  const [planoSelecionado, setPlanoSelecionado] = useState(null);
+
+  const abrirEditar = (plano) => {
+    setPlanoSelecionado(plano);
+    setModalEditarAberto(true);
+  };
+
+  const fecharModais = () => {
+    setModalNovoAberto(false);
+    setModalEditarAberto(false);
+    setPlanoSelecionado(null);
+  };
+
+  const salvarNovoPlano = (novoPlano) => {
+    setPlanos((prev) => [novoPlano, ...prev]);
+    fecharModais();
+  };
+
+  const salvarEdicaoPlano = (planoAtualizado) => {
+    setPlanos((prev) =>
+      prev.map((plano) =>
+        plano.id === planoAtualizado.id ? planoAtualizado : plano
+      )
+    );
+
+    fecharModais();
+  };
+
+  const alternarStatusPlano = (planoSelecionado) => {
+    setPlanos((prev) =>
+      prev.map((plano) =>
+        plano.id === planoSelecionado.id
+          ? {
+              ...plano,
+              status: plano.status === "Ativo" ? "Inativo" : "Ativo",
+            }
+          : plano
+      )
+    );
+  };
 
   const formatarMoeda = (valor) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(valor);
+    }).format(Number(valor || 0));
+  };
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "Ativo":
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
+      case "Inativo":
+        return "bg-red-50 text-red-700 border-red-100";
+      default:
+        return "bg-slate-50 text-slate-600 border-slate-100";
+    }
   };
 
   return (
@@ -80,6 +137,7 @@ function Planos() {
 
         <button
           type="button"
+          onClick={() => setModalNovoAberto(true)}
           className="px-5 py-3 rounded-xl bg-slate-800 text-white text-sm font-bold hover:bg-slate-700 transition shadow-sm"
         >
           + Novo plano
@@ -90,7 +148,11 @@ function Planos() {
         {planos.map((plano) => (
           <div
             key={plano.id}
-            className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col"
+            className={`bg-white rounded-2xl border p-6 shadow-sm flex flex-col transition ${
+              plano.status === "Inativo"
+                ? "border-red-100 opacity-75"
+                : "border-slate-200"
+            }`}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -103,7 +165,11 @@ function Planos() {
                 </p>
               </div>
 
-              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-black">
+              <span
+                className={`px-3 py-1 rounded-full border text-xs font-black ${getStatusClass(
+                  plano.status
+                )}`}
+              >
                 {plano.status}
               </span>
             </div>
@@ -119,7 +185,10 @@ function Planos() {
             </div>
 
             <div className="grid grid-cols-1 gap-3 mt-6">
-              <InfoPlano label="Funcionários" valor={plano.limiteFuncionarios} />
+              <InfoPlano
+                label="Funcionários"
+                valor={plano.limiteFuncionarios}
+              />
               <InfoPlano label="Usuários" valor={plano.limiteUsuarios} />
               <InfoPlano label="EPIs" valor={plano.limiteEpis} />
             </div>
@@ -135,7 +204,7 @@ function Planos() {
                     key={recurso}
                     className="flex items-center gap-2 text-sm text-slate-600 font-medium"
                   >
-                    <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs">
+                    <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs shrink-0">
                       ✓
                     </span>
                     {recurso}
@@ -147,6 +216,7 @@ function Planos() {
             <div className="flex gap-3 mt-8">
               <button
                 type="button"
+                onClick={() => abrirEditar(plano)}
                 className="flex-1 px-4 py-3 rounded-xl bg-slate-800 text-white text-sm font-bold hover:bg-slate-700 transition"
               >
                 Editar
@@ -154,14 +224,32 @@ function Planos() {
 
               <button
                 type="button"
-                className="flex-1 px-4 py-3 rounded-xl bg-slate-100 text-slate-600 text-sm font-bold hover:bg-slate-200 transition"
+                onClick={() => alternarStatusPlano(plano)}
+                className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold transition ${
+                  plano.status === "Ativo"
+                    ? "bg-red-50 text-red-700 border border-red-100 hover:bg-red-100"
+                    : "bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100"
+                }`}
               >
-                Desativar
+                {plano.status === "Ativo" ? "Desativar" : "Ativar"}
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      <ModalNovoPlano
+        aberto={modalNovoAberto}
+        onFechar={fecharModais}
+        onSalvar={salvarNovoPlano}
+      />
+
+      <ModalEditarPlano
+        aberto={modalEditarAberto}
+        plano={planoSelecionado}
+        onFechar={fecharModais}
+        onSalvar={salvarEdicaoPlano}
+      />
     </div>
   );
 }

@@ -1,64 +1,73 @@
 import React, { useMemo, useState } from "react";
+import ModalNovaMensalidade from "../../components/modals/master/ModalNovaMensalidade";
+import ModalEditarMensalidade from "../../components/modals/master/ModalEditarMensalidade";
+import ModalConfirmarPagamento from "../../components/modals/master/ModalConfirmarPagamento";
+
+const mensalidadesIniciais = [
+  {
+    id: 1,
+    empresa: "Alfa Segurança do Trabalho",
+    plano: "Profissional",
+    valor: 450,
+    vencimento: "2026-05-10",
+    pagamento: "2026-04-28",
+    formaPagamento: "PIX",
+    status: "Pago",
+  },
+  {
+    id: 2,
+    empresa: "Beta Construções",
+    plano: "Premium",
+    valor: 750,
+    vencimento: "2026-05-15",
+    pagamento: "",
+    formaPagamento: "",
+    status: "Pendente",
+  },
+  {
+    id: 3,
+    empresa: "Metalúrgica Campo Forte",
+    plano: "Básico",
+    valor: 250,
+    vencimento: "2026-04-05",
+    pagamento: "",
+    formaPagamento: "",
+    status: "Atrasado",
+  },
+  {
+    id: 4,
+    empresa: "Nordeste Serviços Industriais",
+    plano: "Profissional",
+    valor: 450,
+    vencimento: "2026-04-20",
+    pagamento: "",
+    formaPagamento: "",
+    status: "Atrasado",
+  },
+];
 
 function Mensalidades() {
   const [statusFiltro, setStatusFiltro] = useState("Todos");
+  const [mensalidades, setMensalidades] = useState(mensalidadesIniciais);
 
-  const mensalidades = [
-    {
-      id: 1,
-      empresa: "Alfa Segurança do Trabalho",
-      plano: "Profissional",
-      valor: 450,
-      vencimento: "10/05/2026",
-      pagamento: "28/04/2026",
-      formaPagamento: "PIX",
-      status: "Pago",
-    },
-    {
-      id: 2,
-      empresa: "Beta Construções",
-      plano: "Premium",
-      valor: 750,
-      vencimento: "15/05/2026",
-      pagamento: "",
-      formaPagamento: "",
-      status: "Pendente",
-    },
-    {
-      id: 3,
-      empresa: "Metalúrgica Campo Forte",
-      plano: "Básico",
-      valor: 250,
-      vencimento: "05/04/2026",
-      pagamento: "",
-      formaPagamento: "",
-      status: "Atrasado",
-    },
-    {
-      id: 4,
-      empresa: "Nordeste Serviços Industriais",
-      plano: "Profissional",
-      valor: 450,
-      vencimento: "20/04/2026",
-      pagamento: "",
-      formaPagamento: "",
-      status: "Atrasado",
-    },
-  ];
+  const [mensalidadeSelecionada, setMensalidadeSelecionada] = useState(null);
+  const [modalNovaAberto, setModalNovaAberto] = useState(false);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
 
   const mensalidadesFiltradas = useMemo(() => {
     if (statusFiltro === "Todos") return mensalidades;
     return mensalidades.filter((item) => item.status === statusFiltro);
-  }, [statusFiltro]);
+  }, [mensalidades, statusFiltro]);
 
   const totais = useMemo(() => {
     const recebido = mensalidades
       .filter((item) => item.status === "Pago")
-      .reduce((acc, item) => acc + item.valor, 0);
+      .reduce((acc, item) => acc + Number(item.valor || 0), 0);
 
     const pendente = mensalidades
       .filter((item) => item.status === "Pendente" || item.status === "Atrasado")
-      .reduce((acc, item) => acc + item.valor, 0);
+      .reduce((acc, item) => acc + Number(item.valor || 0), 0);
 
     return {
       recebido,
@@ -67,13 +76,65 @@ function Mensalidades() {
       atrasadas: mensalidades.filter((item) => item.status === "Atrasado")
         .length,
     };
-  }, []);
+  }, [mensalidades]);
+
+  const abrirEditar = (mensalidade) => {
+    setMensalidadeSelecionada(mensalidade);
+    setModalEditarAberto(true);
+  };
+
+  const abrirPagamento = (mensalidade) => {
+    setMensalidadeSelecionada(mensalidade);
+    setModalPagamentoAberto(true);
+  };
+
+  const fecharModais = () => {
+    setMensalidadeSelecionada(null);
+    setModalNovaAberto(false);
+    setModalEditarAberto(false);
+    setModalPagamentoAberto(false);
+  };
+
+  const salvarNovaMensalidade = (novaMensalidade) => {
+    setMensalidades((prev) => [novaMensalidade, ...prev]);
+    fecharModais();
+  };
+
+  const salvarEdicaoMensalidade = (mensalidadeAtualizada) => {
+    setMensalidades((prev) =>
+      prev.map((item) =>
+        item.id === mensalidadeAtualizada.id ? mensalidadeAtualizada : item
+      )
+    );
+
+    fecharModais();
+  };
+
+  const confirmarPagamento = (mensalidadePaga) => {
+    setMensalidades((prev) =>
+      prev.map((item) =>
+        item.id === mensalidadePaga.id ? mensalidadePaga : item
+      )
+    );
+
+    fecharModais();
+  };
 
   const formatarMoeda = (valor) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(valor);
+    }).format(Number(valor || 0));
+  };
+
+  const formatarData = (data) => {
+    if (!data) return "-";
+
+    const [ano, mes, dia] = String(data).split("-");
+
+    if (!ano || !mes || !dia) return data;
+
+    return `${dia}/${mes}/${ano}`;
   };
 
   const getStatusClass = (status) => {
@@ -108,6 +169,7 @@ function Mensalidades() {
 
         <button
           type="button"
+          onClick={() => setModalNovaAberto(true)}
           className="px-5 py-3 rounded-xl bg-slate-800 text-white text-sm font-bold hover:bg-slate-700 transition shadow-sm"
         >
           + Nova mensalidade
@@ -174,11 +236,11 @@ function Mensalidades() {
                   </td>
 
                   <td className="px-6 py-4 text-center text-slate-600 font-bold">
-                    {item.vencimento}
+                    {formatarData(item.vencimento)}
                   </td>
 
                   <td className="px-6 py-4 text-center text-slate-500">
-                    {item.pagamento || "-"}
+                    {formatarData(item.pagamento)}
                     {item.formaPagamento && (
                       <p className="text-xs text-slate-400 mt-1">
                         {item.formaPagamento}
@@ -198,15 +260,19 @@ function Mensalidades() {
 
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-2">
-                      <button
-                        type="button"
-                        className="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold hover:bg-emerald-100 transition"
-                      >
-                        Marcar pago
-                      </button>
+                      {item.status !== "Pago" && (
+                        <button
+                          type="button"
+                          onClick={() => abrirPagamento(item)}
+                          className="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold hover:bg-emerald-100 transition"
+                        >
+                          Marcar pago
+                        </button>
+                      )}
 
                       <button
                         type="button"
+                        onClick={() => abrirEditar(item)}
                         className="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold hover:bg-slate-200 transition"
                       >
                         Editar
@@ -230,6 +296,26 @@ function Mensalidades() {
           </table>
         </div>
       </div>
+
+      <ModalNovaMensalidade
+        aberto={modalNovaAberto}
+        onFechar={fecharModais}
+        onSalvar={salvarNovaMensalidade}
+      />
+
+      <ModalEditarMensalidade
+        aberto={modalEditarAberto}
+        mensalidade={mensalidadeSelecionada}
+        onFechar={fecharModais}
+        onSalvar={salvarEdicaoMensalidade}
+      />
+
+      <ModalConfirmarPagamento
+        aberto={modalPagamentoAberto}
+        mensalidade={mensalidadeSelecionada}
+        onFechar={fecharModais}
+        onConfirmar={confirmarPagamento}
+      />
     </div>
   );
 }
