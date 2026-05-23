@@ -1,6 +1,22 @@
 import React, { useState } from "react";
 
-function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
+const RECURSOS_PADRAO = [
+  "Controle de funcionários",
+  "Controle de EPIs",
+  "Registro de entregas",
+  "Relatórios",
+  "Controle de fornecedores",
+  "Assinatura digital",
+  "Dashboard",
+  "Auditoria de ações",
+];
+
+function ModalNovoPlano({
+  aberto,
+  onFechar,
+  onSalvar,
+  recursosPadrao = RECURSOS_PADRAO,
+}) {
   const [form, setForm] = useState({
     nome: "",
     preco: "",
@@ -8,7 +24,6 @@ function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
     limiteFuncionarios: "",
     limiteUsuarios: "",
     limiteEpis: "",
-    recursos: "",
     status: "Ativo",
   });
 
@@ -29,9 +44,9 @@ function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
       limiteFuncionarios: "",
       limiteUsuarios: "",
       limiteEpis: "",
-      recursos: "",
       status: "Ativo",
     });
+
     setErro("");
   };
 
@@ -58,11 +73,6 @@ function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
       return;
     }
 
-    const recursosTratados = form.recursos
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
-
     const novoPlano = {
       id: Date.now(),
       nome: form.nome.trim(),
@@ -71,7 +81,7 @@ function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
       limiteFuncionarios: form.limiteFuncionarios || "Ilimitado",
       limiteUsuarios: form.limiteUsuarios || "Ilimitado",
       limiteEpis: form.limiteEpis || "Ilimitado",
-      recursos: recursosTratados.length > 0 ? recursosTratados : ["Recurso padrão"],
+      recursos: recursosPadrao,
       status: form.status,
     };
 
@@ -99,7 +109,8 @@ function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
               </h2>
 
               <p className="text-sm text-slate-500 mt-1">
-                Cadastre um novo plano comercial para as empresas clientes.
+                Cadastre um plano. Os recursos são fixos para todos; configure
+                apenas os limites e o valor.
               </p>
             </div>
 
@@ -139,7 +150,7 @@ function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
             />
 
             <CampoTexto
-              label="Funcionários"
+              label="Limite de funcionários"
               value={form.limiteFuncionarios}
               onChange={(e) =>
                 alterarCampo("limiteFuncionarios", e.target.value)
@@ -148,14 +159,14 @@ function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
             />
 
             <CampoTexto
-              label="Usuários"
+              label="Limite de usuários"
               value={form.limiteUsuarios}
               onChange={(e) => alterarCampo("limiteUsuarios", e.target.value)}
               placeholder="Ex: 10 ou Ilimitado"
             />
 
             <CampoTexto
-              label="EPIs"
+              label="Limite de EPIs"
               value={form.limiteEpis}
               onChange={(e) => alterarCampo("limiteEpis", e.target.value)}
               placeholder="Ex: 1000 ou Ilimitado"
@@ -177,23 +188,29 @@ function ModalNovoPlano({ aberto, onFechar, onSalvar }) {
                 value={form.descricao}
                 onChange={(e) => alterarCampo("descricao", e.target.value)}
                 rows={3}
-                placeholder="Explique para qual tipo de empresa esse plano é indicado..."
+                placeholder="Explique para qual porte de empresa esse plano é indicado..."
                 className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 resize-none text-sm text-slate-700"
               />
             </div>
+          </div>
 
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.16em] mb-2">
-                Recursos inclusos
-              </label>
+          <div className="mt-8 p-5 rounded-3xl bg-slate-50 border border-slate-200">
+            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.18em]">
+              Recursos inclusos automaticamente
+            </p>
 
-              <textarea
-                value={form.recursos}
-                onChange={(e) => alterarCampo("recursos", e.target.value)}
-                rows={5}
-                placeholder={"Digite um recurso por linha.\nEx:\nControle de funcionários\nRelatórios avançados\nAssinatura digital"}
-                className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 resize-none text-sm text-slate-700"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              {recursosPadrao.map((recurso) => (
+                <div
+                  key={recurso}
+                  className="flex items-center gap-2 text-sm text-slate-600 font-bold"
+                >
+                  <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs">
+                    ✓
+                  </span>
+                  {recurso}
+                </div>
+              ))}
             </div>
           </div>
 

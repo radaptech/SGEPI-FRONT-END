@@ -1,6 +1,23 @@
 import React, { useEffect, useState } from "react";
 
-function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
+const RECURSOS_PADRAO = [
+  "Controle de funcionários",
+  "Controle de EPIs",
+  "Registro de entregas",
+  "Relatórios",
+  "Controle de fornecedores",
+  "Assinatura digital",
+  "Dashboard",
+  "Auditoria de ações",
+];
+
+function ModalEditarPlano({
+  aberto,
+  plano,
+  onFechar,
+  onSalvar,
+  recursosPadrao = RECURSOS_PADRAO,
+}) {
   const [form, setForm] = useState({
     nome: "",
     preco: "",
@@ -8,7 +25,6 @@ function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
     limiteFuncionarios: "",
     limiteUsuarios: "",
     limiteEpis: "",
-    recursos: "",
     status: "Ativo",
   });
 
@@ -23,9 +39,6 @@ function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
         limiteFuncionarios: plano.limiteFuncionarios || "",
         limiteUsuarios: plano.limiteUsuarios || "",
         limiteEpis: plano.limiteEpis || "",
-        recursos: Array.isArray(plano.recursos)
-          ? plano.recursos.join("\n")
-          : "",
         status: plano.status || "Ativo",
       });
 
@@ -58,11 +71,6 @@ function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
       return;
     }
 
-    const recursosTratados = form.recursos
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
-
     const planoAtualizado = {
       ...plano,
       nome: form.nome.trim(),
@@ -71,7 +79,7 @@ function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
       limiteFuncionarios: form.limiteFuncionarios || "Ilimitado",
       limiteUsuarios: form.limiteUsuarios || "Ilimitado",
       limiteEpis: form.limiteEpis || "Ilimitado",
-      recursos: recursosTratados,
+      recursos: recursosPadrao,
       status: form.status,
     };
 
@@ -98,7 +106,8 @@ function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
               </h2>
 
               <p className="text-sm text-slate-500 mt-1">
-                Atualize os dados comerciais, limites e recursos do plano.
+                Atualize valor e limites. Os recursos são fixos para todos os
+                planos.
               </p>
             </div>
 
@@ -136,7 +145,7 @@ function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
             />
 
             <CampoTexto
-              label="Funcionários"
+              label="Limite de funcionários"
               value={form.limiteFuncionarios}
               onChange={(e) =>
                 alterarCampo("limiteFuncionarios", e.target.value)
@@ -144,13 +153,13 @@ function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
             />
 
             <CampoTexto
-              label="Usuários"
+              label="Limite de usuários"
               value={form.limiteUsuarios}
               onChange={(e) => alterarCampo("limiteUsuarios", e.target.value)}
             />
 
             <CampoTexto
-              label="EPIs"
+              label="Limite de EPIs"
               value={form.limiteEpis}
               onChange={(e) => alterarCampo("limiteEpis", e.target.value)}
             />
@@ -174,18 +183,30 @@ function ModalEditarPlano({ aberto, plano, onFechar, onSalvar }) {
                 className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 resize-none text-sm text-slate-700"
               />
             </div>
+          </div>
 
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.16em] mb-2">
-                Recursos inclusos
-              </label>
+          <div className="mt-8 p-5 rounded-3xl bg-slate-50 border border-slate-200">
+            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.18em]">
+              Recursos inclusos automaticamente
+            </p>
 
-              <textarea
-                value={form.recursos}
-                onChange={(e) => alterarCampo("recursos", e.target.value)}
-                rows={5}
-                className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 resize-none text-sm text-slate-700"
-              />
+            <p className="text-sm text-slate-500 mt-2">
+              Estes recursos não são editáveis por plano, porque fazem parte da
+              base do sistema.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              {recursosPadrao.map((recurso) => (
+                <div
+                  key={recurso}
+                  className="flex items-center gap-2 text-sm text-slate-600 font-bold"
+                >
+                  <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs">
+                    ✓
+                  </span>
+                  {recurso}
+                </div>
+              ))}
             </div>
           </div>
 

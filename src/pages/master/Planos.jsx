@@ -2,6 +2,17 @@ import React, { useState } from "react";
 import ModalNovoPlano from "../../components/modals/master/ModalNovoPlano";
 import ModalEditarPlano from "../../components/modals/master/ModalEditarPlano";
 
+export const RECURSOS_PADRAO_PLANOS = [
+  "Controle de funcionários",
+  "Controle de EPIs",
+  "Registro de entregas",
+  "Relatórios",
+  "Controle de fornecedores",
+  "Assinatura digital",
+  "Dashboard",
+  "Auditoria de ações",
+];
+
 const planosIniciais = [
   {
     id: 1,
@@ -11,12 +22,7 @@ const planosIniciais = [
     limiteFuncionarios: 50,
     limiteUsuarios: 1,
     limiteEpis: 200,
-    recursos: [
-      "Controle de funcionários",
-      "Controle de EPIs",
-      "Registro de entregas",
-      "Relatório simples",
-    ],
+    recursos: RECURSOS_PADRAO_PLANOS,
     status: "Ativo",
   },
   {
@@ -27,13 +33,7 @@ const planosIniciais = [
     limiteFuncionarios: 300,
     limiteUsuarios: 5,
     limiteEpis: "Ilimitado",
-    recursos: [
-      "Todos os recursos do Básico",
-      "Relatórios avançados",
-      "Múltiplos usuários",
-      "Controle de fornecedores",
-      "Assinatura digital",
-    ],
+    recursos: RECURSOS_PADRAO_PLANOS,
     status: "Ativo",
   },
   {
@@ -44,13 +44,7 @@ const planosIniciais = [
     limiteFuncionarios: "Ilimitado",
     limiteUsuarios: "Ilimitado",
     limiteEpis: "Ilimitado",
-    recursos: [
-      "Todos os recursos do Profissional",
-      "Suporte prioritário",
-      "Dashboard completo",
-      "Auditoria de ações",
-      "Acesso multiunidade",
-    ],
+    recursos: RECURSOS_PADRAO_PLANOS,
     status: "Ativo",
   },
 ];
@@ -73,14 +67,26 @@ function Planos() {
   };
 
   const salvarNovoPlano = (novoPlano) => {
-    setPlanos((prev) => [novoPlano, ...prev]);
+    setPlanos((prev) => [
+      {
+        ...novoPlano,
+        recursos: RECURSOS_PADRAO_PLANOS,
+      },
+      ...prev,
+    ]);
+
     fecharModais();
   };
 
   const salvarEdicaoPlano = (planoAtualizado) => {
     setPlanos((prev) =>
       prev.map((plano) =>
-        plano.id === planoAtualizado.id ? planoAtualizado : plano
+        plano.id === planoAtualizado.id
+          ? {
+              ...planoAtualizado,
+              recursos: RECURSOS_PADRAO_PLANOS,
+            }
+          : plano
       )
     );
 
@@ -129,10 +135,6 @@ function Planos() {
           <h1 className="text-3xl font-black text-slate-800 mt-2">
             Planos
           </h1>
-
-          <p className="text-slate-500 mt-2">
-            Configure os planos comerciais disponíveis para as empresas.
-          </p>
         </div>
 
         <button
@@ -195,11 +197,11 @@ function Planos() {
 
             <div className="mt-6 flex-1">
               <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
-                Recursos inclusos
+                Recursos inclusos em todos os planos
               </p>
 
               <div className="space-y-3">
-                {plano.recursos.map((recurso) => (
+                {RECURSOS_PADRAO_PLANOS.map((recurso) => (
                   <div
                     key={recurso}
                     className="flex items-center gap-2 text-sm text-slate-600 font-medium"
@@ -242,6 +244,7 @@ function Planos() {
         aberto={modalNovoAberto}
         onFechar={fecharModais}
         onSalvar={salvarNovoPlano}
+        recursosPadrao={RECURSOS_PADRAO_PLANOS}
       />
 
       <ModalEditarPlano
@@ -249,6 +252,7 @@ function Planos() {
         plano={planoSelecionado}
         onFechar={fecharModais}
         onSalvar={salvarEdicaoPlano}
+        recursosPadrao={RECURSOS_PADRAO_PLANOS}
       />
     </div>
   );
