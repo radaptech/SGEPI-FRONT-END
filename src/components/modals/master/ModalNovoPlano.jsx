@@ -17,13 +17,14 @@ function ModalNovoPlano({
   onSalvar,
   recursosPadrao = RECURSOS_PADRAO,
 }) {
+  // 1. Estado inicial alinhado com as tags json do Go
   const [form, setForm] = useState({
     nome: "",
-    preco: "",
+    mensalidade: "",
     descricao: "",
-    limiteFuncionarios: "",
-    limiteUsuarios: "",
-    limiteEpis: "",
+    limite_funcionarios: "",
+    limite_usuarios: "",
+    limite_epis: "",
     status: "Ativo",
   });
 
@@ -39,11 +40,11 @@ function ModalNovoPlano({
   const limpar = () => {
     setForm({
       nome: "",
-      preco: "",
+      mensalidade: "",
       descricao: "",
-      limiteFuncionarios: "",
-      limiteUsuarios: "",
-      limiteEpis: "",
+      limite_funcionarios: "",
+      limite_usuarios: "",
+      limite_epis: "",
       status: "Ativo",
     });
 
@@ -55,6 +56,14 @@ function ModalNovoPlano({
     onFechar?.();
   };
 
+  // Função auxiliar para lidar com o Ilimitado/Null esperado pelo Go
+  const parseLimite = (valor) => {
+    if (!valor || valor.toString().toLowerCase() === "ilimitado") {
+      return null;
+    }
+    return parseInt(valor, 10);
+  };
+
   const salvar = (e) => {
     e.preventDefault();
 
@@ -63,7 +72,7 @@ function ModalNovoPlano({
       return;
     }
 
-    if (!form.preco) {
+    if (!form.mensalidade) {
       setErro("Informe o valor da mensalidade.");
       return;
     }
@@ -73,15 +82,15 @@ function ModalNovoPlano({
       return;
     }
 
+    // 2. Monta o payload exatamente como a struct do Go espera
     const novoPlano = {
-      id: Date.now(),
       nome: form.nome.trim(),
-      preco: Number(form.preco || 0),
+      // O Go e o shopspring/decimal aceitam number ou string aqui, mas enviar o number tratado é mais seguro
+      mensalidade: Number(form.mensalidade || 0), 
       descricao: form.descricao.trim(),
-      limiteFuncionarios: form.limiteFuncionarios || "Ilimitado",
-      limiteUsuarios: form.limiteUsuarios || "Ilimitado",
-      limiteEpis: form.limiteEpis || "Ilimitado",
-      recursos: recursosPadrao,
+      limite_funcionarios: parseLimite(form.limite_funcionarios),
+      limite_usuarios: parseLimite(form.limite_usuarios),
+      limite_epis: parseLimite(form.limite_epis),
       status: form.status,
     };
 
@@ -144,31 +153,31 @@ function ModalNovoPlano({
               label="Mensalidade"
               obrigatorio
               type="number"
-              value={form.preco}
-              onChange={(e) => alterarCampo("preco", e.target.value)}
+              value={form.mensalidade}
+              onChange={(e) => alterarCampo("mensalidade", e.target.value)}
               placeholder="Ex: 990"
             />
 
             <CampoTexto
               label="Limite de funcionários"
-              value={form.limiteFuncionarios}
+              value={form.limite_funcionarios}
               onChange={(e) =>
-                alterarCampo("limiteFuncionarios", e.target.value)
+                alterarCampo("limite_funcionarios", e.target.value)
               }
               placeholder="Ex: 500 ou Ilimitado"
             />
 
             <CampoTexto
               label="Limite de usuários"
-              value={form.limiteUsuarios}
-              onChange={(e) => alterarCampo("limiteUsuarios", e.target.value)}
+              value={form.limite_usuarios}
+              onChange={(e) => alterarCampo("limite_usuarios", e.target.value)}
               placeholder="Ex: 10 ou Ilimitado"
             />
 
             <CampoTexto
               label="Limite de EPIs"
-              value={form.limiteEpis}
-              onChange={(e) => alterarCampo("limiteEpis", e.target.value)}
+              value={form.limite_epis}
+              onChange={(e) => alterarCampo("limite_epis", e.target.value)}
               placeholder="Ex: 1000 ou Ilimitado"
             />
 

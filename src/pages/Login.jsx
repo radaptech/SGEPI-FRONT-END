@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../services/api";
-import EsqueciSenha from "./EsqueciSenha"; // <-- Importamos o componente novo aqui!
+import EsqueciSenha from "./EsqueciSenha"; 
 
 function Login({ onLogin }) {
   // Estado para controlar qual tela mostrar
@@ -13,40 +13,6 @@ function Login({ onLogin }) {
 
   const limparMensagens = () => {
     setErro("");
-  };
-
-  const fazerLoginLocalDeTeste = (loginLimpo, senhaLimpa) => {
-    const ehMasterTeste =
-      loginLimpo.toLowerCase() === "master@sgepi.com" &&
-      senhaLimpa === "master123";
-
-    if (!ehMasterTeste) {
-      return false;
-    }
-
-    const tokenTeste = "token-master-teste";
-
-    const usuarioMasterTeste = {
-      id: 1,
-      nome: "Rickman Admin",
-      email: "master@sgepi.com",
-      tipo: "SUPER_ADMIN",
-      perfil: "SUPER_ADMIN",
-      role: "SUPER_ADMIN",
-      empresaId: null,
-    };
-
-    localStorage.setItem("token", tokenTeste);
-    localStorage.setItem("usuario", JSON.stringify(usuarioMasterTeste));
-
-    if (onLogin) {
-      onLogin({
-        token: tokenTeste,
-        usuario: usuarioMasterTeste,
-      });
-    }
-
-    return true;
   };
 
   const handleLogin = async (e) => {
@@ -64,15 +30,7 @@ function Login({ onLogin }) {
     try {
       setCarregando(true);
 
-      const entrouComoMasterTeste = fazerLoginLocalDeTeste(
-        loginLimpo,
-        senhaLimpa
-      );
-
-      if (entrouComoMasterTeste) {
-        return;
-      }
-
+      // Chamada real para a sua API (via Traefik)
       const resposta = await api.post("/login", {
         email: loginLimpo,
         senha: senhaLimpa,

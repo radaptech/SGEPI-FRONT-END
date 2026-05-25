@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { api } from "../../../services/api"; // Verifique se o caminho da importação está correto
 
 function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
   const [form, setForm] = useState({
@@ -7,7 +8,7 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
     responsavel: "",
     email: "",
     telefone: "",
-    plano: "Básico",
+    plano: "", // Agora começa vazio e é preenchido pela API
     status: "Em teste",
     mensalidade: "",
     vencimento: "",
@@ -15,6 +16,56 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
   });
 
   const [erro, setErro] = useState("");
+  const [planosDoBanco, setPlanosDoBanco] = useState([]);
+
+  // Busca os planos do banco de dados toda vez que o modal for aberto
+  useEffect(() => {
+    if (aberto) {
+      const buscarPlanos = async () => {
+        try {
+          const resposta = await api.get("/painel/planos");
+          const dados = resposta.data || resposta;
+          
+          if (Array.isArray(dados)) {
+            // Filtra para mostrar apenas os planos ativos no select
+            const planosAtivos = dados.filter(p => p.status === "Ativo");
+            setPlanosDoBanco(planosAtivos);
+
+            // Seleciona automaticamente o primeiro plano da lista para facilitar
+            if (planosAtivos.length > 0) {
+              setForm(prev => ({
+                ...prev,
+                plano: planosAtivos[0].nome,
+                mensalidade: planosAtivos[0].mensalidade
+              }));
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao buscar planos:", error);
+          setErro("Não foi possível carregar a lista de planos.");
+        }
+      };
+
+      buscarPlanos();
+    }
+  }, [aberto]);
+
+  // Nova função handlePlanoChange conectada ao banco
+  const handlePlanoChange = (e) => {
+    const nomePlanoSelecionado = e.target.value;
+    
+    // Procura o plano selecionado dentro do array que veio do Go
+    const planoEncontrado = planosDoBanco.find(p => p.nome === nomePlanoSelecionado);
+    
+    setForm(prev => ({
+      ...prev,
+      plano: nomePlanoSelecionado,
+      // Se encontrou o plano, seta o valor real dele. Se não, joga 0
+      mensalidade: planoEncontrado ? planoEncontrado.mensalidade : 0
+    }));
+    
+    setErro("");
+  };
 
   if (!aberto) return null;
 
@@ -23,7 +74,6 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
       ...prev,
       [campo]: valor,
     }));
-
     setErro("");
   };
 
@@ -34,13 +84,12 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
       responsavel: "",
       email: "",
       telefone: "",
-      plano: "Básico",
+      plano: planosDoBanco.length > 0 ? planosDoBanco[0].nome : "",
       status: "Em teste",
-      mensalidade: "",
+      mensalidade: planosDoBanco.length > 0 ? planosDoBanco[0].mensalidade : "",
       vencimento: "",
       observacoes: "",
     });
-
     setErro("");
   };
 
@@ -67,14 +116,19 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
       return;
     }
 
+    if (!form.plano) {
+      setErro("Selecione um plano válido.");
+      return;
+    }
+
     const novaEmpresa = {
-      id: Date.now(),
+      // Como este é o envio (POST), deixei sem o id, pois quem gera o ID é o banco no Go
       nome: form.nome.trim(),
       cnpj: form.cnpj.trim(),
       responsavel: form.responsavel.trim(),
       email: form.email.trim(),
       telefone: form.telefone.trim(),
-      plano: form.plano,
+      plano: form.plano, 
       status: form.status,
       funcionarios: 0,
       epis: 0,
@@ -145,35 +199,12 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
               onChange={(e) => alterarCampo("cnpj", e.target.value)}
             />
 
-            <CampoTexto
-              label="Responsável"
-              obrigatorio
-              placeholder="Nome do responsável"
-              value={form.responsavel}
-              onChange={(e) => alterarCampo("responsavel", e.target.value)}
-            />
-
-            <CampoTexto
-              label="E-mail"
-              obrigatorio
-              type="email"
-              placeholder="contato@empresa.com"
-              value={form.email}
-              onChange={(e) => alterarCampo("email", e.target.value)}
-            />
-
-            <CampoTexto
-              label="Telefone"
-              placeholder="(83) 99999-9999"
-              value={form.telefone}
-              onChange={(e) => alterarCampo("telefone", e.target.value)}
-            />
-
+            {/* O Select agora mapeia os nomes dos planos que vieram do banco */}
             <CampoSelect
               label="Plano"
               value={form.plano}
-              onChange={(e) => alterarCampo("plano", e.target.value)}
-              options={["Básico", "Profissional", "Premium"]}
+              onChange={handlePlanoChange}
+              options={planosDoBanco.map(p => p.nome)}
             />
 
             <CampoSelect
@@ -186,9 +217,9 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
             <CampoTexto
               label="Mensalidade"
               type="number"
-              placeholder="Ex: 450"
+              placeholder="Valor calculado automaticamente"
               value={form.mensalidade}
-              onChange={(e) => alterarCampo("mensalidade", e.target.value)}
+              disabled={true} 
             />
 
             <CampoTexto
@@ -241,6 +272,7 @@ function CampoTexto({
   placeholder,
   value,
   onChange,
+  disabled = false,
 }) {
   return (
     <div>
@@ -253,7 +285,10 @@ function CampoTexto({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 text-sm text-slate-700"
+        disabled={disabled}
+        className={`w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 text-sm text-slate-700 ${
+          disabled ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "focus:border-slate-300"
+        }`}
       />
     </div>
   );
@@ -271,6 +306,9 @@ function CampoSelect({ label, value, onChange, options }) {
         onChange={onChange}
         className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 bg-white text-sm text-slate-700"
       >
+        {/* Adicionei uma opção vazia temporária caso demore a carregar do banco */}
+        {options.length === 0 && <option value="">Carregando planos...</option>}
+        
         {options.map((option) => (
           <option key={option} value={option}>
             {option}

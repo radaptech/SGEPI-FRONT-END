@@ -2,124 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import masterDashboardService from "../../services/masterDashboardService";
 import ModalNovaEmpresa from "../../components/modals/master/ModalNovaEmpresa";
 
-const dadosMock = {
-  resumo: {
-    totalEmpresas: 12,
-    empresasAtivas: 9,
-    empresasBloqueadas: 2,
-    empresasEmTeste: 1,
-    totalFuncionarios: 348,
-    totalEpis: 1240,
-    totalEntregas: 3870,
-    mensalidadesPagas: 8,
-    mensalidadesAtrasadas: 3,
-    receitaMensal: 4800,
-  },
-
-  empresasRecentes: [
-    {
-      id: 1,
-      nome: "Alfa Segurança do Trabalho",
-      responsavel: "Marcos Oliveira",
-      plano: "Profissional",
-      funcionarios: 82,
-      epis: 310,
-      mensalidade: 450,
-      status: "Ativa",
-    },
-    {
-      id: 2,
-      nome: "Beta Construções",
-      responsavel: "Renata Lima",
-      plano: "Premium",
-      funcionarios: 146,
-      epis: 620,
-      mensalidade: 750,
-      status: "Ativa",
-    },
-    {
-      id: 3,
-      nome: "Metalúrgica Campo Forte",
-      responsavel: "Carlos Mendes",
-      plano: "Básico",
-      funcionarios: 38,
-      epis: 112,
-      mensalidade: 250,
-      status: "Atrasada",
-    },
-    {
-      id: 4,
-      nome: "Nordeste Serviços Industriais",
-      responsavel: "Juliana Rocha",
-      plano: "Profissional",
-      funcionarios: 64,
-      epis: 198,
-      mensalidade: 450,
-      status: "Bloqueada",
-    },
-  ],
-
-  alertas: [
-    {
-      id: 1,
-      tipo: "Mensalidade",
-      mensagem: "3 empresas possuem mensalidades em atraso.",
-      nivel: "alto",
-    },
-    {
-      id: 2,
-      tipo: "Uso do sistema",
-      mensagem: "1 empresa está sem acesso há mais de 15 dias.",
-      nivel: "medio",
-    },
-    {
-      id: 3,
-      tipo: "Cadastro",
-      mensagem: "1 empresa está em período de teste.",
-      nivel: "baixo",
-    },
-  ],
-
-  atividadesRecentes: [
-    {
-      id: 1,
-      empresa: "Alfa Segurança do Trabalho",
-      acao: "cadastrou 12 novos funcionários",
-      horario: "Hoje, 09:42",
-    },
-    {
-      id: 2,
-      empresa: "Beta Construções",
-      acao: "registrou 35 entregas de EPIs",
-      horario: "Hoje, 08:15",
-    },
-    {
-      id: 3,
-      empresa: "Metalúrgica Campo Forte",
-      acao: "teve mensalidade marcada como atrasada",
-      horario: "Ontem, 17:30",
-    },
-    {
-      id: 4,
-      empresa: "Nordeste Serviços Industriais",
-      acao: "foi bloqueada por pendência financeira",
-      horario: "Ontem, 14:08",
-    },
-  ],
-};
-
 function DashboardMaster({ usuarioLogado }) {
-  const [resumo, setResumo] = useState(dadosMock.resumo);
-  const [empresasRecentes, setEmpresasRecentes] = useState(
-    dadosMock.empresasRecentes
-  );
-  const [alertas, setAlertas] = useState(dadosMock.alertas);
-  const [atividadesRecentes, setAtividadesRecentes] = useState(
-    dadosMock.atividadesRecentes
-  );
+  const [resumo, setResumo] = useState({});
+  const [empresasRecentes, setEmpresasRecentes] = useState([]);
+  const [alertas, setAlertas] = useState([]);
+  const [atividadesRecentes, setAtividadesRecentes] = useState([]);
 
   const [carregando, setCarregando] = useState(false);
-  const [modoMock, setModoMock] = useState(false);
   const [modalNovaEmpresaAberto, setModalNovaEmpresaAberto] = useState(false);
 
   const carregarDashboard = async () => {
@@ -138,24 +27,12 @@ function DashboardMaster({ usuarioLogado }) {
         masterDashboardService.buscarAtividadesRecentes(8),
       ]);
 
-      setResumo(resumoResposta || dadosMock.resumo);
-      setEmpresasRecentes(empresasResposta || dadosMock.empresasRecentes);
-      setAlertas(alertasResposta || dadosMock.alertas);
-      setAtividadesRecentes(
-        atividadesResposta || dadosMock.atividadesRecentes
-      );
-      setModoMock(false);
+      setResumo(resumoResposta || {});
+      setEmpresasRecentes(empresasResposta || []);
+      setAlertas(alertasResposta || []);
+      setAtividadesRecentes(atividadesResposta || []);
     } catch (error) {
-      console.warn(
-        "API master ainda não disponível. Usando dados temporários.",
-        error
-      );
-
-      setResumo(dadosMock.resumo);
-      setEmpresasRecentes(dadosMock.empresasRecentes);
-      setAlertas(dadosMock.alertas);
-      setAtividadesRecentes(dadosMock.atividadesRecentes);
-      setModoMock(true);
+      console.error("Erro ao carregar dados do painel master:", error);
     } finally {
       setCarregando(false);
     }
@@ -212,7 +89,6 @@ function DashboardMaster({ usuarioLogado }) {
     ]);
 
     setModalNovaEmpresaAberto(false);
-    setModoMock(true);
   };
 
   const resumoSeguro = useMemo(() => {
@@ -513,27 +389,31 @@ function DashboardMaster({ usuarioLogado }) {
             />
 
             <div className="space-y-5 mt-6">
-              {atividadesRecentes.map((atividade, index) => (
-                <div key={atividade.id} className="relative pl-7">
-                  <div className="absolute left-0 top-1 w-3 h-3 rounded-full bg-slate-700" />
+              {atividadesRecentes.length === 0 ? (
+                <MensagemVazia texto="Nenhuma atividade recente registrada." />
+              ) : (
+                atividadesRecentes.map((atividade, index) => (
+                  <div key={atividade.id} className="relative pl-7">
+                    <div className="absolute left-0 top-1 w-3 h-3 rounded-full bg-slate-700" />
 
-                  {index !== atividadesRecentes.length - 1 && (
-                    <div className="absolute left-[5px] top-5 w-px h-full bg-slate-200" />
-                  )}
+                    {index !== atividadesRecentes.length - 1 && (
+                      <div className="absolute left-[5px] top-5 w-px h-full bg-slate-200" />
+                    )}
 
-                  <p className="text-sm font-black text-slate-800">
-                    {atividade.empresa}
-                  </p>
+                    <p className="text-sm font-black text-slate-800">
+                      {atividade.empresa}
+                    </p>
 
-                  <p className="text-sm text-slate-500 mt-1 leading-relaxed">
-                    {atividade.acao}
-                  </p>
+                    <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+                      {atividade.acao}
+                    </p>
 
-                  <p className="text-xs text-slate-400 mt-2 font-bold">
-                    {atividade.horario}
-                  </p>
-                </div>
-              ))}
+                    <p className="text-xs text-slate-400 mt-2 font-bold">
+                      {atividade.horario}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>
