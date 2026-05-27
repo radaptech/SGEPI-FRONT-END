@@ -228,9 +228,6 @@ const entregasHojeDetalhadas = useMemo(() => {
   return linhas.sort((a, b) => a.funcionario.localeCompare(b.funcionario));
 }, [entregas, funcionariosMap, itensEntreguesPorEntrega, episMap, tamanhosMap]);
 
-
-
-
   const alertasDetalhados = useMemo(() => {
     return estoqueDetalhado
       .map((linha) => {

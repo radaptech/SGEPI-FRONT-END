@@ -10,23 +10,113 @@ function ModalDetalhesDashboard({
   tipo = "tabela",
   onClose,
 }) {
-  // --- LÓGICA DE PAGINAÇÃO ---
   const [paginaAtual, setPaginaAtual] = useState(1);
-  const itensPorPagina = 10; // Altere aqui se quiser mostrar mais ou menos itens
 
-  // Volta para a página 1 sempre que o modal abrir ou os dados mudarem
+  const [busca, setBusca] = useState("");
+  const [dataInicial, setDataInicial] = useState("");
+  const [dataFinal, setDataFinal] = useState("");
+
+  const itensPorPagina = 10;
+
+  const obterDataDoItem = (item) => {
+    return (
+      item?.data ||
+      item?.dataEntrada ||
+      item?.dataEntrega ||
+      item?.dataMovimento ||
+      item?.createdAt ||
+      item?.updatedAt ||
+      null
+    );
+  };
+
+  const normalizarData = (valor) => {
+    if (!valor) return null;
+
+    if (valor instanceof Date) {
+      return valor;
+    }
+
+    if (typeof valor === "string") {
+      const valorLimpo = valor.trim();
+
+      if (valorLimpo.includes("/")) {
+        const [dia, mes, ano] = valorLimpo.split("/");
+        if (dia && mes && ano) {
+          return new Date(`${ano}-${mes}-${dia}T00:00:00`);
+        }
+      }
+
+      return new Date(valorLimpo);
+    }
+
+    return new Date(valor);
+  };
+
+  const dadosFiltrados = useMemo(() => {
+    return (dados || []).filter((item) => {
+      const textoBusca = busca.trim().toLowerCase();
+      const textoBuscaNormalizado = textoBusca.replace(",", ".");
+
+      const passaBusca =
+        !textoBusca ||
+        Object.values(item || {}).some((valor) => {
+          const valorTexto = String(valor ?? "").toLowerCase();
+
+          const valorNormalizado = valorTexto.replace(",", ".");
+
+          return (
+            valorTexto.includes(textoBusca) ||
+            valorNormalizado.includes(textoBuscaNormalizado)
+          );
+        });
+
+      const dataItemBruta = obterDataDoItem(item);
+      const dataItem = normalizarData(dataItemBruta);
+
+      const inicio = dataInicial
+        ? new Date(`${dataInicial}T00:00:00`)
+        : null;
+
+      const fim = dataFinal
+        ? new Date(`${dataFinal}T23:59:59`)
+        : null;
+
+      const temFiltroDeData = inicio || fim;
+
+      const passaData =
+        !temFiltroDeData ||
+        (dataItem &&
+          !Number.isNaN(dataItem.getTime()) &&
+          (!inicio || dataItem >= inicio) &&
+          (!fim || dataItem <= fim));
+
+      return passaBusca && passaData;
+    });
+  }, [dados, busca, dataInicial, dataFinal]);
+
   useEffect(() => {
     setPaginaAtual(1);
-  }, [dados, aberto]);
+  }, [dados, aberto, busca, dataInicial, dataFinal]);
 
-  const totalPaginas = Math.ceil((dados?.length || 0) / itensPorPagina);
+  const totalPaginas = Math.ceil(
+    (dadosFiltrados?.length || 0) / itensPorPagina
+  );
 
   const dadosPaginados = useMemo(() => {
     const inicio = (paginaAtual - 1) * itensPorPagina;
     const fim = inicio + itensPorPagina;
-    return dados?.slice(inicio, fim) || [];
-  }, [dados, paginaAtual, itensPorPagina]);
-  // ---------------------------
+    return dadosFiltrados?.slice(inicio, fim) || [];
+  }, [dadosFiltrados, paginaAtual]);
+
+  const limparFiltros = () => {
+    setBusca("");
+    setDataInicial("");
+    setDataFinal("");
+    setPaginaAtual(1);
+  };
+
+  const temFiltrosAtivos = busca || dataInicial || dataFinal;
 
   if (!aberto) return null;
 
@@ -61,15 +151,74 @@ function ModalDetalhesDashboard({
           </div>
         </div>
 
-        {/* CORPO (COM SCROLL) */}
+        {/* CORPO */}
         <div className="p-4 md:p-6 overflow-y-auto flex-1">
-          {dados.length === 0 ? (
+          {/* FILTROS */}
+          <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_auto] gap-3 items-end">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Buscar
+                </label>
+                <input
+                  type="text"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar por item, tamanho, valor..."
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Data inicial
+                </label>
+                <input
+                  type="date"
+                  value={dataInicial}
+                  onChange={(e) => setDataInicial(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Data final
+                </label>
+                <input
+                  type="date"
+                  value={dataFinal}
+                  onChange={(e) => setDataFinal(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={limparFiltros}
+                disabled={!temFiltrosAtivos}
+                className="h-[42px] px-4 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Limpar
+              </button>
+            </div>
+
+            {temFiltrosAtivos && (
+              <p className="mt-3 text-xs text-gray-500">
+                Filtros aplicados. Exibindo{" "}
+                <b>{dadosFiltrados.length}</b> de <b>{dados.length}</b>{" "}
+                registros.
+              </p>
+            )}
+          </div>
+
+          {dadosFiltrados.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-gray-500">
               Nenhum registro encontrado.
             </div>
           ) : (
             <>
-              {/* VERSÃO DESKTOP (TABELA) */}
+              {/* VERSÃO DESKTOP */}
               <div className="hidden md:block overflow-x-auto rounded-2xl border border-gray-200">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-gray-100 text-gray-600 text-sm uppercase">
@@ -86,7 +235,6 @@ function ModalDetalhesDashboard({
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {/* USANDO dadosPaginados AQUI */}
                     {dadosPaginados.map((item, index) => (
                       <tr
                         key={item.id ?? index}
@@ -108,9 +256,8 @@ function ModalDetalhesDashboard({
                 </table>
               </div>
 
-              {/* VERSÃO MOBILE (CARDS) */}
+              {/* VERSÃO MOBILE */}
               <div className="md:hidden space-y-3">
-                {/* USANDO dadosPaginados AQUI TAMBÉM */}
                 {dadosPaginados.map((item, index) => (
                   <div
                     key={item.id ?? index}
@@ -140,12 +287,12 @@ function ModalDetalhesDashboard({
           )}
         </div>
 
-        {/* RODAPÉ (PAGINAÇÃO) */}
-        {dados.length > 0 && (
+        {/* RODAPÉ */}
+        {dadosFiltrados.length > 0 && (
           <div className="shrink-0 px-4 md:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-500">
-              Mostrando <b>{dadosPaginados.length}</b> de <b>{dados.length}</b>{" "}
-              registros
+              Mostrando <b>{dadosPaginados.length}</b> de{" "}
+              <b>{dadosFiltrados.length}</b> registros
             </div>
 
             {totalPaginas > 1 && (
@@ -153,18 +300,20 @@ function ModalDetalhesDashboard({
                 <button
                   type="button"
                   disabled={paginaAtual === 1}
-                  onClick={() => setPaginaAtual(paginaAtual - 1)}
+                  onClick={() => setPaginaAtual((pagina) => pagina - 1)}
                   className="px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
                 >
                   Anterior
                 </button>
+
                 <span className="text-sm text-gray-600 font-medium px-2">
                   Página {paginaAtual} de {totalPaginas}
                 </span>
+
                 <button
                   type="button"
                   disabled={paginaAtual === totalPaginas}
-                  onClick={() => setPaginaAtual(paginaAtual + 1)}
+                  onClick={() => setPaginaAtual((pagina) => pagina + 1)}
                   className="px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
                 >
                   Próxima
