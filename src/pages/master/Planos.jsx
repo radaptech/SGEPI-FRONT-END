@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../services/api"; 
+import { toast } from "react-toastify";
 import ModalNovoPlano from "../../components/modals/master/ModalNovoPlano";
 import ModalEditarPlano from "../../components/modals/master/ModalEditarPlano";
 
@@ -62,40 +63,49 @@ const carregarPlanos = async () => {
     setPlanoSelecionado(null);
   };
 
-  const salvarNovoPlano = async (novoPlano) => {
+
+
+
+// ... resto do código ...
+
+  const salvarEdicaoPlano = async (planoAtualizado) => {
     try {
-      await api.post("/painel/cadastrar-planos", novoPlano);
-      await carregarPlanos(); 
+      const resposta = await api.put(`/painel/planos/${planoAtualizado.id}`, planoAtualizado);
+      
+      await carregarPlanos();
       fecharModais();
+      
+      const mensagem = resposta.data?.sucesso || resposta.data?.message || "Plano atualizado com sucesso!";
+      // 2. Trocamos o alert pelo toast de sucesso
+      toast.success(mensagem);
+
     } catch (error) {
-      console.error("Erro ao salvar novo plano:", error);
-      alert("Erro ao salvar o plano. Verifique os dados.");
+      console.error("Erro ao atualizar plano:", error);
+      // 3. Trocamos o alert pelo toast de erro
+      toast.error("Erro ao atualizar o plano.");
     }
   };
 
-  // ROTA PUT DESATIVADA TEMPORARIAMENTE
-  const salvarEdicaoPlano = async (planoAtualizado) => {
-    alert("🚧 A rota de edição (PUT) ainda está sendo desenvolvida no Go!");
-    fecharModais();
-
-    /* Descomente quando a rota estiver pronta no Go:
+  const salvarNovoPlano = async (novoPlano) => {
     try {
-      await api.put(`/painel/planos/${planoAtualizado.id}`, planoAtualizado);
-      await carregarPlanos();
+      const resposta = await api.post("/painel/cadastrar-planos", novoPlano);
+      await carregarPlanos(); 
       fecharModais();
+
+      const mensagem = resposta.data?.sucesso || resposta.data?.message || "Plano criado com sucesso!";
+      // 2. Trocamos o alert pelo toast de sucesso
+      toast.success(mensagem);
+
     } catch (error) {
-      console.error("Erro ao atualizar plano:", error);
-      alert("Erro ao atualizar o plano.");
+      console.error("Erro ao salvar novo plano:", error);
+      // 3. Trocamos o alert pelo toast de erro
+      toast.error("Erro ao salvar o plano. Verifique os dados.");
     }
-    */
   };
 
   // ROTA PATCH/DELETE DESATIVADA TEMPORARIAMENTE
   const alternarStatusPlano = async (planoSelecionado) => {
-    alert("🚧 A rota de alteração de status ainda está sendo desenvolvida no Go!");
 
-    /*
-    Descomente quando a rota estiver pronta no Go:
     try {
       const novoStatus = planoSelecionado.status === "Ativo" ? "Inativo" : "Ativo";
       await api.patch(`/painel/planos/${planoSelecionado.id}/status`, { status: novoStatus });
@@ -107,11 +117,11 @@ const carregarPlanos = async () => {
             : plano
         )
       );
+      toast.success(`Plano ${novoStatus === "Ativo" ? "ativado" : "desativado"} com sucesso!`);
     } catch (error) {
       console.error("Erro ao alterar status:", error);
-      alert("Erro ao alterar o status do plano.");
+      toast.error("Erro ao alterar o status do plano.");
     }
-    */
   };
 
   const formatarMoeda = (valor) => {

@@ -20,25 +20,32 @@ function ModalEditarPlano({
 }) {
   const [form, setForm] = useState({
     nome: "",
-    preco: "",
+    mensalidade: "",
     descricao: "",
-    limiteFuncionarios: "",
-    limiteUsuarios: "",
-    limiteEpis: "",
+    limite_funcionarios: "",
+    limite_usuarios: "",
+    limite_epis: "",
     status: "Ativo",
   });
 
   const [erro, setErro] = useState("");
 
+  // Helper para mostrar "Ilimitado" na tela caso venha null do banco
+  const formatarLimiteParaExibicao = (valor) => {
+    return valor === null ? "Ilimitado" : valor;
+  };
+
   useEffect(() => {
     if (plano) {
       setForm({
         nome: plano.nome || "",
-        preco: plano.preco ?? "",
+        // A API manda mensalidade agora (e não mais preco)
+        mensalidade: plano.mensalidade ?? "",
         descricao: plano.descricao || "",
-        limiteFuncionarios: plano.limiteFuncionarios || "",
-        limiteUsuarios: plano.limiteUsuarios || "",
-        limiteEpis: plano.limiteEpis || "",
+        // Converte os nulls do banco para "Ilimitado" no input
+        limite_funcionarios: formatarLimiteParaExibicao(plano.limite_funcionarios),
+        limite_usuarios: formatarLimiteParaExibicao(plano.limite_usuarios),
+        limite_epis: formatarLimiteParaExibicao(plano.limite_epis),
         status: plano.status || "Ativo",
       });
 
@@ -53,6 +60,14 @@ function ModalEditarPlano({
     setErro("");
   };
 
+  // Função auxiliar para converter o texto "Ilimitado" de volta para null na hora de salvar
+  const parseLimite = (valor) => {
+    if (!valor || valor.toString().toLowerCase() === "ilimitado") {
+      return null;
+    }
+    return parseInt(valor, 10);
+  };
+
   const salvar = (e) => {
     e.preventDefault();
 
@@ -61,7 +76,7 @@ function ModalEditarPlano({
       return;
     }
 
-    if (!form.preco) {
+    if (!form.mensalidade) {
       setErro("Informe o valor da mensalidade.");
       return;
     }
@@ -72,14 +87,13 @@ function ModalEditarPlano({
     }
 
     const planoAtualizado = {
-      ...plano,
+      ...plano, // Mantém o ID original
       nome: form.nome.trim(),
-      preco: Number(form.preco || 0),
+      mensalidade: Number(form.mensalidade || 0),
       descricao: form.descricao.trim(),
-      limiteFuncionarios: form.limiteFuncionarios || "Ilimitado",
-      limiteUsuarios: form.limiteUsuarios || "Ilimitado",
-      limiteEpis: form.limiteEpis || "Ilimitado",
-      recursos: recursosPadrao,
+      limite_funcionarios: parseLimite(form.limite_funcionarios),
+      limite_usuarios: parseLimite(form.limite_usuarios),
+      limite_epis: parseLimite(form.limite_epis),
       status: form.status,
     };
 
@@ -140,28 +154,28 @@ function ModalEditarPlano({
               label="Mensalidade"
               obrigatorio
               type="number"
-              value={form.preco}
-              onChange={(e) => alterarCampo("preco", e.target.value)}
+              value={form.mensalidade}
+              onChange={(e) => alterarCampo("mensalidade", e.target.value)}
             />
 
             <CampoTexto
               label="Limite de funcionários"
-              value={form.limiteFuncionarios}
+              value={form.limite_funcionarios}
               onChange={(e) =>
-                alterarCampo("limiteFuncionarios", e.target.value)
+                alterarCampo("limite_funcionarios", e.target.value)
               }
             />
 
             <CampoTexto
               label="Limite de usuários"
-              value={form.limiteUsuarios}
-              onChange={(e) => alterarCampo("limiteUsuarios", e.target.value)}
+              value={form.limite_usuarios}
+              onChange={(e) => alterarCampo("limite_usuarios", e.target.value)}
             />
 
             <CampoTexto
               label="Limite de EPIs"
-              value={form.limiteEpis}
-              onChange={(e) => alterarCampo("limiteEpis", e.target.value)}
+              value={form.limite_epis}
+              onChange={(e) => alterarCampo("limite_epis", e.target.value)}
             />
 
             <CampoSelect
@@ -169,6 +183,7 @@ function ModalEditarPlano({
               value={form.status}
               onChange={(e) => alterarCampo("status", e.target.value)}
               options={["Ativo", "Inativo"]}
+              disabled={true}
             />
 
             <div className="lg:col-span-2">
@@ -254,8 +269,7 @@ function CampoTexto({
     </div>
   );
 }
-
-function CampoSelect({ label, value, onChange, options }) {
+function CampoSelect({ label, value, onChange, options, disabled = false }) {
   return (
     <div>
       <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.16em] mb-2">
@@ -265,7 +279,10 @@ function CampoSelect({ label, value, onChange, options }) {
       <select
         value={value}
         onChange={onChange}
-        className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 bg-white text-sm text-slate-700"
+        disabled={disabled}
+        className={`w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 text-sm text-slate-700 transition-colors ${
+          disabled ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "bg-white"
+        }`}
       >
         {options.map((option) => (
           <option key={option} value={option}>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { api } from "../../../services/api"; // Verifique se o caminho da importação está correto
+import { api } from "../../../services/api"; 
+import { toast } from "react-toastify"; 
+import formatarData from "../../../utils/DatasFormater"; // 👈 Import da sua função de datas
 
 function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
   const [form, setForm] = useState({
@@ -8,14 +10,13 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
     responsavel: "",
     email: "",
     telefone: "",
-    plano: "", // Agora começa vazio e é preenchido pela API
+    plano: "", 
     status: "Em teste",
     mensalidade: "",
     vencimento: "",
     observacoes: "",
   });
 
-  const [erro, setErro] = useState("");
   const [planosDoBanco, setPlanosDoBanco] = useState([]);
 
   // Busca os planos do banco de dados toda vez que o modal for aberto
@@ -42,7 +43,7 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
           }
         } catch (error) {
           console.error("Erro ao buscar planos:", error);
-          setErro("Não foi possível carregar a lista de planos.");
+          toast.error("Não foi possível carregar a lista de planos."); 
         }
       };
 
@@ -50,21 +51,15 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
     }
   }, [aberto]);
 
-  // Nova função handlePlanoChange conectada ao banco
   const handlePlanoChange = (e) => {
     const nomePlanoSelecionado = e.target.value;
-    
-    // Procura o plano selecionado dentro do array que veio do Go
     const planoEncontrado = planosDoBanco.find(p => p.nome === nomePlanoSelecionado);
     
     setForm(prev => ({
       ...prev,
       plano: nomePlanoSelecionado,
-      // Se encontrou o plano, seta o valor real dele. Se não, joga 0
       mensalidade: planoEncontrado ? planoEncontrado.mensalidade : 0
     }));
-    
-    setErro("");
   };
 
   if (!aberto) return null;
@@ -74,7 +69,6 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
       ...prev,
       [campo]: valor,
     }));
-    setErro("");
   };
 
   const limparFormulario = () => {
@@ -90,7 +84,6 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
       vencimento: "",
       observacoes: "",
     });
-    setErro("");
   };
 
   const fecharModal = () => {
@@ -102,38 +95,36 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
     e.preventDefault();
 
     if (!form.nome.trim()) {
-      setErro("Informe o nome da empresa.");
+      toast.warning("Informe o nome da empresa.");
       return;
     }
 
     if (!form.responsavel.trim()) {
-      setErro("Informe o responsável pela empresa.");
+      toast.warning("Informe o responsável pela empresa.");
       return;
     }
 
     if (!form.email.trim()) {
-      setErro("Informe o e-mail de contato.");
+      toast.warning("Informe o e-mail de contato.");
       return;
     }
 
     if (!form.plano) {
-      setErro("Selecione um plano válido.");
+      toast.warning("Selecione um plano válido.");
       return;
     }
 
+    // Objeto formatado com as chaves exatas que a struct do Go espera
     const novaEmpresa = {
-      // Como este é o envio (POST), deixei sem o id, pois quem gera o ID é o banco no Go
-      nome: form.nome.trim(),
+      nome_fantasia: form.nome.trim(), 
       cnpj: form.cnpj.trim(),
       responsavel: form.responsavel.trim(),
       email: form.email.trim(),
       telefone: form.telefone.trim(),
       plano: form.plano, 
       status: form.status,
-      funcionarios: 0,
-      epis: 0,
       mensalidade: Number(form.mensalidade || 0),
-      vencimento: form.vencimento,
+      vencimento: formatarData(form.vencimento), // 👈 Data convertida para DD/MM/YYYY
       observacoes: form.observacoes.trim(),
     };
 
@@ -177,12 +168,6 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
         </div>
 
         <form onSubmit={salvarEmpresa} className="p-6">
-          {erro && (
-            <div className="mb-5 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-bold">
-              {erro}
-            </div>
-          )}
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <CampoTexto
               label="Nome da empresa"
@@ -199,7 +184,30 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
               onChange={(e) => alterarCampo("cnpj", e.target.value)}
             />
 
-            {/* O Select agora mapeia os nomes dos planos que vieram do banco */}
+            <CampoTexto
+              label="Responsável"
+              obrigatorio
+              placeholder="Ex: João Silva"
+              value={form.responsavel}
+              onChange={(e) => alterarCampo("responsavel", e.target.value)}
+            />
+
+            <CampoTexto
+              label="E-mail de contato"
+              obrigatorio
+              type="email"
+              placeholder="Ex: contato@empresa.com"
+              value={form.email}
+              onChange={(e) => alterarCampo("email", e.target.value)}
+            />
+
+            <CampoTexto
+              label="Telefone"
+              placeholder="(00) 00000-0000"
+              value={form.telefone}
+              onChange={(e) => alterarCampo("telefone", e.target.value)}
+            />
+
             <CampoSelect
               label="Plano"
               value={form.plano}
@@ -306,7 +314,6 @@ function CampoSelect({ label, value, onChange, options }) {
         onChange={onChange}
         className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 bg-white text-sm text-slate-700"
       >
-        {/* Adicionei uma opção vazia temporária caso demore a carregar do banco */}
         {options.length === 0 && <option value="">Carregando planos...</option>}
         
         {options.map((option) => (
