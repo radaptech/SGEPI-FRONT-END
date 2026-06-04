@@ -18,6 +18,9 @@ function ModalDetalhesDashboard({
 
   const itensPorPagina = 10;
 
+  // 🌟 NOVO: Identifica se este modal específico deve exibir o filtro de datas
+  const temFiltroDeDatasNoConteudo = titulo === "Histórico de Entregas" || titulo === "Entregas do mês";
+
   const obterDataDoItem = (item) => {
     return (
       item?.data ||
@@ -62,7 +65,6 @@ function ModalDetalhesDashboard({
         !textoBusca ||
         Object.values(item || {}).some((valor) => {
           const valorTexto = String(valor ?? "").toLowerCase();
-
           const valorNormalizado = valorTexto.replace(",", ".");
 
           return (
@@ -85,7 +87,8 @@ function ModalDetalhesDashboard({
       const temFiltroDeData = inicio || fim;
 
       const passaData =
-        !temFiltroDeData ||
+        !temFiltroDeDatasNoConteudo || // Se o modal não suporta data, passa direto
+        !temFiltroDeData || // Se não preencheu os inputs, passa direto
         (dataItem &&
           !Number.isNaN(dataItem.getTime()) &&
           (!inicio || dataItem >= inicio) &&
@@ -93,11 +96,18 @@ function ModalDetalhesDashboard({
 
       return passaBusca && passaData;
     });
-  }, [dados, busca, dataInicial, dataFinal]);
+  }, [dados, busca, dataInicial, dataFinal, temFiltroDeDatasNoConteudo]);
 
   useEffect(() => {
     setPaginaAtual(1);
   }, [dados, aberto, busca, dataInicial, dataFinal]);
+
+  // Limpar os filtros quando fechar o modal
+  useEffect(() => {
+    if (!aberto) {
+      limparFiltros();
+    }
+  }, [aberto]);
 
   const totalPaginas = Math.ceil(
     (dadosFiltrados?.length || 0) / itensPorPagina
@@ -155,7 +165,8 @@ function ModalDetalhesDashboard({
         <div className="p-4 md:p-6 overflow-y-auto flex-1">
           {/* FILTROS */}
           <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_auto] gap-3 items-end">
+            {/* A grade se adapta dependendo se tem inputs de data ou não */}
+            <div className={`grid grid-cols-1 ${temFiltroDeDatasNoConteudo ? "md:grid-cols-[1.4fr_1fr_1fr_auto]" : "md:grid-cols-[1fr_auto]"} gap-3 items-end`}>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
                   Buscar
@@ -169,29 +180,33 @@ function ModalDetalhesDashboard({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                  Data inicial
-                </label>
-                <input
-                  type="date"
-                  value={dataInicial}
-                  onChange={(e) => setDataInicial(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
+              {temFiltroDeDatasNoConteudo && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                      Data inicial
+                    </label>
+                    <input
+                      type="date"
+                      value={dataInicial}
+                      onChange={(e) => setDataInicial(e.target.value)}
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                  Data final
-                </label>
-                <input
-                  type="date"
-                  value={dataFinal}
-                  onChange={(e) => setDataFinal(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                      Data final
+                    </label>
+                    <input
+                      type="date"
+                      value={dataFinal}
+                      onChange={(e) => setDataFinal(e.target.value)}
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+                </>
+              )}
 
               <button
                 type="button"

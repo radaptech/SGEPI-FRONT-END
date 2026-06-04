@@ -21,7 +21,7 @@ function Dashboard({ usuarioLogado }) {
     carregandoResumo,
     resumo,
     estoqueDetalhado,
-    entregasHojeDetalhadas,
+    entregasTodasDetalhadas, // 🌟 Modificado para receber o histórico completo
     alertasDetalhados,
     valorEstoqueDetalhado,
     carregarResumo,
@@ -78,10 +78,10 @@ function Dashboard({ usuarioLogado }) {
 
     if (detalheCardAberto === "entregas") {
       return {
-        titulo: "Entregas de hoje",
-        subtitulo: "Lista do que foi entregue hoje e para quem foi entregue.",
+        titulo: "Histórico de Entregas", // 🌟 Texto atualizado
+        subtitulo: "Lista completa de itens entregues. Utilize os filtros abaixo para buscar por datas ou termos.", // 🌟 Texto atualizado
         icon: "🚀",
-        dados: entregasHojeDetalhadas,
+        dados: entregasTodasDetalhadas, // 🌟 Passando a lista completa para o modal
         colunas: [
           {
             key: "data",
@@ -125,43 +125,59 @@ function Dashboard({ usuarioLogado }) {
       };
     }
 
-    if (detalheCardAberto === "alertas") {
+if (detalheCardAberto === "alertas") {
       return {
-        titulo: "Itens com alerta de estoque",
+        titulo: "Lotes com Alerta de Estoque Baixo", // 🌟 Título mais comercial
         subtitulo:
-          "Itens que estão acabando com base no alerta mínimo configurado.",
+          "Lotes ativos que atingiram ou estão abaixo do nível de alerta mínimo configurado.",
         icon: "⚠️",
         dados: alertasDetalhados,
         colunas: [
           {
             key: "item",
-            label: "Item",
+            label: "EPI / Item",
             render: (item) => (
-              <div className="font-semibold text-gray-800">{item.item}</div>
+              <div className="font-semibold text-gray-900">{item.item}</div>
+            ),
+          },
+          {
+            key: "lote",
+            label: "Lote / CA", // 🌟 Nova coluna adicionada
+            render: (item) => (
+              <span className="inline-flex px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-mono font-bold border border-slate-200">
+                {item.lote}
+              </span>
             ),
           },
           {
             key: "tamanho",
-            label: "Tamanho",
+            label: "Tam.",
             render: (item) => (
-              <span className="inline-flex px-2 py-1 rounded-lg bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
+              <span className="inline-flex px-2 py-0.5 rounded-md bg-gray-50 text-gray-600 text-xs font-bold border border-gray-200">
                 {item.tamanho}
               </span>
             ),
           },
           {
             key: "quantidade",
-            label: "Estoque Atual",
+            label: "Qtd. Atual", // 🌟 UI melhorada simulando a sua outra tela
             render: (item) => (
-              <span className="font-bold text-rose-600">{item.quantidade}</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-bold text-amber-700 bg-amber-50 px-3 py-0.5 rounded-lg border border-amber-200 text-center w-fit text-sm">
+                  {item.quantidade}
+                </span>
+                <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wide">
+                  Estoque Baixo
+                </span>
+              </div>
             ),
           },
           {
             key: "alertaMinimo",
-            label: "Alerta Mínimo",
+            label: "Alerta Mín.",
             render: (item) => (
-              <span className="font-semibold text-gray-800">
-                {item.alertaMinimo}
+              <span className="font-semibold text-gray-400 text-sm">
+                {item.alertaMinimo} un.
               </span>
             ),
           },
@@ -222,7 +238,7 @@ function Dashboard({ usuarioLogado }) {
   }, [
     detalheCardAberto,
     estoqueDetalhado,
-    entregasHojeDetalhadas,
+    entregasTodasDetalhadas, // 🌟 Atualizado para refletir a nova variável
     alertasDetalhados,
     valorEstoqueDetalhado,
   ]);
@@ -240,13 +256,13 @@ function Dashboard({ usuarioLogado }) {
     },
     {
       id: "entregas",
-      titulo: "Entregas Hoje",
-      valor: carregandoResumo ? "--" : resumo.entregasHoje,
-      descricao: "Clique para ver o que foi entregue hoje",
+      titulo: "Entregas no Mês",
+      valor: carregandoResumo ? "--" : resumo.entregasMes,
+      descricao: "Clique para pesquisar no histórico", // 🌟 Descrição ajustada
       icone: "🚀",
       iconeBox: "bg-purple-50 text-purple-600",
       ring: "hover:border-purple-200 hover:bg-purple-50/40",
-      badge: "Movimento do dia",
+      badge: "Movimento do mês",
     },
     {
       id: "alertas",
@@ -413,14 +429,14 @@ function Dashboard({ usuarioLogado }) {
         <ModalEntrada onClose={fecharModal} onSalvar={aoSalvarModal} />
       )}
 
-     {modalAberto === "entrega" && (
-     <ModalEntrega 
-        onClose={fecharModal} 
-        onSalvar={aoSalvarModal} 
-        epis={epis} // Passa os EPIs do Dashboard
-        funcionarios={funcionarios} // 🌟 PASSA OS FUNCIONÁRIOS AQUI!
-      />  
-        )}  
+      {modalAberto === "entrega" && (
+        <ModalEntrega 
+          onClose={fecharModal} 
+          onSalvar={aoSalvarModal} 
+          epis={epis} 
+          funcionarios={funcionarios} 
+        />  
+      )}  
 
       {modalAberto === "baixa" && (
         <ModalBaixa onClose={fecharModal} onSalvar={aoSalvarModal} />

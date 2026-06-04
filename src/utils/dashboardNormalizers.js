@@ -11,63 +11,69 @@ export function converterDataParaISO(dataBruta) {
   return dataStr;
 }
 
-
 export function normalizarEpi(item) {
   return {
-    id: Number(item?.id ?? 0),
-    nome: String(item?.nome ?? ""),
-    alerta_minimo: Number(item?.alerta_minimo ?? 0),
+    id: Number(item?.id ?? item?.Id ?? 0),
+    nome: String(item?.nome ?? item?.Nome ?? ""),
+    // 🌟 A CORREÇÃO DEFINITIVA: Tenta ler com underline primeiro, depois camelCase
+    alerta_minimo: Number(item?.alerta_minimo ?? item?.alertaMinimo ?? 0),
   };
 }
 
 export function normalizarTamanho(item) {
   return {
-    id: Number(item?.id ?? 0),
-    tamanho: String(item?.tamanho ?? ""),
+    id: Number(item?.id ?? item?.Id ?? item?.ID ?? 0),
+    tamanho: String(item?.tamanho ?? item?.Tamanho ?? ""),
   };
 }
 
 export function normalizarFuncionario(item) {
   return {
-    id: Number(item?.id ?? 0),
-    nome: String(item?.nome ?? ""),
-    matricula: String(item?.matricula ?? ""),
+    id: Number(item?.id ?? item?.Id ?? item?.ID ?? 0),
+    nome: String(item?.nome ?? item?.Nome ?? ""),
+    matricula: String(item?.matricula ?? item?.Matricula ?? ""),
   };
 }
 
 export function normalizarEntrada(item) {
   return {
-    id: Number(item?.Id),
-    idEpi: Number(item?.IdEpi),
-    idTamanho: Number(item?.IdTamanho),
-    quantidadeAtual: Number(item?.QuantidadeAtual),
-    quantidade: Number(item?.Quantidade),
-    valor_unitario: Number(item?.ValorUnitario),   
+    // 🌟 Blindagem para ler os IDs de entrada independentemente do case
+    id: Number(item?.id ?? item?.Id ?? item?.ID ?? 0),
+    idEpi: Number(item?.idEpi ?? item?.IdEpi ?? item?.id_epi ?? 0),
+    idTamanho: Number(item?.idTamanho ?? item?.IdTamanho ?? item?.id_tamanho ?? 0),
+    quantidadeAtual: Number(item?.quantidadeAtual ?? item?.QuantidadeAtual ?? item?.quantidade_atual ?? 0),
+    quantidade: Number(item?.quantidade ?? item?.Quantidade ?? 0),
+    valor_unitario: Number(item?.valorUnitario ?? item?.ValorUnitario ?? item?.valor_unitario ?? 0),   
     data_entrada: converterDataParaISO(
-      item?.DataEntrada),
-    lote: String(item?.Lote ?? item?.lote ?? ""),
+      item?.dataEntrada ?? item?.DataEntrada ?? item?.data_entrada
+    ),
+    lote: String(item?.lote ?? item?.Lote ?? ""),
   };
 }
 
-// 👇 Agora ela tem 'export' e o nome exato que o seu arquivo procura
 export function normalizarItemEntregue(item) {
   return {
-    id: Number(item?.id ?? 0),
-    // Adicione idEntrega para que o useMemo consiga agrupar!
-    idEntrega: Number(item?.idEntregaCabecalho ?? item?.id_entrega_cabecalho ?? item?.idEntrega ?? 0),
-    idEpi: Number(item?.idEpi ?? item?.id_epi ?? item?.epi?.id ?? 0),
-    idTamanho: Number(item?.idTamanho ?? item?.id_tamanho ?? item?.tamanho?.id ?? 0),
-    quantidade: Number(item?.quantidade ?? 0),
-    epiNome: item?.epiNome ?? item?.epi?.nome ?? "EPI não identificado",
-    tamanhoTexto: item?.tamanhoTexto ?? item?.tamanho?.tamanho ?? "-",
+    id: Number(item?.id ?? item?.Id ?? 0),
+    idEntrega: Number(item?.idEntregaCabecalho ?? item?.id_entrega_cabecalho ?? item?.idEntrega ?? item?.IdEntrega ?? 0),
+    idEpi: Number(item?.idEpi ?? item?.id_epi ?? item?.IdEpi ?? item?.epi?.id ?? 0),
+    idTamanho: Number(item?.idTamanho ?? item?.id_tamanho ?? item?.IdTamanho ?? item?.tamanho?.id ?? 0),
+    quantidade: Number(item?.quantidade ?? item?.Quantidade ?? 0),
+    epiNome: item?.epiNome ?? item?.EpiNome ?? item?.epi?.nome ?? "EPI não identificado",
+    tamanhoTexto: item?.tamanhoTexto ?? item?.TamanhoTexto ?? item?.tamanho?.tamanho ?? "-",
   };
 }
 
 export function normalizarEntrega(item) {
-  const itensOriginais = item?.itens ?? [];
+  const itensOriginais = item?.itens ?? item?.Itens ?? [];
   
-  // Tenta capturar o ID do funcionário de todas as formas possíveis
-  const idFunc = Number(item?.idFuncionario ?? item?.id_funcionario ?? item?.Idfuncionario ?? item?.funcionario?.id ?? 0);
+  const idFunc = Number(
+    item?.idFuncionario ?? 
+    item?.id_funcionario ?? 
+    item?.Idfuncionario ?? 
+    item?.IdFuncionario ?? 
+    item?.funcionario?.id ?? 
+    0
+  );
 
   return {
     id: Number(item?.id ?? item?.Id ?? 0),
@@ -75,11 +81,10 @@ export function normalizarEntrega(item) {
     
     data_entrega: item?.data_entrega ?? item?.dataEntrega ?? item?.DataEntrega ?? "",
     
-    // Simplificando o objeto funcionário para o Dashboard
     funcionario: {
       id: idFunc,
-      nome: item?.nomeFuncionario ?? item?.funcionario?.nome ?? "Não identificado",
-      matricula: String(item?.matricula ?? item?.funcionario?.matricula ?? "-")
+      nome: item?.nomeFuncionario ?? item?.NomeFuncionario ?? item?.funcionario?.nome ?? "Não identificado",
+      matricula: String(item?.matricula ?? item?.Matricula ?? item?.funcionario?.matricula ?? "-")
     },
     
     itens: Array.isArray(itensOriginais) 
@@ -90,9 +95,9 @@ export function normalizarEntrega(item) {
 
 export function normalizarDevolucao(item) {
   return {
-    id: Number(item?.id ?? 0),
+    id: Number(item?.id ?? item?.Id ?? 0),
     data_devolucao: converterDataParaISO(
-      item?.data_devolucao ?? item?.dataDevolucao ?? item?.data
+      item?.data_devolucao ?? item?.dataDevolucao ?? item?.DataDevolucao ?? item?.data ?? item?.Data
     ),
   };
 }

@@ -46,26 +46,26 @@ export function useDashboardResumo() {
 
     try {
       const [
-  listaEpis,
-  listaTamanhos,
-  listaFuncionarios,
-  listaEntradas,
-  listaEntregas,
-  listaItensEntregues,
-  listaDevolucoes,
-] = await Promise.all([
-  api.get("/epis-dashbord").catch(() => []),
-  api.get("/tamanhos").catch(() => []),
-  api.get("/funcionarios-dashbord").catch(() => []),
-  api.get("/entradas-dashbord").catch(() => []),
-  api.get("/entregas-dashbord").catch(() => []),
-  api.get("/entrega-itens-dashbord").catch(() => []),
-  api.get("/devolucoes").catch(() => {
-    console.warn("Rota /devolucoes ainda não implementada no Back-end");
-    return []; // Retorna lista vazia e o código continua rodando
-  }),
-]);
-    
+        listaEpis,
+        listaTamanhos,
+        listaFuncionarios,
+        listaEntradas,
+        listaEntregas,
+        listaItensEntregues,
+        listaDevolucoes,
+      ] = await Promise.all([
+        api.get("/epis-dashbord").catch(() => []),
+        api.get("/tamanhos").catch(() => []),
+        api.get("/funcionarios-dashbord").catch(() => []),
+        api.get("/entradas-dashbord").catch(() => []),
+        api.get("/entregas-dashbord").catch(() => []),
+        api.get("/entrega-itens-dashbord").catch(() => []),
+        api.get("/devolucoes").catch(() => {
+          console.warn("Rota /devolucoes ainda não implementada no Back-end");
+          return []; // Retorna lista vazia e o código continua rodando
+        }),
+      ]);
+      
       setEpis((listaEpis || []).map(normalizarEpi));
       setTamanhos((listaTamanhos || []).map(normalizarTamanho));
       setFuncionarios((listaFuncionarios || []).map(normalizarFuncionario));
@@ -101,25 +101,21 @@ export function useDashboardResumo() {
     );
   }, [funcionarios]);
 
- const itensEntreguesPorEntrega = useMemo(() => {
-  console.log(itensEntregues[0]);
-  return itensEntregues.reduce((acc, item) => {
-    // Agora usamos o campo 'idEntrega' que garantimos no normalizador
-    const idKey = String(item.idEntrega);
-    
-    if (idKey !== "0") {
-      if (!acc[idKey]) acc[idKey] = [];
-      acc[idKey].push(item);
-    }
-    return acc;
-  }, {});
-}, [itensEntregues]);
+  const itensEntreguesPorEntrega = useMemo(() => {
+    return itensEntregues.reduce((acc, item) => {
+      const idKey = String(item.idEntrega);
+      
+      if (idKey !== "0") {
+        if (!acc[idKey]) acc[idKey] = [];
+        acc[idKey].push(item);
+      }
+      return acc;
+    }, {});
+  }, [itensEntregues]);
 
-const estoqueDetalhado = useMemo(() => {
+  const estoqueDetalhado = useMemo(() => {
     const mapa = {};
-    console.log("📥 Dados brutos recebidos das 'entradas':", entradas);
     entradas.forEach((entrada) => {
-      // 1. Ajuste para bater com o JSON: IdEpi, IdTamanho, QuantidadeAtual
       const idEpiReal = entrada.idEpi; 
       const idTamanhoReal = entrada.idTamanho;
       const qtdAtualReal = Number(entrada.quantidadeAtual || 0);
@@ -147,108 +143,143 @@ const estoqueDetalhado = useMemo(() => {
     });
 
     return Object.values(mapa)
-      .filter((item) => item.quantidade > 0)
+      .filter((item) => item.quantidade >= 0)
       .sort((a, b) => a.item.localeCompare(b.item));
   }, [entradas, episMap, tamanhosMap]);
 
-  // ======= BLOCO CORRIGIDO: entregasHojeDetalhadas =======
-const entregasHojeDetalhadas = useMemo(() => {
-  const hojeISO = obterHojeISO();
-  const linhas = [];
-
-  console.group("🔍 DEBUG DASHBOARD");
-  console.log("1. Data de hoje (ISO):", hojeISO);
-  console.log("2. Total de entregas recebidas:", entregas.length);
-
-  // 1. Filtro de Entregas (ISO ou BR)
-  const entregasDoDia = entregas.filter((entrega) => {
-    const dataRaw = String(entrega.data_entrega || "");
-    if (dataRaw.includes("/")) {
-      const [dia, mes, ano] = dataRaw.split("/");
-      return `${ano}-${mes}-${dia}` === hojeISO;
-    }
-    return dataRaw.substring(0, 10) === hojeISO;
-  });
-
-  console.log("3. Entregas filtradas:", entregasDoDia.length);
-
-  entregasDoDia.forEach((entrega) => {
-    const idEnt = String(entrega.id);
+  // ======= BLOCO: entregasMesDetalhadas (Para o Card) =======
+  const entregasMesDetalhadas = useMemo(() => {
+    const hojeISO = obterHojeISO();
+    const anoMesISO = hojeISO.substring(0, 7); 
+    const [ano, mes] = anoMesISO.split("-");
+    const mesAnoBR = `${mes}/${ano}`; 
     
-    // Tenta pegar o ID do funcionário de várias formas (blindagem)
-    const idFunc = String(entrega.idFuncionario || entrega.funcionario?.id || 0);
-    const funcionario = funcionariosMap[idFunc];
-    
-    // IMPORTANTE: Se o array de itens não existir no mapa, tratamos como array vazio
-    const itensDaEntrega = itensEntreguesPorEntrega[idEnt] || [];
+    const lines = [];
 
-    console.log(`--- Processando Entrega #${idEnt} ---`);
-    console.log(`> Funcionário: ${funcionario?.nome || "Não encontrado"} (ID: ${idFunc})`);
-    console.log(`> Qtd Itens vinculados: ${itensDaEntrega.length}`);
+    const entregasDoMes = entregas.filter((entrega) => {
+      const dataRaw = String(entrega.data_entrega || "");
+      if (dataRaw.includes("/")) {
+        return dataRaw.endsWith(mesAnoBR);
+      }
+      return dataRaw.startsWith(anoMesISO);
+    });
 
-    // Se a entrega existe mas não tem itens vinculados no banco
-    if (itensDaEntrega.length === 0) {
-      linhas.push({
-        id: `vazio-${idEnt}`,
-        data: entrega.data_entrega,
-        funcionario: funcionario?.nome || "Funcionário ID: " + idFunc,
-        matricula: funcionario?.matricula || "--",
-        item: "⚠️ Nenhum item no banco",
-        tamanho: "-",
-        quantidade: 0,
-      });
-      return;
-    }
+    entregasDoMes.forEach((entrega) => {
+      const idEnt = String(entrega.id);
+      const idFunc = String(entrega.idFuncionario || entrega.funcionario?.id || 0);
+      const funcionario = funcionariosMap[idFunc];
+      const itensDaEntrega = itensEntreguesPorEntrega[idEnt] || [];
 
-    // Se tem itens, mapeia cada um buscando o nome real nos mapas de EPI e Tamanho
-    itensDaEntrega.forEach((item, index) => {
-      const idEpi = String(item.idEpi);
-      const idTam = String(item.idTamanho);
-      
-      const epi = episMap[idEpi];
-      const tam = tamanhosMap[idTam];
+      if (itensDaEntrega.length === 0) {
+        lines.push({
+          id: `vazio-${idEnt}`,
+          data: entrega.data_entrega,
+          funcionario: funcionario?.nome || "Funcionário ID: " + idFunc,
+          matricula: funcionario?.matricula || "--",
+          item: "⚠️ Nenhum item no banco",
+          tamanho: "-",
+          quantidade: 0,
+        });
+        return;
+      }
 
-      linhas.push({
-        id: `${idEnt}-item-${index}`,
-        data: entrega.data_entrega,
-        funcionario: funcionario?.nome || "Desconhecido",
-        matricula: funcionario?.matricula || "--",
-        // Prioridade: Mapa de EPIs -> Nome vindo no item -> ID Genérico
-        item: epi?.nome || item.epiNome || `EPI #${idEpi}`,
-        // Prioridade: Mapa de Tamanhos -> Texto vindo no item -> "?"
-        tamanho: tam?.tamanho || item.tamanhoTexto || "?",
-        quantidade: Number(item.quantidade || 0),
+      itensDaEntrega.forEach((item, index) => {
+        const idEpi = String(item.idEpi);
+        const idTam = String(item.idTamanho);
+        const epi = episMap[idEpi];
+        const tam = tamanhosMap[idTam];
+
+        lines.push({
+          id: `${idEnt}-item-${index}`,
+          data: entrega.data_entrega,
+          funcionario: funcionario?.nome || "Desconhecido",
+          matricula: funcionario?.matricula || "--",
+          item: epi?.nome || item.epiNome || `EPI #${idEpi}`,
+          tamanho: tam?.tamanho || item.tamanhoTexto || "?",
+          quantidade: Number(item.quantidade || 0),
+        });
       });
     });
-  });
 
-  console.log("4. Total de linhas geradas:", linhas.length);
-  console.groupEnd();
+    return lines.sort((a, b) => a.funcionario.localeCompare(b.funcionario));
+  }, [entradas, funcionariosMap, itensEntreguesPorEntrega, episMap, tamanhosMap]);
 
-  return linhas.sort((a, b) => a.funcionario.localeCompare(b.funcionario));
-}, [entregas, funcionariosMap, itensEntreguesPorEntrega, episMap, tamanhosMap]);
+  // ======= BLOCO: entregasTodasDetalhadas (Para o Filtro do Modal) =======
+  const entregasTodasDetalhadas = useMemo(() => {
+    const lines = [];
 
+    entregas.forEach((entrega) => {
+      const idEnt = String(entrega.id);
+      const idFunc = String(entrega.idFuncionario || entrega.funcionario?.id || 0);
+      const funcionario = funcionariosMap[idFunc];
+      const itensDaEntrega = itensEntreguesPorEntrega[idEnt] || [];
+
+      if (itensDaEntrega.length === 0) {
+        lines.push({
+          id: `vazio-${idEnt}`,
+          data: entrega.data_entrega,
+          funcionario: funcionario?.nome || "Funcionário ID: " + idFunc,
+          matricula: funcionario?.matricula || "--",
+          item: "⚠️ Nenhum item no banco",
+          tamanho: "-",
+          quantidade: 0,
+        });
+        return;
+      }
+
+      itensDaEntrega.forEach((item, index) => {
+        const idEpi = String(item.idEpi);
+        const idTam = String(item.idTamanho);
+        const epi = episMap[idEpi];
+        const tam = tamanhosMap[idTam];
+
+        lines.push({
+          id: `${idEnt}-item-${index}`,
+          data: entrega.data_entrega,
+          funcionario: funcionario?.nome || "Desconhecido",
+          matricula: funcionario?.matricula || "--",
+          item: epi?.nome || item.epiNome || `EPI #${idEpi}`,
+          tamanho: tam?.tamanho || item.tamanhoTexto || "?",
+          quantidade: Number(item.quantidade || 0),
+        });
+      });
+    });
+
+    return lines.sort((a, b) => a.funcionario.localeCompare(b.funcionario));
+  }, [entregas, funcionariosMap, itensEntreguesPorEntrega, episMap, tamanhosMap]);
+
+ 
   const alertasDetalhados = useMemo(() => {
-    return estoqueDetalhado
-      .map((linha) => {
-        const epi = episMap[Number(linha.idEpi)];
-        const alertaMinimo = Number(epi?.alerta_minimo || 0);
+    return entradas
+      .map((entrada) => {
+        const epi = episMap[Number(entrada.idEpi)];
+        const tamanho = tamanhosMap[Number(entrada.idTamanho)];
+        
+        const alertaMinimo = Number(
+          epi?.alerta_minimo || 
+          epi?.alertaMinimo || 
+          0
+        );
+
+        const quantidadeAtual = Number(entrada.quantidadeAtual || 0);
 
         return {
-          id: linha.id,
-          item: linha.item,
-          tamanho: linha.tamanho,
-          quantidade: Number(linha.quantidade || 0),
+          id: `entrada-${entrada.id}`,
+          item: epi?.nome || `EPI #${entrada.idEpi}`,
+          tamanho: tamanho?.tamanho || "Sem tamanho",
+          quantidade: quantidadeAtual,
           alertaMinimo,
+          lote: entrada.lote || "Sem lote", // 🌟 Captura o lote da entrada
         };
       })
       .filter(
         (item) =>
-          Number(item.alertaMinimo) > 0 &&
-          Number(item.quantidade) <= Number(item.alertaMinimo)
+          Number(item.alertaMinimo) > 0 && 
+          Number(item.quantidade) > 0 && // 🌟 Remove os lotes que já estão ZERADOS
+          Number(item.quantidade) <= Number(item.alertaMinimo) // Mantém apenas os que estão abaixo/no limite
       )
       .sort((a, b) => a.quantidade - b.quantidade);
-  }, [estoqueDetalhado, episMap]);
+  }, [entradas, episMap, tamanhosMap]);
 
   const valorEstoqueDetalhado = useMemo(() => {
     const mapa = {};
@@ -274,36 +305,39 @@ const entregasHojeDetalhadas = useMemo(() => {
         };
       }
 
-      mapa[chave].quantidade += Number(entrada.quantidadeAtual || 0);
-      mapa[chave].valorTotal +=
-        Number(entrada.quantidadeAtual || 0) *
-        Number(entrada.valor_unitario || 0);
+      const qtd = Number(entrada.quantidadeAtual || 0);
+      const valorUnit = Number(entrada.valor_unitario || 0);
+
+      mapa[chave].quantidade += qtd;
+      mapa[chave].valorTotal += qtd * valorUnit;
     });
 
     return Object.values(mapa)
       .filter((item) => Number(item.quantidade) > 0)
       .sort((a, b) => b.valorTotal - a.valorTotal);
   }, [entradas, episMap, tamanhosMap]);
-  // ======= BLOCO CORRIGIDO: resumo =======
+
+  // ======= BLOCO: resumo =======
   const resumo = useMemo(() => {
     const hojeISO = obterHojeISO();
-    const [ano, mes, dia] = hojeISO.split("-");
-    const hojeBR = `${dia}/${mes}/${ano}`; 
+    const anoMesISO = hojeISO.substring(0, 7); 
+    const [ano, mes] = anoMesISO.split("-");
+    const mesAnoBR = `${mes}/${ano}`; 
 
     const totalItens = entradas.reduce(
       (acc, entrada) => acc + Number(entrada.quantidadeAtual || 0),
       0
     );
 
-    // Atualizado com a verificação dupla
-    const entregasHoje = entregas.filter((entrega) => {
-      const data = String(entrega.data_entrega || "").substring(0, 10);
-      return data === hojeISO || data === hojeBR;
+    const entregasMes = entregas.filter((entrega) => {
+      const dataRaw = String(entrega.data_entrega || "");
+      return dataRaw.startsWith(anoMesISO) || dataRaw.includes(mesAnoBR);
     }).length;
 
-    // Atualizado com a verificação dupla
     const devolucoesHoje = devolucoes.filter((devolucao) => {
       const data = String(devolucao.data_devolucao || "").substring(0, 10);
+      const [anoD, mesD, diaD] = hojeISO.split("-");
+      const hojeBR = `${diaD}/${mesD}/${anoD}`; 
       return data === hojeISO || data === hojeBR;
     }).length;
 
@@ -319,7 +353,7 @@ const entregasHojeDetalhadas = useMemo(() => {
 
     return {
       totalItens,
-      entregasHoje,
+      entregasMes, 
       devolucoesHoje,
       alertas,
       valorTotal,
@@ -333,7 +367,8 @@ const entregasHojeDetalhadas = useMemo(() => {
     carregandoResumo,
     resumo,
     estoqueDetalhado,
-    entregasHojeDetalhadas,
+    entregasMesDetalhadas, 
+    entregasTodasDetalhadas, 
     alertasDetalhados,
     valorEstoqueDetalhado,
     carregarResumo,
