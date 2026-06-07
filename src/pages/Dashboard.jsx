@@ -21,7 +21,7 @@ function Dashboard({ usuarioLogado }) {
     carregandoResumo,
     resumo,
     estoqueDetalhado,
-    entregasTodasDetalhadas, // 🌟 Modificado para receber o histórico completo
+    entregasTodasDetalhadas,
     alertasDetalhados,
     valorEstoqueDetalhado,
     carregarResumo,
@@ -76,12 +76,42 @@ function Dashboard({ usuarioLogado }) {
       };
     }
 
-    if (detalheCardAberto === "entregas") {
+    
+    
+
+
+   if (detalheCardAberto === "entregas") {
+      const entregasAgrupadasMap = {};
+
+      (entregasTodasDetalhadas || []).forEach((item) => {
+        // 🌟 O PULO DO GATO:
+        // Pega o "2-item-0", separa pelo traço "-", e usa apenas o "2" como chave!
+        // Se por acaso vier sem ID (fallback), usa data + matricula.
+        const chave = item.id ? item.id.split('-')[0] : `${item.data}-${item.matricula}`;
+
+        if (!entregasAgrupadasMap[chave]) {
+          entregasAgrupadasMap[chave] = {
+            id: chave, 
+            data: item.data,
+            funcionario: item.funcionario,
+            matricula: item.matricula,
+            totalVolumes: 0,
+            itens: [], 
+          };
+        }
+
+        entregasAgrupadasMap[chave].itens.push(item);
+        entregasAgrupadasMap[chave].totalVolumes += Number(item.quantidade || 1);
+      });
+
+      const entregasAgrupadas = Object.values(entregasAgrupadasMap);
+
+
       return {
-        titulo: "Histórico de Entregas", // 🌟 Texto atualizado
-        subtitulo: "Lista completa de itens entregues. Utilize os filtros abaixo para buscar por datas ou termos.", // 🌟 Texto atualizado
+        titulo: "Histórico de Entregas",
+        subtitulo: "Clique na linha da entrega para visualizar os itens detalhados.",
         icon: "🚀",
-        dados: entregasTodasDetalhadas, // 🌟 Passando a lista completa para o modal
+        dados: entregasAgrupadas, // Passamos os dados já agrupados
         colunas: [
           {
             key: "data",
@@ -102,6 +132,16 @@ function Dashboard({ usuarioLogado }) {
               </div>
             ),
           },
+          {
+            key: "totalVolumes",
+            label: "Total de Volumes",
+            render: (item) => (
+              <span className="font-bold text-gray-800">{item.totalVolumes}</span>
+            ),
+          },
+        ],
+        // 🌟 NOVO: Configuração das colunas expansíveis (Accordion)
+        subColunas: [
           {
             key: "item",
             label: "Item entregue",
@@ -125,9 +165,9 @@ function Dashboard({ usuarioLogado }) {
       };
     }
 
-if (detalheCardAberto === "alertas") {
+    if (detalheCardAberto === "alertas") {
       return {
-        titulo: "Lotes com Alerta de Estoque Baixo", // 🌟 Título mais comercial
+        titulo: "Lotes com Alerta de Estoque Baixo",
         subtitulo:
           "Lotes ativos que atingiram ou estão abaixo do nível de alerta mínimo configurado.",
         icon: "⚠️",
@@ -142,7 +182,7 @@ if (detalheCardAberto === "alertas") {
           },
           {
             key: "lote",
-            label: "Lote / CA", // 🌟 Nova coluna adicionada
+            label: "Lote / CA",
             render: (item) => (
               <span className="inline-flex px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-mono font-bold border border-slate-200">
                 {item.lote}
@@ -160,7 +200,7 @@ if (detalheCardAberto === "alertas") {
           },
           {
             key: "quantidade",
-            label: "Qtd. Atual", // 🌟 UI melhorada simulando a sua outra tela
+            label: "Qtd. Atual",
             render: (item) => (
               <div className="flex flex-col gap-0.5">
                 <span className="font-bold text-amber-700 bg-amber-50 px-3 py-0.5 rounded-lg border border-amber-200 text-center w-fit text-sm">
@@ -234,14 +274,16 @@ if (detalheCardAberto === "alertas") {
       icon: "",
       dados: [],
       colunas: [],
+      subColunas: null, // Evita undefined em modais que não usam expansão
     };
   }, [
     detalheCardAberto,
     estoqueDetalhado,
-    entregasTodasDetalhadas, // 🌟 Atualizado para refletir a nova variável
+    entregasTodasDetalhadas,
     alertasDetalhados,
     valorEstoqueDetalhado,
   ]);
+
 
   const cardsPrincipais = [
     {
@@ -258,7 +300,7 @@ if (detalheCardAberto === "alertas") {
       id: "entregas",
       titulo: "Entregas no Mês",
       valor: carregandoResumo ? "--" : resumo.entregasMes,
-      descricao: "Clique para pesquisar no histórico", // 🌟 Descrição ajustada
+      descricao: "Clique para pesquisar no histórico",
       icone: "🚀",
       iconeBox: "bg-purple-50 text-purple-600",
       ring: "hover:border-purple-200 hover:bg-purple-50/40",
@@ -422,6 +464,7 @@ if (detalheCardAberto === "alertas") {
         icon={detalheCardAtual.icon}
         dados={detalheCardAtual.dados}
         colunas={detalheCardAtual.colunas}
+        subColunas={detalheCardAtual.subColunas} // 🌟 NOVO: repassando prop
         onClose={fecharDetalheCard}
       />
 

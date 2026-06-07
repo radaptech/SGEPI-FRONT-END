@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, Fragment } from "react";
 
 function ModalDetalhesDashboard({
   aberto,
@@ -6,20 +6,24 @@ function ModalDetalhesDashboard({
   subtitulo,
   icon,
   colunas = [],
+  subColunas = null, // 🌟 NOVO: Colunas para os itens internos da entrega
+  chaveSubItens = "itens", // 🌟 NOVO: Nome da propriedade no objeto que guarda o array de itens
   dados = [],
   tipo = "tabela",
   onClose,
 }) {
   const [paginaAtual, setPaginaAtual] = useState(1);
-
   const [busca, setBusca] = useState("");
   const [dataInicial, setDataInicial] = useState("");
   const [dataFinal, setDataFinal] = useState("");
+  
+  // 🌟 NOVO: Controle de qual linha está expandida (accordion)
+  const [linhaExpandida, setLinhaExpandida] = useState(null);
 
   const itensPorPagina = 10;
 
-  // 🌟 NOVO: Identifica se este modal específico deve exibir o filtro de datas
-  const temFiltroDeDatasNoConteudo = titulo === "Histórico de Entregas" || titulo === "Entregas do mês";
+  const temFiltroDeDatasNoConteudo =
+    titulo === "Histórico de Entregas" || titulo === "Entregas do mês" || titulo === "Entregas no mês";
 
   const obterDataDoItem = (item) => {
     return (
@@ -35,24 +39,17 @@ function ModalDetalhesDashboard({
 
   const normalizarData = (valor) => {
     if (!valor) return null;
-
-    if (valor instanceof Date) {
-      return valor;
-    }
-
+    if (valor instanceof Date) return valor;
     if (typeof valor === "string") {
       const valorLimpo = valor.trim();
-
       if (valorLimpo.includes("/")) {
         const [dia, mes, ano] = valorLimpo.split("/");
         if (dia && mes && ano) {
           return new Date(`${ano}-${mes}-${dia}T00:00:00`);
         }
       }
-
       return new Date(valorLimpo);
     }
-
     return new Date(valor);
   };
 
@@ -66,7 +63,6 @@ function ModalDetalhesDashboard({
         Object.values(item || {}).some((valor) => {
           const valorTexto = String(valor ?? "").toLowerCase();
           const valorNormalizado = valorTexto.replace(",", ".");
-
           return (
             valorTexto.includes(textoBusca) ||
             valorNormalizado.includes(textoBuscaNormalizado)
@@ -76,19 +72,13 @@ function ModalDetalhesDashboard({
       const dataItemBruta = obterDataDoItem(item);
       const dataItem = normalizarData(dataItemBruta);
 
-      const inicio = dataInicial
-        ? new Date(`${dataInicial}T00:00:00`)
-        : null;
-
-      const fim = dataFinal
-        ? new Date(`${dataFinal}T23:59:59`)
-        : null;
-
+      const inicio = dataInicial ? new Date(`${dataInicial}T00:00:00`) : null;
+      const fim = dataFinal ? new Date(`${dataFinal}T23:59:59`) : null;
       const temFiltroDeData = inicio || fim;
 
       const passaData =
-        !temFiltroDeDatasNoConteudo || // Se o modal não suporta data, passa direto
-        !temFiltroDeData || // Se não preencheu os inputs, passa direto
+        !temFiltroDeDatasNoConteudo ||
+        !temFiltroDeData ||
         (dataItem &&
           !Number.isNaN(dataItem.getTime()) &&
           (!inicio || dataItem >= inicio) &&
@@ -100,18 +90,14 @@ function ModalDetalhesDashboard({
 
   useEffect(() => {
     setPaginaAtual(1);
+    setLinhaExpandida(null); // Fecha as linhas ao filtrar
   }, [dados, aberto, busca, dataInicial, dataFinal]);
 
-  // Limpar os filtros quando fechar o modal
   useEffect(() => {
-    if (!aberto) {
-      limparFiltros();
-    }
+    if (!aberto) limparFiltros();
   }, [aberto]);
 
-  const totalPaginas = Math.ceil(
-    (dadosFiltrados?.length || 0) / itensPorPagina
-  );
+  const totalPaginas = Math.ceil((dadosFiltrados?.length || 0) / itensPorPagina);
 
   const dadosPaginados = useMemo(() => {
     const inicio = (paginaAtual - 1) * itensPorPagina;
@@ -124,6 +110,11 @@ function ModalDetalhesDashboard({
     setDataInicial("");
     setDataFinal("");
     setPaginaAtual(1);
+    setLinhaExpandida(null);
+  };
+
+  const toggleExpandir = (idItem) => {
+    setLinhaExpandida(linhaExpandida === idItem ? null : idItem);
   };
 
   const temFiltrosAtivos = busca || dataInicial || dataFinal;
@@ -141,16 +132,12 @@ function ModalDetalhesDashboard({
                 <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-xl shrink-0">
                   {icon}
                 </div>
-
                 <div className="min-w-0">
-                  <h3 className="text-lg md:text-xl font-bold truncate">
-                    {titulo}
-                  </h3>
+                  <h3 className="text-lg md:text-xl font-bold truncate">{titulo}</h3>
                   <p className="text-sm text-slate-300 mt-1">{subtitulo}</p>
                 </div>
               </div>
             </div>
-
             <button
               type="button"
               onClick={onClose}
@@ -163,14 +150,11 @@ function ModalDetalhesDashboard({
 
         {/* CORPO */}
         <div className="p-4 md:p-6 overflow-y-auto flex-1">
-          {/* FILTROS */}
+          {/* FILTROS (Mantidos como estavam) */}
           <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            {/* A grade se adapta dependendo se tem inputs de data ou não */}
             <div className={`grid grid-cols-1 ${temFiltroDeDatasNoConteudo ? "md:grid-cols-[1.4fr_1fr_1fr_auto]" : "md:grid-cols-[1fr_auto]"} gap-3 items-end`}>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                  Buscar
-                </label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Buscar</label>
                 <input
                   type="text"
                   value={busca}
@@ -183,27 +167,12 @@ function ModalDetalhesDashboard({
               {temFiltroDeDatasNoConteudo && (
                 <>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                      Data inicial
-                    </label>
-                    <input
-                      type="date"
-                      value={dataInicial}
-                      onChange={(e) => setDataInicial(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Data inicial</label>
+                    <input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                   </div>
-
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                      Data final
-                    </label>
-                    <input
-                      type="date"
-                      value={dataFinal}
-                      onChange={(e) => setDataFinal(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Data final</label>
+                    <input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                   </div>
                 </>
               )}
@@ -217,12 +186,9 @@ function ModalDetalhesDashboard({
                 Limpar
               </button>
             </div>
-
             {temFiltrosAtivos && (
               <p className="mt-3 text-xs text-gray-500">
-                Filtros aplicados. Exibindo{" "}
-                <b>{dadosFiltrados.length}</b> de <b>{dados.length}</b>{" "}
-                registros.
+                Filtros aplicados. Exibindo <b>{dadosFiltrados.length}</b> de <b>{dados.length}</b> registros.
               </p>
             )}
           </div>
@@ -239,100 +205,154 @@ function ModalDetalhesDashboard({
                   <thead className="bg-gray-100 text-gray-600 text-sm uppercase">
                     <tr>
                       {colunas.map((coluna) => (
-                        <th
-                          key={coluna.key}
-                          className="p-4 font-semibold whitespace-nowrap"
-                        >
+                        <th key={coluna.key} className="p-4 font-semibold whitespace-nowrap">
                           {coluna.label}
                         </th>
                       ))}
+                      {/* Coluna extra para o ícone de expandir, se houver subColunas */}
+                      {subColunas && <th className="p-4 font-semibold w-10"></th>}
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {dadosPaginados.map((item, index) => (
-                      <tr
-                        key={item.id ?? index}
-                        className="hover:bg-gray-50 transition"
-                      >
-                        {colunas.map((coluna) => (
-                          <td
-                            key={`${coluna.key}-${item.id ?? index}`}
-                            className="p-4 text-sm text-gray-700 align-top"
+                    {dadosPaginados.map((item, index) => {
+                      const idItem = item.id ?? index;
+                      const isExpandido = linhaExpandida === idItem;
+                      const temSubItens = subColunas && item[chaveSubItens] && item[chaveSubItens].length > 0;
+
+                      return (
+                        <Fragment key={idItem}>
+                          {/* LINHA PRINCIPAL */}
+                          <tr
+                            className={`transition ${temSubItens ? "cursor-pointer hover:bg-blue-50/50" : "hover:bg-gray-50"}`}
+                            onClick={() => temSubItens && toggleExpandir(idItem)}
                           >
-                            {typeof coluna.render === "function"
-                              ? coluna.render(item)
-                              : item[coluna.key]}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
+                            {colunas.map((coluna) => (
+                              <td key={`${coluna.key}-${idItem}`} className="p-4 text-sm text-gray-700 align-middle">
+                                {typeof coluna.render === "function" ? coluna.render(item) : item[coluna.key]}
+                              </td>
+                            ))}
+                            
+                            {subColunas && (
+                              <td className="p-4 text-center text-gray-400">
+                                {temSubItens && (
+                                  <span className="text-xs">{isExpandido ? "▲" : "▼"}</span>
+                                )}
+                              </td>
+                            )}
+                          </tr>
+
+                          {/* LINHA EXPANDIDA (SUB-ITENS) */}
+                          {isExpandido && temSubItens && (
+                            <tr className="bg-slate-50">
+                              <td colSpan={colunas.length + 1} className="p-0 border-b border-gray-200">
+                                <div className="p-4 pl-8 border-l-4 border-blue-400 animate-fade-in">
+                                  <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">Itens desta entrega</h4>
+                                  <table className="w-full text-sm text-left bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                    <thead className="bg-gray-100 text-gray-600">
+                                      <tr>
+                                        {subColunas.map((sc) => (
+                                          <th key={sc.key} className="py-2 px-4 font-medium">{sc.label}</th>
+                                        ))}
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                      {item[chaveSubItens].map((subItem, subIdx) => (
+                                        <tr key={subIdx} className="hover:bg-gray-50">
+                                          {subColunas.map((sc) => (
+                                            <td key={sc.key} className="py-2 px-4 text-gray-700">
+                                              {typeof sc.render === "function" ? sc.render(subItem) : subItem[sc.key]}
+                                            </td>
+                                          ))}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
               {/* VERSÃO MOBILE */}
               <div className="md:hidden space-y-3">
-                {dadosPaginados.map((item, index) => (
-                  <div
-                    key={item.id ?? index}
-                    className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4"
-                  >
-                    <div className="space-y-2">
-                      {colunas.map((coluna) => (
-                        <div
-                          key={`${coluna.key}-${item.id ?? index}`}
-                          className="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-b-0 last:pb-0"
-                        >
-                          <span className="text-[11px] uppercase font-bold tracking-wide text-gray-400">
-                            {coluna.label}
-                          </span>
-                          <div className="text-sm text-gray-700">
-                            {typeof coluna.render === "function"
-                              ? coluna.render(item)
-                              : item[coluna.key]}
+                {dadosPaginados.map((item, index) => {
+                  const idItem = item.id ?? index;
+                  const isExpandido = linhaExpandida === idItem;
+                  const temSubItens = subColunas && item[chaveSubItens] && item[chaveSubItens].length > 0;
+
+                  return (
+                    <div key={idItem} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                      {/* CARD PRINCIPAL */}
+                      <div
+                        className={`p-4 ${temSubItens ? "cursor-pointer hover:bg-gray-50" : ""}`}
+                        onClick={() => temSubItens && toggleExpandir(idItem)}
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="space-y-2 flex-1">
+                            {colunas.map((coluna) => (
+                              <div key={`${coluna.key}-${idItem}`} className="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
+                                <span className="text-[11px] uppercase font-bold tracking-wide text-gray-400">
+                                  {coluna.label}
+                                </span>
+                                <div className="text-sm text-gray-700">
+                                  {typeof coluna.render === "function" ? coluna.render(item) : item[coluna.key]}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {subColunas && temSubItens && (
+                            <div className="p-2 text-gray-400 bg-gray-50 rounded-lg">
+                              <span className="text-xs">{isExpandido ? "▲" : "▼"}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* SUB-ITENS MOBILE */}
+                      {isExpandido && temSubItens && (
+                        <div className="bg-slate-50 p-4 border-t border-gray-200 border-l-4 border-blue-400">
+                          <span className="block text-xs font-bold text-gray-500 uppercase mb-3">Itens desta entrega:</span>
+                          <div className="space-y-3">
+                            {item[chaveSubItens].map((subItem, subIdx) => (
+                              <div key={subIdx} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                                {subColunas.map((sc) => (
+                                  <div key={sc.key} className="flex justify-between text-sm items-center gap-2">
+                                    <span className="text-gray-500 text-xs uppercase font-medium">{sc.label}:</span>
+                                    <span className="font-medium text-gray-700 text-right">
+                                      {typeof sc.render === "function" ? sc.render(subItem) : subItem[sc.key]}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
         </div>
 
-        {/* RODAPÉ */}
+        {/* RODAPÉ (Mantido como estava) */}
         {dadosFiltrados.length > 0 && (
           <div className="shrink-0 px-4 md:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-500">
-              Mostrando <b>{dadosPaginados.length}</b> de{" "}
-              <b>{dadosFiltrados.length}</b> registros
+              Mostrando <b>{dadosPaginados.length}</b> de <b>{dadosFiltrados.length}</b> registros
             </div>
-
             {totalPaginas > 1 && (
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={paginaAtual === 1}
-                  onClick={() => setPaginaAtual((pagina) => pagina - 1)}
-                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
-                >
-                  Anterior
-                </button>
-
-                <span className="text-sm text-gray-600 font-medium px-2">
-                  Página {paginaAtual} de {totalPaginas}
-                </span>
-
-                <button
-                  type="button"
-                  disabled={paginaAtual === totalPaginas}
-                  onClick={() => setPaginaAtual((pagina) => pagina + 1)}
-                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
-                >
-                  Próxima
-                </button>
+                <button type="button" disabled={paginaAtual === 1} onClick={() => setPaginaAtual((p) => p - 1)} className="px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition shadow-sm">Anterior</button>
+                <span className="text-sm text-gray-600 font-medium px-2">Página {paginaAtual} de {totalPaginas}</span>
+                <button type="button" disabled={paginaAtual === totalPaginas} onClick={() => setPaginaAtual((p) => p + 1)} className="px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition shadow-sm">Próxima</button>
               </div>
             )}
           </div>
