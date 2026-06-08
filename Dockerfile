@@ -31,8 +31,8 @@ RUN npm install -g serve
 # Copia APENAS os arquivos compilados do estágio anterior
 # ATENÇÃO: Se você usa Vite, a pasta gerada é 'dist'. 
 # Se usa Create React App, mude a palavra 'dist' abaixo para 'build'.
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/build ./build
 
 # O Railway injeta a variável $PORT automaticamente. 
 # O comando abaixo diz para o serve escutar nessa porta.
-CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT:-3000}"]
+CMD ["sh", "-c", "serve -s build -l tcp://0.0.0.0:${PORT:-3000}"]
