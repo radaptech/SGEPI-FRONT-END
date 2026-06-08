@@ -6,7 +6,6 @@ import { toast } from "react-toastify"; // 👈 Para os alertas bonitos
 
 // ==========================================
 // FUNÇÕES AUXILIARES GLOBAIS
-// (Movidas para fora do componente para não serem recriadas a cada renderização, melhorando a performance)
 // ==========================================
 const formatarMoeda = (valor) => {
   return new Intl.NumberFormat("pt-BR", {
@@ -60,27 +59,31 @@ function DashboardMaster({ usuarioLogado }) {
   const [carregando, setCarregando] = useState(false);
   const [modalNovaEmpresaAberto, setModalNovaEmpresaAberto] = useState(false);
 
-  // Busca todos os dados do painel em paralelo para ser mais rápido
+  // ESTADOS DA PAGINAÇÃO
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const empresasPorPagina = 3;
+
   const carregarDashboard = async () => {
     try {
       setCarregando(true);
 
-      const [
-        resumoResposta,
-        empresasResposta,
-        alertasResposta,
-        atividadesResposta,
-      ] = await Promise.all([
-        masterDashboardService.buscarResumo(),
-        masterDashboardService.buscarEmpresasRecentes(5),
-        masterDashboardService.buscarAlertas(),
-        masterDashboardService.buscarAtividadesRecentes(8),
-      ]);
+      const resumoResposta = await masterDashboardService.buscarResumo();
+      const empresasResposta = await masterDashboardService.buscarEmpresasRecentes();
+      
+      setResumo(resumoResposta?.data || resumoResposta || {});
+      setEmpresasRecentes(empresasResposta?.data || empresasResposta || []);
+      
+      // Volta para a página 1 sempre que os dados são atualizados
+      setPaginaAtual(1);
 
-      setResumo(resumoResposta || {});
-      setEmpresasRecentes(empresasResposta || []);
-      setAlertas(alertasResposta || []);
-      setAtividadesRecentes(atividadesResposta || []);
+      /* --- DEIXE COMENTADO ATÉ CRIAR AS ROTAS NO GO ---
+      const alertasResposta = await masterDashboardService.buscarAlertas();
+      const atividadesResposta = await masterDashboardService.buscarAtividadesRecentes(8);
+
+      setAlertas(alertasResposta?.data || []);
+      setAtividadesRecentes(atividadesResposta?.data || []);
+      -------------------------------------------------- */
+
     } catch (error) {
       console.error("Erro ao carregar dados do painel master:", error);
       toast.error("Erro ao carregar os dados do painel.");
@@ -93,19 +96,11 @@ function DashboardMaster({ usuarioLogado }) {
     carregarDashboard();
   }, []);
 
-  // Integração com o Backend em Go (Substituiu os cálculos manuais)
   const salvarNovaEmpresa = async (novaEmpresa) => {
     try {
-      // 1. Manda os dados para o Go salvar no Postgres
       await empresaService.criar(novaEmpresa);
-
-      // 2. Avisa que deu tudo certo
       toast.success("Empresa cadastrada com sucesso!");
-
-      // 3. Atualiza os dados da tela puxando as informações novas do banco
       await carregarDashboard();
-
-      // 4. Fecha o modal
       setModalNovaEmpresaAberto(false);
     } catch (error) {
       console.error("Erro ao salvar empresa:", error);
@@ -114,7 +109,6 @@ function DashboardMaster({ usuarioLogado }) {
     }
   };
 
-  // Cálculos memorizados (useMemo) evitam recálculo desnecessário
   const resumoSeguro = useMemo(() => {
     return {
       totalEmpresas: resumo?.totalEmpresas ?? 0,
@@ -140,6 +134,23 @@ function DashboardMaster({ usuarioLogado }) {
     if (!total) return 0;
     return Math.round((resumoSeguro.mensalidadesAtrasadas / total) * 100);
   }, [resumoSeguro]);
+
+
+  // ==========================================
+  // LÓGICA DE PAGINAÇÃO DAS EMPRESAS
+  // ==========================================
+  const indiceUltimaEmpresa = paginaAtual * empresasPorPagina;
+  const indicePrimeiraEmpresa = indiceUltimaEmpresa - empresasPorPagina;
+  const empresasPaginadas = empresasRecentes.slice(indicePrimeiraEmpresa, indiceUltimaEmpresa);
+  const totalPaginas = Math.ceil(empresasRecentes.length / empresasPorPagina);
+
+  const irParaPaginaAnterior = () => {
+    if (paginaAtual > 1) setPaginaAtual(paginaAtual - 1);
+  };
+
+  const irParaProximaPagina = () => {
+    if (paginaAtual < totalPaginas) setPaginaAtual(paginaAtual + 1);
+  };
 
   return (
     <div className="animate-fade-in min-h-screen bg-slate-100">
@@ -261,26 +272,58 @@ function DashboardMaster({ usuarioLogado }) {
             </div>
           </div>
 
+          {/* SEÇÃO DE DOMÍNIOS */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
             <TituloSecao
-              etiqueta="Financeiro"
-              titulo="Mensalidades"
-              descricao="Resumo dos pagamentos e pendências das empresas."
+              etiqueta="Acessos"
+              titulo="Domínios dos clientes"
+              descricao="Links diretos para os painéis de cada empresa (Multi-tenant)."
             />
 
-            <div className="grid grid-cols-1 gap-4 mt-6">
-              <MiniCard
-                titulo="Pagas"
-                descricao="Empresas em dia"
-                valor={resumoSeguro.mensalidadesPagas}
-                classe="bg-emerald-50 border-emerald-200 text-emerald-700"
-              />
-              <MiniCard
-                titulo="Atrasadas"
-                descricao="Pendências financeiras"
-                valor={resumoSeguro.mensalidadesAtrasadas}
-                classe="bg-red-50 border-red-200 text-red-700"
-              />
+            <div className="space-y-3 mt-6 overflow-y-auto max-h-[220px] pr-1">
+              {empresasRecentes.length === 0 ? (
+                <MensagemVazia texto="Nenhum domínio encontrado." />
+              ) : (
+                empresasRecentes.map((empresa, idx) => {
+                  const sub = empresa.subdominio || empresa.nome?.toLowerCase().replace(/\s+/g, '') || `cliente${idx}`;
+                  const urlCompleta = `https://${sub}.radaptech.com.br`;
+
+                  return (
+                    <div
+                      key={empresa.id || idx}
+                      className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-blue-50/50 transition group"
+                    >
+                      <div className="min-w-0 pr-3">
+                        <p className="text-sm font-bold text-slate-800 truncate">
+                          {empresa.nome}
+                        </p>
+                        <a
+                          href={urlCompleta}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate block mt-0.5"
+                        >
+                          {sub}.radaptech.com.br
+                        </a>
+                      </div>
+                      
+                      <a
+                        href={urlCompleta}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 shrink-0 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:border-blue-300 transition shadow-sm"
+                        title={`Acessar painel de ${empresa.nome}`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                          <polyline points="15 3 21 3 21 9"></polyline>
+                          <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                      </a>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -315,7 +358,7 @@ function DashboardMaster({ usuarioLogado }) {
 
         {/* LISTAS DE EMPRESAS E ATIVIDADES */}
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
             <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <TituloSecao
                 etiqueta="Clientes"
@@ -331,11 +374,12 @@ function DashboardMaster({ usuarioLogado }) {
               </button>
             </div>
 
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 flex-1">
               {empresasRecentes.length === 0 ? (
                 <MensagemVazia texto="Nenhuma empresa encontrada." />
               ) : (
-                empresasRecentes.map((empresa) => (
+                // 👈 O map agora renderiza as "empresasPaginadas" ao invés de todas
+                empresasPaginadas.map((empresa) => (
                   <EmpresaRecenteCard
                     key={empresa.id}
                     empresa={empresa}
@@ -346,6 +390,29 @@ function DashboardMaster({ usuarioLogado }) {
                 ))
               )}
             </div>
+
+            {/* CONTROLES DE PAGINAÇÃO INSERIDOS AQUI 👇 */}
+            {totalPaginas > 1 && (
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <button
+                  onClick={irParaPaginaAnterior}
+                  disabled={paginaAtual === 1}
+                  className="px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
+                >
+                  Anterior
+                </button>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Página {paginaAtual} de {totalPaginas}
+                </span>
+                <button
+                  onClick={irParaProximaPagina}
+                  disabled={paginaAtual === totalPaginas}
+                  className="px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
+                >
+                  Próxima
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
@@ -391,7 +458,6 @@ function DashboardMaster({ usuarioLogado }) {
 
 // ==========================================
 // SUB-COMPONENTES 
-// (Em um projeto gigante, estes poderiam ir para a pasta src/components/dashboard)
 // ==========================================
 
 function EmpresaRecenteCard({ empresa, formatarNumero, formatarMoeda, getStatusClass }) {
