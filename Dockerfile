@@ -1,30 +1,38 @@
-# =================================================================
-# ETAPA 1: BUILD (Compilando o React)
-# =================================================================
+# ==========================================
+# ESTÁGIO 1: Construir a aplicação (Build)
+# ==========================================
 FROM node:18-alpine AS builder
+
+# Define a pasta de trabalho dentro do contêiner
+WORKDIR /app
+
+# Copia os arquivos de dependência primeiro (melhora o cache do Docker)
+COPY package*.json ./
+
+# Instala as dependências
+RUN npm install
+
+# Copia o resto do código do repositório
+COPY . .
+
+# Roda o build do React (Gera a pasta 'dist' se for Vite, ou 'build' se for CRA)
+RUN npm run build
+
+# ==========================================
+# ESTÁGIO 2: Servir a aplicação na nuvem
+# ==========================================
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Copia os arquivos de dependência e instala
-COPY SGEEPI-FRONT-END/package*.json ./
-RUN npm install
+# Instala o pacote 'serve' globalmente para rodar o site
+RUN npm install -g serve
 
-# Copia o restante do código do front
-COPY SGEEPI-FRONT-END/ .
+# Copia APENAS os arquivos compilados do estágio anterior
+# ATENÇÃO: Se você usa Vite, a pasta gerada é 'dist'. 
+# Se usa Create React App, mude a palavra 'dist' abaixo para 'build'.
+COPY --from=builder /app/dist ./dist
 
-# Roda o comando que gera os arquivos estáticos na pasta /build
-RUN npm run build
-
-# =================================================================
-# ETAPA 2: NGINX (Servindo o React e roteando a API)
-# =================================================================
-FROM nginx:alpine
-
-# Copia o arquivo de configuração do Nginx que está lá no backend!
-COPY gestao-de-epi--backEnd/nginx.prod.conf /etc/nginx/nginx.conf
-
-# Pega os arquivos estáticos gerados na ETAPA 1 e joga na pasta padrão do Nginx
-COPY --from=builder /app/build /usr/share/nginx/html
-
-# A porta 80 do container já fica exposta automaticamente pela imagem do Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# O Railway injeta a variável $PORT automaticamente. 
+# O comando abaixo diz para o serve escutar nessa porta.
+CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT:-3000}"]
