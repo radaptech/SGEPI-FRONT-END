@@ -15,16 +15,16 @@ export const masterDashboardService = {
     return api.get(`${BASE_URL}/mensalidades`);
   },
 
-  buscarEmpresasRecentes: async (limite = 5) => {
-    return api.get(`${BASE_URL}/empresas-recentes?limite=${limite}`);
+  buscarEmpresasRecentes: async () => {
+    return api.get(`${BASE_URL}/empresas-recentes`);
   },
 
   buscarAlertas: async () => {
     return api.get(`${BASE_URL}/alertas`);
   },
 
-  buscarAtividadesRecentes: async (limite = 10) => {
-    return api.get(`${BASE_URL}/atividades-recentes?limite=${limite}`);
+  buscarAtividadesRecentes: async () => {
+    return api.get(`${BASE_URL}/atividades-recentes`);
   },
 
   buscarDadosCompletos: async () => {
