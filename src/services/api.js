@@ -24,19 +24,9 @@ function getToken() {
 function getTenantId() {
     const hostname = window.location.hostname;
 
-    // Se estiver local
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-        return "teste"; 
-    }
 
     const partes = hostname.split(".");
-    
-    // 2. LÓGICA DE TENANT PARA HOMOLOGAÇÃO
-    // Se acessar frigopaiva.homolog.radaptech.com.br -> retorna "frigopaiva"
-    // Se acessar homolog.radaptech.com.br -> retorna "frigopaiva" (fallback para testes)
-    if (partes[0] === "homolog") {
-        return "frigopaiva"; 
-    }
+
 
     return partes[0]; 
 }
