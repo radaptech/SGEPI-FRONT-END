@@ -1,33 +1,28 @@
-import api from './api';
+import { api } from './api'; // 👈Correção do import com chaves
 
-const realizarLogin = async (email, senha) => {
+export const realizarLogin = async (email, senha) => {
   try {
-    // Faz o POST para a rota /login. 
-    // O seu arquivo api.js já vai colocar a BASE_URL correta e o header X-tenant-ID
     const resposta = await api.post('/login', {
       email: email,
       senha: senha
     });
 
-    // Supondo que o seu back-end retorne o token dentro de um campo chamado "token"
+    
+
+    // Se o backend Go envia o token dentro da chave "token" (ex: {"token": "eyJ..."})
     if (resposta && resposta.token) {
-      // Salva o token no localStorage para as próximas requisições (como o api.js já espera)
-      localStorage.setItem('token', resposta.token);
+      sessionStorage.setItem('token', resposta.token);
       
       console.log("Login realizado com sucesso!");
-      
-      // Retorna true para o seu formulário saber que deu certo e redirecionar o usuário
       return true; 
     } else {
+      // Se a resposta vier sem token (um erro inesperado da API)
       throw new Error("Token não retornado pelo servidor.");
     }
 
   } catch (erro) {
-    // O erro já vem tratado com a mensagem certa lá do seu 'extrairMensagemErro'
     console.error("Falha no login:", erro.message);
     
-    // Você pode jogar esse erro para o estado do seu componente para mostrar na tela
-    alert(`Erro ao entrar: ${erro.message}`); 
     return false;
   }
 };

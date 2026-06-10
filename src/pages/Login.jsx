@@ -47,8 +47,8 @@ function Login({ onLogin }) {
         throw new Error("Dados do usuário não retornados pelo servidor.");
       }
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("usuario", JSON.stringify(usuario));
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("usuario", JSON.stringify(usuario));
 
       if (onLogin) {
         onLogin({

@@ -18,16 +18,12 @@ function normalizarRota(rota = "") {
 }
 
 function getToken() {
-    return localStorage.getItem("token");
+    return sessionStorage.getItem("token");
 }
 
 function getTenantId() {
     const hostname = window.location.hostname;
-
-
     const partes = hostname.split(".");
-
-
     return partes[0]; 
 }
 
@@ -37,6 +33,8 @@ function isFormData(valor) {
 
 function montarHeaders(headersExtras = {}, body = null) {
     const token = getToken();
+
+    console.log("MONTANDO CABEÇALHOS! O token encontrado foi:", token ? "ACHOU UM TOKEN" : "VAAAAAAZIO");
     const tenantId = getTenantId();
     const headers = { ...headersExtras };
 
@@ -90,14 +88,28 @@ async function tratarResposta(resposta, rota, mensagemErroPadrao) {
     const dados = await lerCorpoResposta(resposta);
     
     if (!resposta.ok) {
+        
+        // ==========================================
+        if (resposta.status === 401) {
+            console.warn("Token expirado ou inválido.");
+            sessionStorage.removeItem("token"); // Limpa o token estragado
+            
+            // Só redireciona se a URL atual NÃO for a de login 
+            // E se a rota da API que deu erro NÃO for a tentativa de "/login"
+            if (window.location.pathname !== "/login" && !rota.includes("/login")) {
+                toast.error("Sua sessão expirou. Por favor, faça login novamente.");
+                window.location.href = "/login"; 
+            }
+        }
+        // ==========================================
+
         const fallback = `${mensagemErroPadrao} ${rota}`;
         const mensagemFinal = extrairMensagemErro(dados, fallback);
         
-        // DISPARA O ERRO GLOBALMENTE AQUI
+        // Dispara o erro globalmente 
+        // (Isso vai mostrar o erro de "Senha incorreta" quando a rota for /login)
         toast.error(mensagemFinal);
         
-        // Mantemos o throw para que os componentes saibam que deu erro 
-        // e possam desligar os loadings (setCarregando(false))
         throw new Error(mensagemFinal);
     }
     
