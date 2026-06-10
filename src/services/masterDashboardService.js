@@ -30,6 +30,15 @@ export const masterDashboardService = {
   buscarDadosCompletos: async () => {
     return api.get(BASE_URL);
   },
+
+
+  buscarEmpresas: async () => {
+    return api.get(`${BASE_URL}/dados-empresas`);
+  },
+
+  buscarUsuarios: async () => {
+    return api.get(`${BASE_URL}/dados-usuarios`); 
+  }
 };
 
 export default masterDashboardService;

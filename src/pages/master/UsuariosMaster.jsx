@@ -1,68 +1,65 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import ModalNovoUsuario from "../../components/modals/master/ModalNovoUsuario";
 import ModalEditarUsuario from "../../components/modals/master/ModalEditarUsuario";
 import ModalConfirmarBloqueioUsuario from "../../components/modals/master/ModalConfirmarBloqueioUsuario";
 
-const usuariosIniciais = [
-  {
-    id: 1,
-    nome: "Paloma Brito",
-    email: "rickmanbrown.dev@gmail.com",
-    tipo: "SUPER_ADMIN",
-    empresa: "SGEPI Plataforma",
-    status: "Ativo",
-    ultimoAcesso: "Hoje, 10:30",
-  },
-  {
-    id: 2,
-    nome: "Administrador Alfa",
-    email: "admin@alfaseguranca.com",
-    tipo: "ADMIN_EMPRESA",
-    empresa: "Alfa Segurança do Trabalho",
-    status: "Ativo",
-    ultimoAcesso: "Hoje, 09:42",
-  },
-  {
-    id: 3,
-    nome: "Usuário Beta",
-    email: "usuario@betaconstrucoes.com",
-    tipo: "USUARIO_EMPRESA",
-    empresa: "Beta Construções",
-    status: "Ativo",
-    ultimoAcesso: "Ontem, 16:10",
-  },
-  {
-    id: 4,
-    nome: "Carlos Mendes",
-    email: "admin@campoforte.com",
-    tipo: "ADMIN_EMPRESA",
-    empresa: "Metalúrgica Campo Forte",
-    status: "Bloqueado",
-    ultimoAcesso: "20/04/2026",
-  },
-];
+ import masterDashboardService from "../../services/masterDashboardService";
 
 function UsuariosMaster() {
   const [busca, setBusca] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("Todos");
-  const [usuarios, setUsuarios] = useState(usuariosIniciais);
+  
+  const [usuarios, setUsuarios] = useState([]);
+  const [empresasDisponiveis, setEmpresasDisponiveis] = useState([]); // Novo estado para as empresas
 
   const [usuarioSelecionado, setUsuarioSelecionado] = useState(null);
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [modalBloqueioAberto, setModalBloqueioAberto] = useState(false);
 
+  // ==========================================
+  // INTEGRAÇÃO COM O SERVIÇO DE API
+  // ==========================================
+useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        // 1. Busca os usuários (COMENTADO TEMPORARIAMENTE pois a rota não existe no back-end)
+        // const resUsuarios = await masterDashboardService.buscarUsuarios(); 
+        // const dadosUsuarios = resUsuarios?.data || resUsuarios;            
+        // setUsuarios(Array.isArray(dadosUsuarios) ? dadosUsuarios : []);    
+
+        // 2. Busca as empresas para o Select do Modal (MANTIDO)
+        const resEmpresas = await masterDashboardService.buscarEmpresas(); 
+        const dadosEmpresas = resEmpresas?.data || resEmpresas;            
+        setEmpresasDisponiveis(Array.isArray(dadosEmpresas) ? dadosEmpresas : []); 
+        
+      } catch (error) {
+        console.error("Falha ao buscar dados do servidor:", error);
+        setEmpresasDisponiveis([]); 
+      }
+    };
+
+    carregarDados();
+  }, []);
+  // ==========================================
+
   const usuariosFiltrados = useMemo(() => {
+    if (!Array.isArray(usuarios)) return [];
+
     return usuarios.filter((usuario) => {
+      const nome = usuario?.nome || "";
+      const email = usuario?.email || "";
+      const empresa = usuario?.empresa || "";
+      const tipo = usuario?.tipo || "";
+
       const termo = busca.toLowerCase().trim();
 
       const combinaBusca =
-        usuario.nome.toLowerCase().includes(termo) ||
-        usuario.email.toLowerCase().includes(termo) ||
-        usuario.empresa.toLowerCase().includes(termo);
+        nome.toLowerCase().includes(termo) ||
+        email.toLowerCase().includes(termo) ||
+        empresa.toLowerCase().includes(termo);
 
-      const combinaTipo =
-        tipoFiltro === "Todos" || usuario.tipo === tipoFiltro;
+      const combinaTipo = tipoFiltro === "Todos" || tipo === tipoFiltro;
 
       return combinaBusca && combinaTipo;
     });
@@ -96,7 +93,6 @@ function UsuariosMaster() {
         usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario
       )
     );
-
     fecharModais();
   };
 
@@ -106,13 +102,11 @@ function UsuariosMaster() {
         usuario.id === usuarioSelecionado.id
           ? {
               ...usuario,
-              status:
-                usuario.status === "Bloqueado" ? "Ativo" : "Bloqueado",
+              status: usuario.status === "Bloqueado" ? "Ativo" : "Bloqueado",
             }
           : usuario
       )
     );
-
     fecharModais();
   };
 
@@ -303,6 +297,7 @@ function UsuariosMaster() {
         aberto={modalNovoAberto}
         onFechar={fecharModais}
         onSalvar={salvarNovoUsuario}
+        empresas={empresasDisponiveis} // <-- Prop repassada aqui
       />
 
       <ModalEditarUsuario
@@ -310,6 +305,7 @@ function UsuariosMaster() {
         usuario={usuarioSelecionado}
         onFechar={fecharModais}
         onSalvar={salvarEdicaoUsuario}
+        empresas={empresasDisponiveis} // <-- Prop repassada aqui (opcional)
       />
 
       <ModalConfirmarBloqueioUsuario

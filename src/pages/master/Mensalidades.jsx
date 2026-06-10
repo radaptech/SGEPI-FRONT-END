@@ -1,80 +1,67 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import ModalNovaMensalidade from "../../components/modals/master/ModalNovaMensalidade";
 import ModalEditarMensalidade from "../../components/modals/master/ModalEditarMensalidade";
 import ModalConfirmarPagamento from "../../components/modals/master/ModalConfirmarPagamento";
 
-const mensalidadesIniciais = [
-  {
-    id: 1,
-    empresa: "Alfa Segurança do Trabalho",
-    plano: "Profissional",
-    valor: 450,
-    vencimento: "2026-05-10",
-    pagamento: "2026-04-28",
-    formaPagamento: "PIX",
-    status: "Pago",
-  },
-  {
-    id: 2,
-    empresa: "Beta Construções",
-    plano: "Premium",
-    valor: 750,
-    vencimento: "2026-05-15",
-    pagamento: "",
-    formaPagamento: "",
-    status: "Pendente",
-  },
-  {
-    id: 3,
-    empresa: "Metalúrgica Campo Forte",
-    plano: "Básico",
-    valor: 250,
-    vencimento: "2026-04-05",
-    pagamento: "",
-    formaPagamento: "",
-    status: "Atrasado",
-  },
-  {
-    id: 4,
-    empresa: "Nordeste Serviços Industriais",
-    plano: "Profissional",
-    valor: 450,
-    vencimento: "2026-04-20",
-    pagamento: "",
-    formaPagamento: "",
-    status: "Atrasado",
-  },
-];
+// ⚠️ Lembre-se de importar o seu serviço de API aqui futuramente:
+// import masterDashboardService from "../../services/masterDashboardService";
 
 function Mensalidades() {
   const [statusFiltro, setStatusFiltro] = useState("Todos");
-  const [mensalidades, setMensalidades] = useState(mensalidadesIniciais);
+  const [mensalidades, setMensalidades] = useState([]); // Estado inicializado vazio
 
   const [mensalidadeSelecionada, setMensalidadeSelecionada] = useState(null);
   const [modalNovaAberto, setModalNovaAberto] = useState(false);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
 
+  // ==========================================
+  // INTEGRAÇÃO COM O SERVIÇO DE API
+  // ==========================================
+  useEffect(() => {
+    const carregarMensalidades = async () => {
+      try {
+        // Exemplo chamando o serviço (descomente/ajuste quando criar a rota)
+        // const response = await masterDashboardService.buscarMensalidades();
+        // const dados = response?.data || response;
+        // setMensalidades(Array.isArray(dados) ? dados : []);
+      } catch (error) {
+        console.error("Falha ao buscar mensalidades do servidor:", error);
+        setMensalidades([]); // Proteção em caso de erro
+      }
+    };
+
+    carregarMensalidades();
+  }, []);
+  // ==========================================
+
   const mensalidadesFiltradas = useMemo(() => {
+    // Proteção de array
+    if (!Array.isArray(mensalidades)) return [];
+    
     if (statusFiltro === "Todos") return mensalidades;
-    return mensalidades.filter((item) => item.status === statusFiltro);
+    return mensalidades.filter((item) => item?.status === statusFiltro);
   }, [mensalidades, statusFiltro]);
 
   const totais = useMemo(() => {
+    // Retorna tudo zerado se não houver dados válidos ainda
+    if (!Array.isArray(mensalidades)) {
+      return { recebido: 0, pendente: 0, total: 0, atrasadas: 0 };
+    }
+
     const recebido = mensalidades
-      .filter((item) => item.status === "Pago")
-      .reduce((acc, item) => acc + Number(item.valor || 0), 0);
+      .filter((item) => item?.status === "Pago")
+      .reduce((acc, item) => acc + Number(item?.valor || 0), 0);
 
     const pendente = mensalidades
-      .filter((item) => item.status === "Pendente" || item.status === "Atrasado")
-      .reduce((acc, item) => acc + Number(item.valor || 0), 0);
+      .filter((item) => item?.status === "Pendente" || item?.status === "Atrasado")
+      .reduce((acc, item) => acc + Number(item?.valor || 0), 0);
 
     return {
       recebido,
       pendente,
       total: recebido + pendente,
-      atrasadas: mensalidades.filter((item) => item.status === "Atrasado")
-        .length,
+      atrasadas: mensalidades.filter((item) => item?.status === "Atrasado").length,
     };
   }, [mensalidades]);
 

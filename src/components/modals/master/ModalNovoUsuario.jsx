@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
-function ModalNovoUsuario({ aberto, onFechar, onSalvar }) {
+// Adicione a prop "empresas = []" na assinatura da função
+function ModalNovoUsuario({ aberto, onFechar, onSalvar, empresas = [] }) {
   const [form, setForm] = useState({
     nome: "",
     email: "",
@@ -49,8 +50,10 @@ function ModalNovoUsuario({ aberto, onFechar, onSalvar }) {
       return;
     }
 
-    if (!form.empresa.trim()) {
-      setErro("Informe a empresa vinculada.");
+    // Se o usuário for Super Admin, talvez não precise de empresa. 
+    // Mantenho a validação caso seja regra de negócio obrigatória para todos.
+    if (!form.empresa.trim() && form.tipo !== "SUPER_ADMIN") {
+      setErro("Selecione a empresa vinculada.");
       return;
     }
 
@@ -68,6 +71,16 @@ function ModalNovoUsuario({ aberto, onFechar, onSalvar }) {
     onSalvar?.(novoUsuario);
     limpar();
   };
+
+  // Transforma o array de empresas do BD no formato que o CampoSelect espera
+  // { value: "nome", label: "nome" }
+  const opcoesEmpresas = [
+    { value: "", label: "Selecione uma empresa..." }, // Opção vazia padrão
+    ...empresas.map((emp) => ({
+      value: emp.nome, // Mude para emp.id se o backend precisar do ID da empresa
+      label: emp.nome,
+    })),
+  ];
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
@@ -128,18 +141,26 @@ function ModalNovoUsuario({ aberto, onFechar, onSalvar }) {
               placeholder="usuario@email.com"
             />
 
-            <CampoTexto
+            {/* AQUI FOI ALTERADO: Substituído CampoTexto por CampoSelect */}
+            <CampoSelect
               label="Empresa"
-              obrigatorio
+              obrigatorio={form.tipo !== "SUPER_ADMIN"} // Opcional se for Super Admin
               value={form.empresa}
               onChange={(e) => alterarCampo("empresa", e.target.value)}
-              placeholder="Empresa vinculada"
+              options={opcoesEmpresas}
+              disabled={form.tipo === "SUPER_ADMIN"} // Se quiser bloquear a seleção
             />
 
             <CampoSelect
               label="Tipo"
               value={form.tipo}
-              onChange={(e) => alterarCampo("tipo", e.target.value)}
+              onChange={(e) => {
+                alterarCampo("tipo", e.target.value);
+                // Se mudar para Super Admin, pode querer limpar a empresa
+                if (e.target.value === "SUPER_ADMIN") {
+                  alterarCampo("empresa", "");
+                }
+              }}
               options={[
                 { value: "SUPER_ADMIN", label: "Super Admin" },
                 { value: "ADMIN_EMPRESA", label: "Admin Empresa" },
@@ -214,20 +235,24 @@ function CampoTexto({
   );
 }
 
-function CampoSelect({ label, value, onChange, options }) {
+// Atualizei o CampoSelect para aceitar o disabled (útil para o Super Admin) e obrigatorio
+function CampoSelect({ label, value, onChange, options, disabled, obrigatorio }) {
   return (
     <div>
       <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.16em] mb-2">
-        {label}
+        {label} {obrigatorio && <span className="text-red-500">*</span>}
       </label>
 
       <select
         value={value}
         onChange={onChange}
-        className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 bg-white text-sm text-slate-700"
+        disabled={disabled}
+        className={`w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 bg-white text-sm text-slate-700 ${
+          disabled ? "opacity-50 cursor-not-allowed bg-slate-50" : ""
+        }`}
       >
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
+          <option key={option.value} value={option.value} disabled={option.value === ""}>
             {option.label}
           </option>
         ))}

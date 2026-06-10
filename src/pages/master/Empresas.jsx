@@ -1,89 +1,64 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import ModalNovaEmpresa from "../../components/modals/master/ModalNovaEmpresa";
 import ModalVerEmpresa from "../../components/modals/master/ModalVerEmpresa";
 import ModalEditarEmpresa from "../../components/modals/master/ModalEditarEmpresa";
 
-const empresasIniciais = [
-  {
-    id: 1,
-    nome: "Alfa Segurança do Trabalho",
-    cnpj: "12.345.678/0001-90",
-    responsavel: "Marcos Oliveira",
-    email: "contato@alfaseguranca.com",
-    telefone: "(83) 99999-0001",
-    plano: "Profissional",
-    funcionarios: 82,
-    epis: 310,
-    mensalidade: 450,
-    vencimento: "2026-05-10",
-    status: "Ativa",
-  },
-  {
-    id: 2,
-    nome: "Beta Construções",
-    cnpj: "22.111.333/0001-44",
-    responsavel: "Renata Lima",
-    email: "financeiro@betaconstrucoes.com",
-    telefone: "(83) 99999-0002",
-    plano: "Premium",
-    funcionarios: 146,
-    epis: 620,
-    mensalidade: 750,
-    vencimento: "2026-05-15",
-    status: "Ativa",
-  },
-  {
-    id: 3,
-    nome: "Metalúrgica Campo Forte",
-    cnpj: "33.456.789/0001-12",
-    responsavel: "Carlos Mendes",
-    email: "admin@campoforte.com",
-    telefone: "(83) 99999-0003",
-    plano: "Básico",
-    funcionarios: 38,
-    epis: 112,
-    mensalidade: 250,
-    vencimento: "2026-04-05",
-    status: "Atrasada",
-  },
-  {
-    id: 4,
-    nome: "Nordeste Serviços Industriais",
-    cnpj: "44.987.654/0001-55",
-    responsavel: "Juliana Rocha",
-    email: "suporte@nordesteservicos.com",
-    telefone: "(83) 99999-0004",
-    plano: "Profissional",
-    funcionarios: 64,
-    epis: 198,
-    mensalidade: 450,
-    vencimento: "2026-04-20",
-    status: "Bloqueada",
-  },
-];
+import { masterDashboardService } from "../../services/masterDashboardService"; 
 
 function Empresas() {
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("Todos");
-  const [empresas, setEmpresas] = useState(empresasIniciais);
+  const [empresas, setEmpresas] = useState([]); 
 
   const [empresaSelecionada, setEmpresaSelecionada] = useState(null);
   const [modalNovaEmpresaAberto, setModalNovaEmpresaAberto] = useState(false);
   const [modalVerAberto, setModalVerAberto] = useState(false);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
 
+  // ==========================================
+  // INTEGRAÇÃO COM O SERVIÇO DE API
+  // ==========================================
+useEffect(() => {
+    const carregarEmpresas = async () => {
+      try {
+        const response = await masterDashboardService.buscarEmpresas();
+        
+        // 1. Tenta pegar response.data. Se não existir, pega o próprio response.
+        const dados = response?.data || response;
+
+        // 2. Garante que estamos salvando um Array no estado. Se vier nulo/indefinido, salva []
+        setEmpresas(Array.isArray(dados) ? dados : []); 
+      } catch (error) {
+        console.error("Falha ao buscar empresas do servidor:", error);
+        setEmpresas([]); // Em caso de erro na requisição, garante o array vazio
+      }
+    };
+
+    carregarEmpresas();
+  }, []);
+  // ==========================================
+
   const empresasFiltradas = useMemo(() => {
+    // PROTEÇÃO EXTRA: Se por algum motivo bizarro 'empresas' não for array, retorna vazio e evita o crash
+    if (!Array.isArray(empresas)) return [];
+
     return empresas.filter((empresa) => {
+      // Proteção para evitar que campos nulos quebrem o toLowerCase()
+      const nome = empresa?.nome || "";
+      const cnpj = empresa?.cnpj || "";
+      const responsavel = empresa?.responsavel || "";
+      const email = empresa?.email || "";
+      const status = empresa?.status || "";
+
       const termo = busca.toLowerCase().trim();
 
       const combinaBusca =
-        empresa.nome.toLowerCase().includes(termo) ||
-        empresa.cnpj.toLowerCase().includes(termo) ||
-        empresa.responsavel.toLowerCase().includes(termo) ||
-        empresa.email.toLowerCase().includes(termo);
+        nome.toLowerCase().includes(termo) ||
+        cnpj.toLowerCase().includes(termo) ||
+        responsavel.toLowerCase().includes(termo) ||
+        email.toLowerCase().includes(termo);
 
-      const combinaStatus =
-        statusFiltro === "Todos" || empresa.status === statusFiltro;
+      const combinaStatus = statusFiltro === "Todos" || status === statusFiltro;
 
       return combinaBusca && combinaStatus;
     });
