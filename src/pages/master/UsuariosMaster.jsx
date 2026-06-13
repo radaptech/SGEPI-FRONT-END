@@ -3,14 +3,14 @@ import ModalNovoUsuario from "../../components/modals/master/ModalNovoUsuario";
 import ModalEditarUsuario from "../../components/modals/master/ModalEditarUsuario";
 import ModalConfirmarBloqueioUsuario from "../../components/modals/master/ModalConfirmarBloqueioUsuario";
 
- import masterDashboardService from "../../services/masterDashboardService";
+import masterDashboardService from "../../services/masterDashboardService";
 
 function UsuariosMaster() {
   const [busca, setBusca] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("Todos");
   
   const [usuarios, setUsuarios] = useState([]);
-  const [empresasDisponiveis, setEmpresasDisponiveis] = useState([]); // Novo estado para as empresas
+  const [empresasDisponiveis, setEmpresasDisponiveis] = useState([]);
 
   const [usuarioSelecionado, setUsuarioSelecionado] = useState(null);
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
@@ -20,13 +20,13 @@ function UsuariosMaster() {
   // ==========================================
   // INTEGRAÇÃO COM O SERVIÇO DE API
   // ==========================================
-useEffect(() => {
+  useEffect(() => {
     const carregarDados = async () => {
       try {
         // 1. Busca os usuários (COMENTADO TEMPORARIAMENTE pois a rota não existe no back-end)
-        // const resUsuarios = await masterDashboardService.buscarUsuarios(); 
-        // const dadosUsuarios = resUsuarios?.data || resUsuarios;            
-        // setUsuarios(Array.isArray(dadosUsuarios) ? dadosUsuarios : []);    
+         const resUsuarios = await masterDashboardService.buscarUsuarios(); 
+         const dadosUsuarios = resUsuarios?.data || resUsuarios;            
+        setUsuarios(Array.isArray(dadosUsuarios) ? dadosUsuarios : []);    
 
         // 2. Busca as empresas para o Select do Modal (MANTIDO)
         const resEmpresas = await masterDashboardService.buscarEmpresas(); 
@@ -102,7 +102,7 @@ useEffect(() => {
         usuario.id === usuarioSelecionado.id
           ? {
               ...usuario,
-              status: usuario.status === "Bloqueado" ? "Ativo" : "Bloqueado",
+              status: !usuario.status, // Inverte o booleano (true vira false, false vira true)
             }
           : usuario
       )
@@ -137,14 +137,16 @@ useEffect(() => {
   };
 
   const getStatusClass = (status) => {
-    switch (status) {
-      case "Ativo":
-        return "bg-emerald-50 text-emerald-700 border-emerald-100";
-      case "Bloqueado":
-        return "bg-red-50 text-red-700 border-red-100";
-      default:
-        return "bg-slate-50 text-slate-600 border-slate-100";
+    // Se status for true (Ativo)
+    if (status === true) {
+      return "bg-emerald-50 text-emerald-700 border-emerald-100";
     }
+    // Se status for false (Bloqueado)
+    if (status === false) {
+      return "bg-red-50 text-red-700 border-red-100";
+    }
+    // Fallback de segurança
+    return "bg-slate-50 text-slate-600 border-slate-100";
   };
 
   return (
@@ -210,7 +212,7 @@ useEffect(() => {
 
             <tbody className="divide-y divide-slate-100">
               {usuariosFiltrados.map((usuario) => {
-                const bloqueado = usuario.status === "Bloqueado";
+                const bloqueado = usuario.status === false; // Bloqueado é quando o status for false
 
                 return (
                   <tr key={usuario.id} className="hover:bg-slate-50 transition">
@@ -243,7 +245,7 @@ useEffect(() => {
                           usuario.status
                         )}`}
                       >
-                        {usuario.status}
+                        {usuario.status ? "Ativo" : "Bloqueado"}
                       </span>
                     </td>
 
@@ -297,7 +299,7 @@ useEffect(() => {
         aberto={modalNovoAberto}
         onFechar={fecharModais}
         onSalvar={salvarNovoUsuario}
-        empresas={empresasDisponiveis} // <-- Prop repassada aqui
+        empresas={empresasDisponiveis}
       />
 
       <ModalEditarUsuario
@@ -305,7 +307,7 @@ useEffect(() => {
         usuario={usuarioSelecionado}
         onFechar={fecharModais}
         onSalvar={salvarEdicaoUsuario}
-        empresas={empresasDisponiveis} // <-- Prop repassada aqui (opcional)
+        empresas={empresasDisponiveis}
       />
 
       <ModalConfirmarBloqueioUsuario
