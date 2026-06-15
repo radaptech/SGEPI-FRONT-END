@@ -23,12 +23,10 @@ function UsuariosMaster() {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        // 1. Busca os usuários (COMENTADO TEMPORARIAMENTE pois a rota não existe no back-end)
-         const resUsuarios = await masterDashboardService.buscarUsuarios(); 
-         const dadosUsuarios = resUsuarios?.data || resUsuarios;            
+        const resUsuarios = await masterDashboardService.buscarUsuarios(); 
+        const dadosUsuarios = resUsuarios?.data || resUsuarios;            
         setUsuarios(Array.isArray(dadosUsuarios) ? dadosUsuarios : []);    
 
-        // 2. Busca as empresas para o Select do Modal (MANTIDO)
         const resEmpresas = await masterDashboardService.buscarEmpresas(); 
         const dadosEmpresas = resEmpresas?.data || resEmpresas;            
         setEmpresasDisponiveis(Array.isArray(dadosEmpresas) ? dadosEmpresas : []); 
@@ -82,9 +80,24 @@ function UsuariosMaster() {
     setModalBloqueioAberto(false);
   };
 
-  const salvarNovoUsuario = (novoUsuario) => {
-    setUsuarios((prev) => [novoUsuario, ...prev]);
-    fecharModais();
+  // ==========================================
+  // AQUI: Integração da rota de Salvar Usuário
+  // ==========================================
+  const salvarNovoUsuario = async (novoUsuario) => {
+    try {
+      // 1. Envia os dados para a API (Back-end)
+      console.log("Enviando para API:", novoUsuario);
+      await masterDashboardService.salvarUsuarios(novoUsuario);
+
+      // 2. Atualiza a tela imediatamente (ou você pode chamar carregarDados() novamente para buscar do banco)
+      setUsuarios((prev) => [novoUsuario, ...prev]);
+      
+      // 3. Fecha o modal
+      fecharModais();
+    } catch (error) {
+      console.error("Erro ao salvar usuário:", error);
+      alert("Houve um erro ao salvar o usuário. Tente novamente.");
+    }
   };
 
   const salvarEdicaoUsuario = (usuarioAtualizado) => {
@@ -102,7 +115,7 @@ function UsuariosMaster() {
         usuario.id === usuarioSelecionado.id
           ? {
               ...usuario,
-              status: !usuario.status, // Inverte o booleano (true vira false, false vira true)
+              status: !usuario.status, 
             }
           : usuario
       )
@@ -110,26 +123,28 @@ function UsuariosMaster() {
     fecharModais();
   };
 
+  // Atualizado para os novos tipos do banco
   const getTipoLabel = (tipo) => {
     switch (tipo) {
-      case "SUPER_ADMIN":
-        return "Super Admin";
-      case "ADMIN_EMPRESA":
-        return "Admin Empresa";
-      case "USUARIO_EMPRESA":
-        return "Usuário Empresa";
+      case "super_admin":
+        return "Master";
+      case "admin":
+        return "Administrador";
+      case "colaborador":
+        return "Colaborador";
       default:
         return tipo;
     }
   };
 
+  // Atualizado para os novos tipos do banco
   const getTipoClass = (tipo) => {
     switch (tipo) {
-      case "SUPER_ADMIN":
+      case "super_admin":
         return "bg-violet-50 text-violet-700 border-violet-100";
-      case "ADMIN_EMPRESA":
+      case "admin":
         return "bg-sky-50 text-sky-700 border-sky-100";
-      case "USUARIO_EMPRESA":
+      case "colaborador":
         return "bg-slate-50 text-slate-600 border-slate-100";
       default:
         return "bg-slate-50 text-slate-600 border-slate-100";
@@ -137,15 +152,12 @@ function UsuariosMaster() {
   };
 
   const getStatusClass = (status) => {
-    // Se status for true (Ativo)
     if (status === true) {
       return "bg-emerald-50 text-emerald-700 border-emerald-100";
     }
-    // Se status for false (Bloqueado)
     if (status === false) {
       return "bg-red-50 text-red-700 border-red-100";
     }
-    // Fallback de segurança
     return "bg-slate-50 text-slate-600 border-slate-100";
   };
 
@@ -191,9 +203,10 @@ function UsuariosMaster() {
             className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-400 bg-white"
           >
             <option value="Todos">Todos os tipos</option>
-            <option value="SUPER_ADMIN">Super Admin</option>
-            <option value="ADMIN_EMPRESA">Admin Empresa</option>
-            <option value="USUARIO_EMPRESA">Usuário Empresa</option>
+            {/* Atualizado para os novos tipos do banco */}
+            <option value="super_admin">Master</option>
+            <option value="admin">Administrador</option>
+            <option value="colaborador">Colaborador</option>
           </select>
         </div>
 
@@ -212,7 +225,7 @@ function UsuariosMaster() {
 
             <tbody className="divide-y divide-slate-100">
               {usuariosFiltrados.map((usuario) => {
-                const bloqueado = usuario.status === false; // Bloqueado é quando o status for false
+                const bloqueado = usuario.status === false;
 
                 return (
                   <tr key={usuario.id} className="hover:bg-slate-50 transition">

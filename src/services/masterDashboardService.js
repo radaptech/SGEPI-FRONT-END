@@ -38,6 +38,10 @@ export const masterDashboardService = {
 
   buscarUsuarios: async () => {
     return api.get(`${BASE_URL}/dados-usuarios`); 
+  },
+
+  salvarUsuarios: async (usuarios) => {
+    return api.post(`${BASE_URL}/salvar-usuarios`, usuarios);
   }
 };
 
