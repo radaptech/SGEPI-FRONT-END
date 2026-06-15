@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 
-// Adicione a prop "empresas = []" na assinatura da função
 function ModalNovoUsuario({ aberto, onFechar, onSalvar, empresas = [] }) {
   const [form, setForm] = useState({
     nome: "",
     email: "",
     empresa: "",
-    tipo: "USUARIO_EMPRESA",
+    tipo: "colaborador", 
     status: "Ativo",
     senhaTemporaria: "",
   });
@@ -25,7 +24,7 @@ function ModalNovoUsuario({ aberto, onFechar, onSalvar, empresas = [] }) {
       nome: "",
       email: "",
       empresa: "",
-      tipo: "USUARIO_EMPRESA",
+      tipo: "colaborador", 
       status: "Ativo",
       senhaTemporaria: "",
     });
@@ -50,34 +49,44 @@ function ModalNovoUsuario({ aberto, onFechar, onSalvar, empresas = [] }) {
       return;
     }
 
-    // Se o usuário for Super Admin, talvez não precise de empresa. 
-    // Mantenho a validação caso seja regra de negócio obrigatória para todos.
-    if (!form.empresa.trim() && form.tipo !== "SUPER_ADMIN") {
+    if (!form.empresa && form.tipo !== "super_admin") {
       setErro("Selecione a empresa vinculada.");
       return;
     }
 
-    const novoUsuario = {
-      id: Date.now(),
+    // 1. OBJETO PARA A API
+    const payloadApi = {
       nome: form.nome.trim(),
       email: form.email.trim(),
-      empresa: form.empresa.trim(),
-      tipo: form.tipo,
-      status: form.status,
-      ultimoAcesso: "Nunca acessou",
-      senhaTemporaria: form.senhaTemporaria.trim(),
+      senha: form.senhaTemporaria.trim(),
+      role: form.tipo, 
+      status: form.status === "Ativo", 
     };
 
-    onSalvar?.(novoUsuario);
+    // Só adiciona a chave empresaId se realmente houver uma empresa selecionada
+    if (form.empresa) {
+      payloadApi.empresaId = Number(form.empresa);
+    }
+
+    // 2. OBJETO PARA A TELA
+    const novoUsuarioParaTela = {
+      id: Date.now(), 
+      nome: form.nome.trim(),
+      email: form.email.trim(),
+      empresa: empresas.find(emp => Number(emp.id) === Number(form.empresa))?.nome || "Sem empresa",
+      tipo: form.tipo,
+      status: form.status === "Ativo",
+      ultimoAcesso: "Nunca acessou", 
+    };
+
+    onSalvar?.(payloadApi, novoUsuarioParaTela);
     limpar();
   };
 
-  // Transforma o array de empresas do BD no formato que o CampoSelect espera
-  // { value: "nome", label: "nome" }
   const opcoesEmpresas = [
-    { value: "", label: "Selecione uma empresa..." }, // Opção vazia padrão
+    { value: "", label: "Selecione uma empresa..." },
     ...empresas.map((emp) => ({
-      value: emp.nome, // Mude para emp.id se o backend precisar do ID da empresa
+      value: emp.id, 
       label: emp.nome,
     })),
   ];
@@ -141,30 +150,23 @@ function ModalNovoUsuario({ aberto, onFechar, onSalvar, empresas = [] }) {
               placeholder="usuario@email.com"
             />
 
-            {/* AQUI FOI ALTERADO: Substituído CampoTexto por CampoSelect */}
             <CampoSelect
               label="Empresa"
-              obrigatorio={form.tipo !== "SUPER_ADMIN"} // Opcional se for Super Admin
+              obrigatorio={form.tipo !== "super_admin"} 
               value={form.empresa}
               onChange={(e) => alterarCampo("empresa", e.target.value)}
               options={opcoesEmpresas}
-              disabled={form.tipo === "SUPER_ADMIN"} // Se quiser bloquear a seleção
+              // Removido o disabled
             />
 
             <CampoSelect
               label="Tipo"
               value={form.tipo}
-              onChange={(e) => {
-                alterarCampo("tipo", e.target.value);
-                // Se mudar para Super Admin, pode querer limpar a empresa
-                if (e.target.value === "SUPER_ADMIN") {
-                  alterarCampo("empresa", "");
-                }
-              }}
+              onChange={(e) => alterarCampo("tipo", e.target.value)} // Removido o if que limpava a empresa
               options={[
-                { value: "SUPER_ADMIN", label: "Super Admin" },
-                { value: "ADMIN_EMPRESA", label: "Admin Empresa" },
-                { value: "USUARIO_EMPRESA", label: "Usuário Empresa" },
+                { value: "super_admin", label: "Master" },
+                { value: "admin", label: "Administrador" },
+                { value: "colaborador", label: "Colaborador" },
               ]}
             />
 
@@ -181,9 +183,7 @@ function ModalNovoUsuario({ aberto, onFechar, onSalvar, empresas = [] }) {
             <CampoTexto
               label="Senha temporária"
               value={form.senhaTemporaria}
-              onChange={(e) =>
-                alterarCampo("senhaTemporaria", e.target.value)
-              }
+              onChange={(e) => alterarCampo("senhaTemporaria", e.target.value)}
               placeholder="Opcional por enquanto"
             />
           </div>
@@ -235,7 +235,6 @@ function CampoTexto({
   );
 }
 
-// Atualizei o CampoSelect para aceitar o disabled (útil para o Super Admin) e obrigatorio
 function CampoSelect({ label, value, onChange, options, disabled, obrigatorio }) {
   return (
     <div>

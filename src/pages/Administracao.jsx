@@ -4,7 +4,7 @@ import AbaFuncoes from "./administracao/AbaFuncoes";
 import AbaFuncionarios from "./administracao/AbaFuncionario";
 import AbaEpis from "./administracao/AbaEpi";
 import AbaFornecedores from "./administracao/AbaFornecedores";
-import AbaColaboradores from "./administracao/AbaColaboradores";
+
 
 function Administracao() {
   const [abaAtiva, setAbaAtiva] = useState("departamentos");
@@ -89,17 +89,6 @@ function Administracao() {
         </button>
 
         <button
-          onClick={() => setAbaAtiva("colaboradores")}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
-            abaAtiva === "colaboradores"
-              ? "bg-slate-800 text-white shadow-md"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }`}
-        >
-          👤 Colaboradores
-        </button>
-
-        <button
           onClick={() => setAbaAtiva("epis")}
           className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
             abaAtiva === "epis"
@@ -116,7 +105,6 @@ function Administracao() {
         {abaAtiva === "departamentos" && <AbaDepartamentos />}
         {abaAtiva === "funcoes" && <AbaFuncoes />}
         {abaAtiva === "funcionarios" && <AbaFuncionarios />}
-        {abaAtiva === "colaboradores" && <AbaColaboradores />}
         {abaAtiva === "epis" && <AbaEpis />}
       </div>
     </div>

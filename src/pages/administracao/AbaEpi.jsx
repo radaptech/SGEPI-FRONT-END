@@ -118,6 +118,67 @@ export default function AbaEpis() {
     setPaginaAtual(1);
   }, [buscaEpi]);
 
+  // ==========================================
+  // LÓGICA DE VALIDADE E CORES DO CA
+  // ==========================================
+  const verificarStatusCA = (dataString) => {
+    if (!dataString || dataString === "---" || dataString === "N/A") return "normal";
+
+    let dataFormatada;
+    if (dataString.includes("/")) {
+      const [dia, mes, ano] = dataString.split("/");
+      dataFormatada = new Date(`${ano}-${mes}-${dia}T00:00:00`);
+    } else if (dataString.includes("-")) {
+      dataFormatada = new Date(`${dataString}T00:00:00`);
+    } else {
+      return "normal";
+    }
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    // Cria uma data "limite" de 15 dias pra frente
+    const dataAlerta = new Date(hoje);
+    dataAlerta.setDate(hoje.getDate() + 15);
+
+    if (dataFormatada < hoje) {
+      return "vencido";
+    } else if (dataFormatada <= dataAlerta) {
+      return "alerta";
+    }
+
+    return "normal";
+  };
+
+  // Mini-componente para renderizar a data já com a cor certa
+  const BadgeValidade = ({ data, mobile }) => {
+    const status = verificarStatusCA(data);
+
+    if (status === "vencido") {
+      return (
+        <span className="text-red-600 font-bold flex items-center gap-1" title="CA Vencido!">
+          🚨 {data}
+        </span>
+      );
+    }
+
+    if (status === "alerta") {
+      return (
+        <span className="text-orange-500 font-bold flex items-center gap-1" title="Vence em 15 dias ou menos!">
+          ⚠️ {data}
+        </span>
+      );
+    }
+
+    // Se estiver tudo OK (Normal)
+    return (
+      <span className={mobile ? "font-bold text-slate-700" : "text-slate-600 font-semibold"}>
+        {data}
+      </span>
+    );
+  };
+  // ==========================================
+
   return (
     <div className="animate-fade-in p-2 md:p-0">
       {toast && (
@@ -266,17 +327,30 @@ export default function AbaEpis() {
                   </td>
 
                   <td className="p-4 text-center">
-                    <span className="font-mono text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded border border-amber-100">
-                      {epi.ca}
-                    </span>
+                    {epi.ca !== "N/A" ? (
+                      <a
+                        href={`https://consultaca.com/${epi.ca}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Consultar CA"
+                        className="font-mono text-xs bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-900 transition-colors px-2 py-1 rounded border border-amber-100 cursor-pointer inline-flex items-center gap-1"
+                      >
+                        {epi.ca} <span className="text-[10px]">🔗</span>
+                      </a>
+                    ) : (
+                      <span className="font-mono text-xs bg-slate-50 text-slate-500 px-2 py-1 rounded border border-slate-200">
+                        N/A
+                      </span>
+                    )}
                   </td>
 
                   <td className="p-4 text-center text-slate-700 font-bold">
                     {epi.alerta_minimo ?? 0}
                   </td>
 
-                  <td className="p-4 text-slate-600 font-semibold">
-                    {epi.data_validadeCa}
+                  <td className="p-4">
+                    {/* Componente que verifica o vencimento no Desktop */}
+                    <BadgeValidade data={epi.data_validadeCa} mobile={false} />
                   </td>
 
                   <td className="p-4">
@@ -354,16 +428,27 @@ export default function AbaEpis() {
 
                 <div>
                   <span className="text-slate-400 block text-right">CA:</span>
-                  <span className="font-bold text-slate-700 block text-right font-mono">
-                    {epi.ca}
-                  </span>
+                  {epi.ca !== "N/A" ? (
+                    <a
+                      href={`https://consultaca.com/${epi.ca}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Consultar CA"
+                      className="font-bold text-blue-600 hover:text-blue-800 transition-colors block text-right font-mono flex items-center justify-end gap-1"
+                    >
+                      {epi.ca} <span className="text-[10px]">🔗</span>
+                    </a>
+                  ) : (
+                    <span className="font-bold text-slate-500 block text-right font-mono">
+                      N/A
+                    </span>
+                  )}
                 </div>
 
                 <div>
                   <span className="text-slate-400 block">Validade:</span>
-                  <span className="font-bold text-slate-700">
-                    {epi.data_validadeCa}
-                  </span>
+                  {/* Componente que verifica o vencimento no Mobile */}
+                  <BadgeValidade data={epi.data_validadeCa} mobile={true} />
                 </div>
 
                 <div>
