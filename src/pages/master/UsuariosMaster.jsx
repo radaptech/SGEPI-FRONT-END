@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { toast } from "react-toastify"; // Atualizado para o react-toastify
+
 import ModalNovoUsuario from "../../components/modals/master/ModalNovoUsuario";
 import ModalEditarUsuario from "../../components/modals/master/ModalEditarUsuario";
 import ModalConfirmarBloqueioUsuario from "../../components/modals/master/ModalConfirmarBloqueioUsuario";
@@ -33,6 +35,7 @@ function UsuariosMaster() {
         
       } catch (error) {
         console.error("Falha ao buscar dados do servidor:", error);
+        toast.error("Falha ao carregar os dados. Verifique sua conexão.");
         setEmpresasDisponiveis([]); 
       }
     };
@@ -81,49 +84,84 @@ function UsuariosMaster() {
   };
 
   // ==========================================
-  // AQUI: Integração da rota de Salvar Usuário
+  // INTEGRAÇÕES DE SALVAR, EDITAR E BLOQUEAR
   // ==========================================
-  const salvarNovoUsuario = async (novoUsuario) => {
-    try {
-      // 1. Envia os dados para a API (Back-end)
-      console.log("Enviando para API:", novoUsuario);
-      await masterDashboardService.salvarUsuarios(novoUsuario);
+  const salvarNovoUsuario = async (payloadApi, usuarioParaTela) => {
+    const promessa = masterDashboardService.salvarUsuarios(payloadApi);
 
-      // 2. Atualiza a tela imediatamente (ou você pode chamar carregarDados() novamente para buscar do banco)
-      setUsuarios((prev) => [novoUsuario, ...prev]);
-      
-      // 3. Fecha o modal
+    // react-toastify usa "pending" em vez de "loading"
+    toast.promise(promessa, {
+      pending: "Salvando novo usuário...",
+      success: "Usuário criado com sucesso!",
+      error: "Houve um erro ao salvar o usuário.",
+    });
+
+    try {
+      await promessa;
+      setUsuarios((prev) => [usuarioParaTela, ...prev]);
       fecharModais();
     } catch (error) {
       console.error("Erro ao salvar usuário:", error);
-      alert("Houve um erro ao salvar o usuário. Tente novamente.");
     }
   };
 
-  const salvarEdicaoUsuario = (usuarioAtualizado) => {
-    setUsuarios((prev) =>
-      prev.map((usuario) =>
-        usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario
-      )
-    );
-    fecharModais();
+  const salvarEdicaoUsuario = async (id, payloadApi, usuarioAtualizadoParaTela) => {
+    const promessa = masterDashboardService.editarUsuario(id, payloadApi);
+
+    toast.promise(promessa, {
+      pending: "Atualizando dados...",
+      success: "Usuário atualizado com sucesso!",
+      error: "Erro ao atualizar os dados do usuário.",
+    });
+
+    try {
+      await promessa;
+      setUsuarios((prev) =>
+        prev.map((usuario) =>
+          usuario.id === id ? usuarioAtualizadoParaTela : usuario
+        )
+      );
+      fecharModais();
+    } catch (error) {
+      console.error("Erro ao editar usuário:", error);
+    }
   };
 
-  const confirmarBloqueioUsuario = (usuarioSelecionado) => {
-    setUsuarios((prev) =>
-      prev.map((usuario) =>
-        usuario.id === usuarioSelecionado.id
-          ? {
-              ...usuario,
-              status: !usuario.status, 
-            }
-          : usuario
-      )
-    );
-    fecharModais();
+  const confirmarBloqueioUsuario = async (usuarioSelecionado) => {
+    const novoStatus = !usuarioSelecionado.status; 
+    
+    const acaoTexto = novoStatus ? "Desbloqueando..." : "Bloqueando...";
+    const sucessoTexto = novoStatus ? "Usuário ativado com sucesso!" : "Usuário bloqueado!";
+
+    const promessa = masterDashboardService.editarStatusUsuario(usuarioSelecionado.id, novoStatus);
+
+    toast.promise(promessa, {
+      pending: acaoTexto,
+      success: sucessoTexto,
+      error: "Houve um erro ao alterar o acesso.",
+    });
+
+    try {
+      await promessa;
+      setUsuarios((prev) =>
+        prev.map((usuario) =>
+          usuario.id === usuarioSelecionado.id
+            ? {
+                ...usuario,
+                status: novoStatus, 
+              }
+            : usuario
+        )
+      );
+      fecharModais();
+    } catch (error) {
+      console.error("Erro ao alterar status do usuário:", error);
+    }
   };
 
-  // Atualizado para os novos tipos do banco
+  // ==========================================
+  // ESTILOS E LABELS
+  // ==========================================
   const getTipoLabel = (tipo) => {
     switch (tipo) {
       case "super_admin":
@@ -137,7 +175,6 @@ function UsuariosMaster() {
     }
   };
 
-  // Atualizado para os novos tipos do banco
   const getTipoClass = (tipo) => {
     switch (tipo) {
       case "super_admin":
@@ -203,7 +240,6 @@ function UsuariosMaster() {
             className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-400 bg-white"
           >
             <option value="Todos">Todos os tipos</option>
-            {/* Atualizado para os novos tipos do banco */}
             <option value="super_admin">Master</option>
             <option value="admin">Administrador</option>
             <option value="colaborador">Colaborador</option>
@@ -320,7 +356,6 @@ function UsuariosMaster() {
         usuario={usuarioSelecionado}
         onFechar={fecharModais}
         onSalvar={salvarEdicaoUsuario}
-        empresas={empresasDisponiveis}
       />
 
       <ModalConfirmarBloqueioUsuario

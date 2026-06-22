@@ -42,7 +42,15 @@ export const masterDashboardService = {
 
   salvarUsuarios: async (usuarios) => {
     return api.post(`${BASE_URL}/salvar-usuarios`, usuarios);
-  }
+  },
+
+  editarUsuario: async (id, payload) => {
+    return api.patch(`${BASE_URL}/editar/${id}`, payload);
+  },
+
+  editarStatusUsuario: async (id, ativo) => {
+    return api.patch(`${BASE_URL}/usuario/${id}/status`, { ativo });
+  },
 };
 
 export default masterDashboardService;

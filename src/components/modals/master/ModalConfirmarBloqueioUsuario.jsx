@@ -8,7 +8,8 @@ function ModalConfirmarBloqueioUsuario({
 }) {
   if (!aberto || !usuario) return null;
 
-  const estaBloqueado = usuario.status === "Bloqueado";
+  // Atualizado para verificar o booleano que vem do banco
+  const estaBloqueado = usuario.status === false;
   const acao = estaBloqueado ? "desbloquear" : "bloquear";
 
   return (

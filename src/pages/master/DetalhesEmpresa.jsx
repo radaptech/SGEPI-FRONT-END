@@ -1,52 +1,61 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+// import { useParams } from "react-router-dom"; // Útil se você for pegar o ID da empresa pela URL
+// import masterDashboardService from "../../services/masterDashboardService"; // Onde ficará sua rota
 
 function DetalhesEmpresa() {
-  const empresa = {
-    id: 1,
-    nome: "Alfa Segurança do Trabalho",
-    cnpj: "12.345.678/0001-90",
-    responsavel: "Marcos Oliveira",
-    email: "contato@alfaseguranca.com",
-    telefone: "(83) 99999-0001",
-    endereco: "Rua das Indústrias, 120 - Campina Grande/PB",
-    plano: "Profissional",
-    status: "Ativa",
-    mensalidade: 450,
-    vencimento: "10/05/2026",
-    funcionarios: 82,
-    epis: 310,
-    entregas: 1240,
-    usuarios: 5,
-    ultimoAcesso: "Hoje, 09:42",
-  };
+  // Estados para gerenciar os dados da API
+  const [empresa, setEmpresa] = useState(null);
+  const [historico, setHistorico] = useState([]);
+  const [carregando, setCarregando] = useState(true);
 
-  const historico = [
-    {
-      id: 1,
-      titulo: "Mensalidade paga",
-      descricao: "Pagamento referente ao mês atual registrado com sucesso.",
-      data: "28/04/2026 às 10:12",
-    },
-    {
-      id: 2,
-      titulo: "Novo usuário criado",
-      descricao: "Administrador da empresa criou um novo usuário interno.",
-      data: "27/04/2026 às 16:40",
-    },
-    {
-      id: 3,
-      titulo: "Entregas registradas",
-      descricao: "Foram registradas 35 entregas de EPIs.",
-      data: "26/04/2026 às 14:20",
-    },
-  ];
+  // const { id } = useParams(); // Descomente para pegar o ID na URL (ex: /dashboard/empresas/1)
+
+  useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        setCarregando(true);
+        // ==========================================
+        // AQUI ENTRA A CHAMADA REAL PARA O BACK-END EM GO
+        // ==========================================
+        // const resEmpresa = await masterDashboardService.buscarDetalhesEmpresa(id);
+        // setEmpresa(resEmpresa.data);
+        
+        // const resHistorico = await masterDashboardService.buscarHistoricoEmpresa(id);
+        // setHistorico(resHistorico.data || []);
+      } catch (error) {
+        console.error("Erro ao carregar detalhes da empresa:", error);
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    carregarDados();
+  }, []);
 
   const formatarMoeda = (valor) => {
+    if (valor === undefined || valor === null) return "R$ 0,00";
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
     }).format(valor);
   };
+
+  // Previne que a tela quebre enquanto os dados estão chegando
+  if (carregando) {
+    return (
+      <div className="p-6 bg-slate-50 min-h-screen flex items-center justify-center">
+        <p className="text-slate-500 font-bold animate-pulse">Carregando detalhes da empresa...</p>
+      </div>
+    );
+  }
+
+  if (!empresa) {
+    return (
+      <div className="p-6 bg-slate-50 min-h-screen flex items-center justify-center">
+        <p className="text-slate-500 font-bold">Nenhuma empresa encontrada.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in p-6 bg-slate-50 min-h-screen">
@@ -65,10 +74,10 @@ function DetalhesEmpresa() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 mb-8">
-        <CardResumo titulo="Funcionários" valor={empresa.funcionarios} icone="👷" />
-        <CardResumo titulo="EPIs" valor={empresa.epis} icone="🦺" />
-        <CardResumo titulo="Entregas" valor={empresa.entregas} icone="📦" />
-        <CardResumo titulo="Usuários" valor={empresa.usuarios} icone="👥" />
+        <CardResumo titulo="Funcionários" valor={empresa.funcionarios || 0} icone="👷" />
+        <CardResumo titulo="EPIs" valor={empresa.epis || 0} icone="🦺" />
+        <CardResumo titulo="Entregas" valor={empresa.entregas || 0} icone="📦" />
+        <CardResumo titulo="Usuários" valor={empresa.usuarios || 0} icone="👥" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -88,14 +97,14 @@ function DetalhesEmpresa() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Campo label="Responsável" valor={empresa.responsavel} />
-            <Campo label="E-mail" valor={empresa.email} />
-            <Campo label="Telefone" valor={empresa.telefone} />
-            <Campo label="Plano" valor={empresa.plano} />
+            <Campo label="Responsável" valor={empresa.responsavel || "Não informado"} />
+            <Campo label="E-mail" valor={empresa.email || "Não informado"} />
+            <Campo label="Telefone" valor={empresa.telefone || "Não informado"} />
+            <Campo label="Plano" valor={empresa.plano || "Não informado"} />
             <Campo label="Mensalidade" valor={formatarMoeda(empresa.mensalidade)} />
-            <Campo label="Vencimento" valor={empresa.vencimento} />
-            <Campo label="Último acesso" valor={empresa.ultimoAcesso} />
-            <Campo label="Endereço" valor={empresa.endereco} />
+            <Campo label="Vencimento" valor={empresa.vencimento || "Não informado"} />
+            <Campo label="Último acesso" valor={empresa.ultimoAcesso || "Nunca acessou"} />
+            <Campo label="Endereço" valor={empresa.endereco || "Não informado"} />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-8">
@@ -128,17 +137,23 @@ function DetalhesEmpresa() {
           </h2>
 
           <div className="space-y-5">
-            {historico.map((item) => (
-              <div key={item.id} className="border-l-4 border-slate-300 pl-4">
-                <p className="text-sm font-black text-slate-700">
-                  {item.titulo}
-                </p>
-                <p className="text-sm text-slate-500 mt-1">{item.descricao}</p>
-                <p className="text-xs text-slate-400 mt-2 font-bold">
-                  {item.data}
-                </p>
-              </div>
-            ))}
+            {historico.length > 0 ? (
+              historico.map((item) => (
+                <div key={item.id} className="border-l-4 border-slate-300 pl-4">
+                  <p className="text-sm font-black text-slate-700">
+                    {item.titulo}
+                  </p>
+                  <p className="text-sm text-slate-500 mt-1">{item.descricao}</p>
+                  <p className="text-xs text-slate-400 mt-2 font-bold">
+                    {item.data}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500 font-medium">
+                Nenhum histórico recente encontrado.
+              </p>
+            )}
           </div>
         </div>
       </div>

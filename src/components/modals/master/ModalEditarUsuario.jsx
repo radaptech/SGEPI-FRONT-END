@@ -4,9 +4,7 @@ function ModalEditarUsuario({ aberto, usuario, onFechar, onSalvar }) {
   const [form, setForm] = useState({
     nome: "",
     email: "",
-    empresa: "",
-    tipo: "USUARIO_EMPRESA",
-    status: "Ativo",
+    tipo: "colaborador", // Atualizado para o novo padrão do banco
   });
 
   const [erro, setErro] = useState("");
@@ -16,9 +14,7 @@ function ModalEditarUsuario({ aberto, usuario, onFechar, onSalvar }) {
       setForm({
         nome: usuario.nome || "",
         email: usuario.email || "",
-        empresa: usuario.empresa || "",
-        tipo: usuario.tipo || "USUARIO_EMPRESA",
-        status: usuario.status || "Ativo",
+        tipo: usuario.tipo || "colaborador",
       });
 
       setErro("");
@@ -32,7 +28,7 @@ function ModalEditarUsuario({ aberto, usuario, onFechar, onSalvar }) {
     setErro("");
   };
 
-  const salvar = (e) => {
+ const salvar = (e) => {
     e.preventDefault();
 
     if (!form.nome.trim()) {
@@ -45,23 +41,24 @@ function ModalEditarUsuario({ aberto, usuario, onFechar, onSalvar }) {
       return;
     }
 
-    if (!form.empresa.trim()) {
-      setErro("Informe a empresa vinculada.");
-      return;
-    }
-
-    const usuarioAtualizado = {
-      ...usuario,
+    // 1. OBJETO PARA A API (Apenas os dados que o Go está esperando agora)
+    const payloadApi = {
       nome: form.nome.trim(),
       email: form.email.trim(),
-      empresa: form.empresa.trim(),
-      tipo: form.tipo,
-      status: form.status,
+      role: form.tipo,
     };
 
-    onSalvar?.(usuarioAtualizado);
-  };
+    // 2. OBJETO PARA A TELA (Atualiza apenas o visual da tabela)
+    const usuarioAtualizadoParaTela = {
+      ...usuario, // Copia o ID, último acesso, status e empresa originais
+      nome: form.nome.trim(),
+      email: form.email.trim(),
+      tipo: form.tipo,
+    };
 
+    // Envia o ID e os dois objetos para o UsuariosMaster.js
+    onSalvar?.(usuario.id, payloadApi, usuarioAtualizadoParaTela);
+  };
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
       <div
@@ -119,31 +116,14 @@ function ModalEditarUsuario({ aberto, usuario, onFechar, onSalvar }) {
               onChange={(e) => alterarCampo("email", e.target.value)}
             />
 
-            <CampoTexto
-              label="Empresa"
-              obrigatorio
-              value={form.empresa}
-              onChange={(e) => alterarCampo("empresa", e.target.value)}
-            />
-
             <CampoSelect
               label="Tipo"
               value={form.tipo}
               onChange={(e) => alterarCampo("tipo", e.target.value)}
               options={[
-                { value: "SUPER_ADMIN", label: "Super Admin" },
-                { value: "ADMIN_EMPRESA", label: "Admin Empresa" },
-                { value: "USUARIO_EMPRESA", label: "Usuário Empresa" },
-              ]}
-            />
-
-            <CampoSelect
-              label="Status"
-              value={form.status}
-              onChange={(e) => alterarCampo("status", e.target.value)}
-              options={[
-                { value: "Ativo", label: "Ativo" },
-                { value: "Bloqueado", label: "Bloqueado" },
+                { value: "super_admin", label: "Master" },
+                { value: "admin", label: "Administrador" },
+                { value: "colaborador", label: "Colaborador" },
               ]}
             />
           </div>
