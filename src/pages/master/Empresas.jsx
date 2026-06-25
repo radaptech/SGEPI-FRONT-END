@@ -3,12 +3,14 @@ import ModalNovaEmpresa from "../../components/modals/master/ModalNovaEmpresa";
 import ModalVerEmpresa from "../../components/modals/master/ModalVerEmpresa";
 import ModalEditarEmpresa from "../../components/modals/master/ModalEditarEmpresa";
 
-import { masterDashboardService } from "../../services/masterDashboardService"; 
+import masterDashboardService from "../../services/masterDashboardService"; 
 
 function Empresas() {
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("Todos");
+  
   const [empresas, setEmpresas] = useState([]); 
+  const [planosDisponiveis, setPlanosDisponiveis] = useState([]); // 👈 1. Estado para os planos
 
   const [empresaSelecionada, setEmpresaSelecionada] = useState(null);
   const [modalNovaEmpresaAberto, setModalNovaEmpresaAberto] = useState(false);
@@ -18,32 +20,34 @@ function Empresas() {
   // ==========================================
   // INTEGRAÇÃO COM O SERVIÇO DE API
   // ==========================================
-useEffect(() => {
-    const carregarEmpresas = async () => {
+  useEffect(() => {
+    const carregarDados = async () => {
       try {
-        const response = await masterDashboardService.buscarEmpresas();
-        
-        // 1. Tenta pegar response.data. Se não existir, pega o próprio response.
-        const dados = response?.data || response;
+        // Busca as empresas
+        const responseEmpresas = await masterDashboardService.buscarEmpresas();
+        const dadosEmpresas = responseEmpresas?.data || responseEmpresas;
+        setEmpresas(Array.isArray(dadosEmpresas) ? dadosEmpresas : []); 
 
-        // 2. Garante que estamos salvando um Array no estado. Se vier nulo/indefinido, salva []
-        setEmpresas(Array.isArray(dados) ? dados : []); 
+        // 👇 2. Busca os planos simultaneamente
+        const responsePlanos = await masterDashboardService.buscarPlanos();
+        const dadosPlanos = responsePlanos?.data || responsePlanos;
+        setPlanosDisponiveis(Array.isArray(dadosPlanos) ? dadosPlanos : []);
+
       } catch (error) {
-        console.error("Falha ao buscar empresas do servidor:", error);
-        setEmpresas([]); // Em caso de erro na requisição, garante o array vazio
+        console.error("Falha ao buscar dados do servidor:", error);
+        setEmpresas([]); 
+        setPlanosDisponiveis([]);
       }
     };
 
-    carregarEmpresas();
+    carregarDados();
   }, []);
   // ==========================================
 
   const empresasFiltradas = useMemo(() => {
-    // PROTEÇÃO EXTRA: Se por algum motivo bizarro 'empresas' não for array, retorna vazio e evita o crash
     if (!Array.isArray(empresas)) return [];
 
     return empresas.filter((empresa) => {
-      // Proteção para evitar que campos nulos quebrem o toLowerCase()
       const nome = empresa?.nome || "";
       const cnpj = empresa?.cnpj || "";
       const responsavel = empresa?.responsavel || "";
@@ -80,31 +84,30 @@ useEffect(() => {
     setModalEditarAberto(false);
   };
 
-  const salvarNovaEmpresa = (novaEmpresa) => {
+  // Atualizado para lidar com a nova empresa (ainda apenas no visual, até você integrar a API)
+  const salvarNovaEmpresa = async (payloadApi) => {
+    // Aqui você pode colocar a chamada da API depois (ex: empresaService.criar(payloadApi))
+    
+    // Pegando o nome do plano para aparecer bonito na tabela imediatamente
+    const planoSelecionado = planosDisponiveis.find(p => String(p.id) === String(payloadApi.planoId));
+
     const empresaFormatada = {
-      ...novaEmpresa,
-      id: novaEmpresa.id || Date.now(),
-      nome: novaEmpresa.nome || "Nova empresa",
-      cnpj: novaEmpresa.cnpj || "",
-      responsavel: novaEmpresa.responsavel || "",
-      email: novaEmpresa.email || "",
-      telefone: novaEmpresa.telefone || "",
-      plano: novaEmpresa.plano || "Básico",
-      funcionarios: Number(novaEmpresa.funcionarios || 0),
-      epis: Number(novaEmpresa.epis || 0),
-      mensalidade: Number(novaEmpresa.mensalidade || 0),
-      vencimento: novaEmpresa.vencimento || "",
-      status: novaEmpresa.status || "Em teste",
+      ...payloadApi,
+      id: Date.now(), // ID provisório até a API retornar o real
+      plano: planoSelecionado ? planoSelecionado.nome : "Básico", 
     };
 
     setEmpresas((prev) => [empresaFormatada, ...prev]);
     setModalNovaEmpresaAberto(false);
   };
 
-  const salvarEdicaoEmpresa = (empresaAtualizada) => {
+  // Atualizado para bater com a assinatura que fizemos no ModalEditarEmpresa
+  const salvarEdicaoEmpresa = async (id, payloadApi, empresaAtualizadaParaTela) => {
+    // Aqui você pode colocar a chamada da API depois (ex: empresaService.atualizar(id, payloadApi))
+
     setEmpresas((prev) =>
       prev.map((empresa) =>
-        empresa.id === empresaAtualizada.id ? empresaAtualizada : empresa
+        empresa.id === id ? empresaAtualizadaParaTela : empresa
       )
     );
 
@@ -232,7 +235,8 @@ useEffect(() => {
                   </td>
 
                   <td className="px-6 py-4 text-center font-bold text-slate-600">
-                    {empresa.plano || "-"}
+                    {/* Alterado para pegar planoNome, pois agora a API manda o planoId numérico */}
+                    {empresa.planoNome || empresa.plano || "-"}
                   </td>
 
                   <td className="px-6 py-4 text-center font-black text-slate-700">
@@ -299,6 +303,7 @@ useEffect(() => {
 
       <ModalNovaEmpresa
         aberto={modalNovaEmpresaAberto}
+        planos={planosDisponiveis} // 👇 3. Passando os planos pro modal de criação
         onFechar={() => setModalNovaEmpresaAberto(false)}
         onSalvar={salvarNovaEmpresa}
       />
@@ -312,6 +317,7 @@ useEffect(() => {
       <ModalEditarEmpresa
         aberto={modalEditarAberto}
         empresa={empresaSelecionada}
+        planos={planosDisponiveis} // 👇 4. Passando os planos pro modal de edição
         onFechar={fecharModais}
         onSalvar={salvarEdicaoEmpresa}
       />

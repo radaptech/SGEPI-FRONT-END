@@ -23,6 +23,22 @@ export const masterDashboardService = {
     return api.get(`${BASE_URL}/alertas`);
   },
 
+  buscarPlanos: async () => {
+    return api.get(`${BASE_URL}/planos`);
+  },
+
+  editarPlano: async (id, payload) => {
+    return api.patch(`${BASE_URL}/planos/${id}`, payload);
+  },
+
+  salvarPlano: async (payload) => {
+    return api.post(`${BASE_URL}/cadastrar-planos`, payload);
+  },
+
+  editarStatusPlano: async (id, status) => {
+    return api.patch(`${BASE_URL}/planos/${id}/status`, { status });
+  },
+
   buscarAtividadesRecentes: async () => {
     return api.get(`${BASE_URL}/atividades-recentes`);
   },

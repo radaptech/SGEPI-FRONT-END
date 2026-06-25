@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { api } from "../../services/api"; 
 import { toast } from "react-toastify";
+import masterDashboardService from "../../services/masterDashboardService"; // Importando o serviço correto
 import ModalNovoPlano from "../../components/modals/master/ModalNovoPlano";
 import ModalEditarPlano from "../../components/modals/master/ModalEditarPlano";
 
@@ -23,16 +23,12 @@ function Planos() {
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState(null);
 
-const carregarPlanos = async () => {
+  const carregarPlanos = async () => {
     try {
       setCarregando(true);
-      const resposta = await api.get("/painel/planos"); 
+      const resposta = await masterDashboardService.buscarPlanos(); 
       
-      // LOG DE INVESTIGAÇÃO: Aperte F12 e olhe o Console no navegador
-      console.log("🕵️ O que veio da API?", resposta);
-
-      // A MÁGICA: Pega o .data se existir, senão pega a própria resposta
-      const dados = resposta.data || resposta;
+      const dados = resposta?.data || resposta;
 
       if (Array.isArray(dados)) {
         setPlanos(dados);
@@ -42,6 +38,7 @@ const carregarPlanos = async () => {
       }
     } catch (error) {
       console.error("Erro ao buscar planos da API:", error);
+      toast.error("Erro ao carregar a lista de planos.");
       setPlanos([]);
     } finally {
       setCarregando(false);
@@ -63,53 +60,61 @@ const carregarPlanos = async () => {
     setPlanoSelecionado(null);
   };
 
-
-
-
-// ... resto do código ...
-
+  // ==========================================
+  // INTEGRAÇÕES DE SALVAR, EDITAR E BLOQUEAR
+  // ==========================================
   const salvarEdicaoPlano = async (planoAtualizado) => {
+    const promessa = masterDashboardService.editarPlano(planoAtualizado.id, planoAtualizado);
+
+    toast.promise(promessa, {
+      pending: "Atualizando o plano...",
+      success: "Plano atualizado com sucesso!",
+      error: "Erro ao atualizar o plano.",
+    });
+
     try {
-      const resposta = await api.put(`/painel/planos/${planoAtualizado.id}`, planoAtualizado);
-      
+      await promessa;
       await carregarPlanos();
       fecharModais();
-      
-      const mensagem = resposta.data?.sucesso || resposta.data?.message || "Plano atualizado com sucesso!";
-      // 2. Trocamos o alert pelo toast de sucesso
-      toast.success(mensagem);
-
     } catch (error) {
       console.error("Erro ao atualizar plano:", error);
-      // 3. Trocamos o alert pelo toast de erro
-      toast.error("Erro ao atualizar o plano.");
     }
   };
 
   const salvarNovoPlano = async (novoPlano) => {
+    const promessa = masterDashboardService.salvarPlano(novoPlano);
+
+    toast.promise(promessa, {
+      pending: "Criando novo plano...",
+      success: "Plano criado com sucesso!",
+      error: "Erro ao salvar o plano. Verifique os dados.",
+    });
+
     try {
-      const resposta = await api.post("/painel/cadastrar-planos", novoPlano);
+      await promessa;
       await carregarPlanos(); 
       fecharModais();
-
-      const mensagem = resposta.data?.sucesso || resposta.data?.message || "Plano criado com sucesso!";
-      // 2. Trocamos o alert pelo toast de sucesso
-      toast.success(mensagem);
-
     } catch (error) {
       console.error("Erro ao salvar novo plano:", error);
-      // 3. Trocamos o alert pelo toast de erro
-      toast.error("Erro ao salvar o plano. Verifique os dados.");
     }
   };
 
-  // ROTA PATCH/DELETE DESATIVADA TEMPORARIAMENTE
   const alternarStatusPlano = async (planoSelecionado) => {
+    const novoStatus = planoSelecionado.status === "Ativo" ? "Inativo" : "Ativo";
+    
+    const acaoTexto = novoStatus === "Ativo" ? "Ativando plano..." : "Desativando plano...";
+    const sucessoTexto = `Plano ${novoStatus === "Ativo" ? "ativado" : "desativado"} com sucesso!`;
+
+    const promessa = masterDashboardService.editarStatusPlano(planoSelecionado.id, novoStatus);
+
+    toast.promise(promessa, {
+      pending: acaoTexto,
+      success: sucessoTexto,
+      error: "Erro ao alterar o status do plano.",
+    });
 
     try {
-      const novoStatus = planoSelecionado.status === "Ativo" ? "Inativo" : "Ativo";
-      await api.patch(`/painel/planos/${planoSelecionado.id}/status`, { status: novoStatus });
-      
+      await promessa;
       setPlanos((prev) =>
         prev.map((plano) =>
           plano.id === planoSelecionado.id
@@ -117,13 +122,14 @@ const carregarPlanos = async () => {
             : plano
         )
       );
-      toast.success(`Plano ${novoStatus === "Ativo" ? "ativado" : "desativado"} com sucesso!`);
     } catch (error) {
       console.error("Erro ao alterar status:", error);
-      toast.error("Erro ao alterar o status do plano.");
     }
   };
 
+  // ==========================================
+  // ESTILOS E FORMATAÇÃO
+  // ==========================================
   const formatarMoeda = (valor) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",

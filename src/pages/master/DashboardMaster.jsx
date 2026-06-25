@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import masterDashboardService from "../../services/masterDashboardService";
-import empresaService from "../../services/empresaService"; // 👈 O service real das empresas
+import empresaService from "../../services/empresaService"; // O service real das empresas
 import ModalNovaEmpresa from "../../components/modals/master/ModalNovaEmpresa";
-import { toast } from "react-toastify"; // 👈 Para os alertas bonitos
+import ModalEditarEmpresa from "../../components/modals/master/ModalEditarEmpresa"; // 👈 Importado o modal de edição
+import { toast } from "react-toastify"; // Para os alertas bonitos
 
 // ==========================================
 // FUNÇÕES AUXILIARES GLOBAIS
@@ -53,11 +54,14 @@ const getAlertaClass = (nivel) => {
 function DashboardMaster({ usuarioLogado }) {
   const [resumo, setResumo] = useState({});
   const [empresasRecentes, setEmpresasRecentes] = useState([]);
+  const [planosDisponiveis, setPlanosDisponiveis] = useState([]); // 👈 Estado para guardar os planos do banco
   const [alertas, setAlertas] = useState([]);
   const [atividadesRecentes, setAtividadesRecentes] = useState([]);
 
   const [carregando, setCarregando] = useState(false);
   const [modalNovaEmpresaAberto, setModalNovaEmpresaAberto] = useState(false);
+  const [modalEditarEmpresaAberto, setModalEditarEmpresaAberto] = useState(false); // 👈 Controle do modal de edição
+  const [empresaSelecionada, setEmpresaSelecionada] = useState(null); // 👈 Guarda a empresa que clicamos para editar
 
   // ESTADOS DA PAGINAÇÃO
   const [paginaAtual, setPaginaAtual] = useState(1);
@@ -69,11 +73,13 @@ function DashboardMaster({ usuarioLogado }) {
 
       const resumoResposta = await masterDashboardService.buscarResumo();
       const empresasResposta = await masterDashboardService.buscarEmpresasRecentes();
+      const planosResposta = await masterDashboardService.buscarPlanos(); // 👈 Buscando planos reais do banco
+      console.log("🕵️ Planos carregados no Dashboard:", planosResposta);
       
       setResumo(resumoResposta?.data || resumoResposta || {});
       setEmpresasRecentes(empresasResposta?.data || empresasResposta || []);
+      setPlanosDisponiveis(planosResposta?.data || planosResposta || []); // 👈 Salvando planos no estado
       
-      // Volta para a página 1 sempre que os dados são atualizados
       setPaginaAtual(1);
 
       /* --- DEIXE COMENTADO ATÉ CRIAR AS ROTAS NO GO ---
@@ -107,6 +113,42 @@ function DashboardMaster({ usuarioLogado }) {
       const mensagemErro = error.response?.data?.error || "Erro ao salvar a empresa. Verifique os dados.";
       toast.error(mensagemErro);
     }
+  };
+
+  // 👈 Função para salvar a edição enviando os dados corretos para a API
+  const salvarEdicaoEmpresa = async (id, payloadApi, empresaAtualizadaParaTela) => {
+    // Caso use o service dedicado de empresas, garanta que ele possua o método de atualizar
+    const promessa = empresaService.atualizar 
+      ? empresaService.atualizar(id, payloadApi)
+      : masterDashboardService.editarPlano(id, payloadApi); // Fallback adaptável
+
+    toast.promise(promessa, {
+      pending: "Atualizando dados da empresa...",
+      success: "Empresa atualizada com sucesso!",
+      error: "Erro ao atualizar os dados da empresa.",
+    });
+
+    try {
+      await promessa;
+      // Atualiza instantaneamente a linha correspondente na tabela/lista visual
+      setEmpresasRecentes((prev) =>
+        prev.map((emp) => (emp.id === id ? empresaAtualizadaParaTela : emp))
+      );
+      fecharModais();
+    } catch (error) {
+      console.error("Erro ao editar empresa:", error);
+    }
+  };
+
+  const abrirEditarEmpresa = (empresa) => {
+    setEmpresaSelecionada(empresa);
+    setModalEditarEmpresaAberto(true);
+  };
+
+  const fecharModais = () => {
+    setModalNovaEmpresaAberto(false);
+    setModalEditarEmpresaAberto(false);
+    setEmpresaSelecionada(null);
   };
 
   const resumoSeguro = useMemo(() => {
@@ -378,7 +420,6 @@ function DashboardMaster({ usuarioLogado }) {
               {empresasRecentes.length === 0 ? (
                 <MensagemVazia texto="Nenhuma empresa encontrada." />
               ) : (
-                // 👈 O map agora renderiza as "empresasPaginadas" ao invés de todas
                 empresasPaginadas.map((empresa) => (
                   <EmpresaRecenteCard
                     key={empresa.id}
@@ -386,12 +427,13 @@ function DashboardMaster({ usuarioLogado }) {
                     formatarNumero={formatarNumero}
                     formatarMoeda={formatarMoeda}
                     getStatusClass={getStatusClass}
+                    onEditar={abrirEditarEmpresa} // 👈 Passando a ação de abrir a edição para o card
                   />
                 ))
               )}
             </div>
 
-            {/* CONTROLES DE PAGINAÇÃO INSERIDOS AQUI 👇 */}
+            {/* CONTROLES DE PAGINAÇÃO */}
             {totalPaginas > 1 && (
               <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <button
@@ -449,8 +491,17 @@ function DashboardMaster({ usuarioLogado }) {
 
       <ModalNovaEmpresa
         aberto={modalNovaEmpresaAberto}
-        onFechar={() => setModalNovaEmpresaAberto(false)}
+        onFechar={fecharModais}
         onSalvar={salvarNovaEmpresa}
+      />
+
+      {/* 👈 Inserido o Modal de Edição passando os planos coletados dinamicamente do banco */}
+      <ModalEditarEmpresa
+        aberto={modalEditarEmpresaAberto}
+        empresa={empresaSelecionada}
+        planos={planosDisponiveis} // 👈 Aqui entra a mágica da lista do banco alimentando o select
+        onFechar={fecharModais}
+        onSalvar={salvarEdicaoEmpresa}
       />
     </div>
   );
@@ -460,7 +511,7 @@ function DashboardMaster({ usuarioLogado }) {
 // SUB-COMPONENTES 
 // ==========================================
 
-function EmpresaRecenteCard({ empresa, formatarNumero, formatarMoeda, getStatusClass }) {
+function EmpresaRecenteCard({ empresa, formatarNumero, formatarMoeda, getStatusClass, onEditar }) {
   return (
     <article className="p-5 lg:p-6 hover:bg-slate-50 transition">
       <div className="flex flex-col gap-5">
@@ -478,9 +529,20 @@ function EmpresaRecenteCard({ empresa, formatarNumero, formatarMoeda, getStatusC
                   Responsável: <span className="font-bold">{empresa.responsavel || "-"}</span>
                 </p>
               </div>
-              <span className={`w-fit inline-flex px-3 py-1 rounded-full border text-xs font-black shrink-0 ${getStatusClass(empresa.status)}`}>
-                {empresa.status || "Indefinido"}
-              </span>
+              
+              {/* 👈 Container alinhado contendo o botão de acionar a edição e o badge de status */}
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onEditar?.(empresa)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition shadow-sm"
+                >
+                  Editar
+                </button>
+                <span className={`w-fit inline-flex px-3 py-1 rounded-full border text-xs font-black shrink-0 ${getStatusClass(empresa.status)}`}>
+                  {empresa.status || "Indefinido"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -549,20 +611,6 @@ function CardResumo({ titulo, valor, descricao, detalhe, icone, tipo }) {
       </div>
       <div className={`inline-flex mt-5 px-3 py-1 rounded-full border text-xs font-black ${detalheClass}`}>
         {detalhe}
-      </div>
-    </div>
-  );
-}
-
-function MiniCard({ titulo, descricao, valor, classe }) {
-  return (
-    <div className={`rounded-2xl border p-4 ${classe}`}>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-black">{titulo}</p>
-          <p className="text-xs opacity-80 mt-1">{descricao}</p>
-        </div>
-        <strong className="text-3xl font-black">{valor}</strong>
       </div>
     </div>
   );

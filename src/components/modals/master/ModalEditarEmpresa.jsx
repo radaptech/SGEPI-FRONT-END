@@ -1,16 +1,33 @@
 import React, { useEffect, useState } from "react";
 
-function ModalEditarEmpresa({ aberto, empresa, onFechar, onSalvar }) {
+// Função auxiliar para converter a data do formato BR para o formato do input HTML
+const converterDataParaInput = (dataString) => {
+  if (!dataString) return "";
+  
+  // Se já estiver no formato AAAA-MM-DD (ex: vem direto do banco sem formatar)
+  if (dataString.includes("-")) {
+    return dataString.split("T")[0]; // Remove possíveis horas (T00:00:00)
+  }
+  
+  // Se estiver no formato DD/MM/AAAA
+  if (dataString.includes("/")) {
+    const [dia, mes, ano] = dataString.split("/");
+    if (dia && mes && ano) {
+      return `${ano}-${mes}-${dia}`;
+    }
+  }
+  
+  return dataString;
+};
+
+function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }) {
   const [form, setForm] = useState({
     nome: "",
     cnpj: "",
     responsavel: "",
     email: "",
     telefone: "",
-    plano: "Básico",
-    funcionarios: "",
-    epis: "",
-    mensalidade: "",
+    planoId: "",
     vencimento: "",
     status: "Ativa",
   });
@@ -18,24 +35,33 @@ function ModalEditarEmpresa({ aberto, empresa, onFechar, onSalvar }) {
   const [erro, setErro] = useState("");
 
   useEffect(() => {
-    if (empresa) {
+    // Só preenche o formulário se o modal estiver sendo aberto
+    if (empresa && aberto) {
+      let planoInicial = "";
+      if (empresa.planoId) {
+        planoInicial = String(empresa.planoId);
+      } else if (planos && planos.length > 0) {
+        planoInicial = String(planos[0].id);
+      }
+
       setForm({
         nome: empresa.nome || "",
         cnpj: empresa.cnpj || "",
         responsavel: empresa.responsavel || "",
         email: empresa.email || "",
         telefone: empresa.telefone || "",
-        plano: empresa.plano || "Básico",
-        funcionarios: empresa.funcionarios ?? "",
-        epis: empresa.epis ?? "",
-        mensalidade: empresa.mensalidade ?? "",
-        vencimento: empresa.vencimento || "",
+        planoId: planoInicial, 
+        vencimento: converterDataParaInput(empresa.vencimento),
         status: empresa.status || "Ativa",
       });
 
       setErro("");
     }
-  }, [empresa]);
+    
+    // 👇 A SOLUÇÃO DEFINITIVA: Observar apenas o ID (número) e o aberto (booleano).
+    // Como números e booleanos não mudam de endereço de memória, o loop acaba aqui!
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresa?.id, aberto]);
 
   if (!aberto || !empresa) return null;
 
@@ -66,22 +92,31 @@ function ModalEditarEmpresa({ aberto, empresa, onFechar, onSalvar }) {
       return;
     }
 
-    const empresaAtualizada = {
-      ...empresa,
+    if (!form.planoId) {
+      setErro("Selecione um plano.");
+      return;
+    }
+
+    const payloadApi = {
       nome: form.nome.trim(),
       cnpj: form.cnpj.trim(),
       responsavel: form.responsavel.trim(),
       email: form.email.trim(),
       telefone: form.telefone.trim(),
-      plano: form.plano,
-      funcionarios: Number(form.funcionarios || 0),
-      epis: Number(form.epis || 0),
-      mensalidade: Number(form.mensalidade || 0),
+      planoId: Number(form.planoId),
       vencimento: form.vencimento,
       status: form.status,
     };
 
-    onSalvar?.(empresaAtualizada);
+    const planoSelecionado = planos.find(p => String(p.id) === String(form.planoId));
+    
+    const empresaAtualizadaParaTela = {
+      ...empresa, 
+      ...payloadApi,
+      planoNome: planoSelecionado ? planoSelecionado.nome : empresa.planoNome,
+    };
+
+    onSalvar?.(empresa.id, payloadApi, empresaAtualizadaParaTela);
   };
 
   return (
@@ -104,7 +139,7 @@ function ModalEditarEmpresa({ aberto, empresa, onFechar, onSalvar }) {
               </h2>
 
               <p className="text-sm text-slate-500 mt-1">
-                Atualize informações administrativas, plano, mensalidade e
+                Atualize informações administrativas, plano, e
                 status.
               </p>
             </div>
@@ -161,32 +196,16 @@ function ModalEditarEmpresa({ aberto, empresa, onFechar, onSalvar }) {
               onChange={(e) => alterarCampo("telefone", e.target.value)}
             />
 
+            {/* A MÁGICA ESTÁ AQUI: Conversão do ID do plano para String */}
             <CampoSelect
               label="Plano"
-              value={form.plano}
-              onChange={(e) => alterarCampo("plano", e.target.value)}
-              options={["Básico", "Profissional", "Premium"]}
-            />
-
-            <CampoTexto
-              label="Funcionários"
-              type="number"
-              value={form.funcionarios}
-              onChange={(e) => alterarCampo("funcionarios", e.target.value)}
-            />
-
-            <CampoTexto
-              label="EPIs"
-              type="number"
-              value={form.epis}
-              onChange={(e) => alterarCampo("epis", e.target.value)}
-            />
-
-            <CampoTexto
-              label="Mensalidade"
-              type="number"
-              value={form.mensalidade}
-              onChange={(e) => alterarCampo("mensalidade", e.target.value)}
+              value={String(form.planoId || "")}
+              onChange={(e) => alterarCampo("planoId", e.target.value)}
+              options={
+                Array.isArray(planos) 
+                  ? planos.map((p) => ({ value: String(p.id), label: p.nome })) 
+                  : []
+              }
             />
 
             <CampoTexto
@@ -200,7 +219,12 @@ function ModalEditarEmpresa({ aberto, empresa, onFechar, onSalvar }) {
               label="Status"
               value={form.status}
               onChange={(e) => alterarCampo("status", e.target.value)}
-              options={["Ativa", "Atrasada", "Bloqueada"]}
+              options={[
+                { value: "Ativa", label: "Ativa" },
+                { value: "Atrasada", label: "Atrasada" },
+                { value: "Bloqueada", label: "Bloqueada" },
+                { value: "Em teste", label: "Em teste" },
+              ]}
             />
           </div>
 
@@ -250,6 +274,9 @@ function CampoTexto({
 }
 
 function CampoSelect({ label, value, onChange, options }) {
+  // Proteção extra: garante que options seja sempre um array
+  const listaOpcoes = Array.isArray(options) ? options : [];
+
   return (
     <div>
       <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.16em] mb-2">
@@ -257,13 +284,18 @@ function CampoSelect({ label, value, onChange, options }) {
       </label>
 
       <select
-        value={value}
+        value={value || ""} // Se não tiver valor, fica em branco (segurança)
         onChange={onChange}
         className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 bg-white text-sm text-slate-700"
       >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
+        {/* Opção padrão bonita enquanto os dados não chegam */}
+        <option value="" disabled>
+          {listaOpcoes.length === 0 ? "Carregando planos..." : "Selecione uma opção"}
+        </option>
+
+        {listaOpcoes.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>
