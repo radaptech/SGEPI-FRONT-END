@@ -14,6 +14,7 @@ function EntregaForm({
   assinaturaPreview,
   limparAssinatura,
   abrirAssinatura,
+  abrirCamera,
 }) {
   return (
     <div className="space-y-6">
@@ -52,6 +53,7 @@ function EntregaForm({
         assinaturaPreview={assinaturaPreview}
         limparAssinatura={limparAssinatura}
         abrirAssinatura={abrirAssinatura}
+        abrirCamera={abrirCamera}
       />
     </div>
   );
