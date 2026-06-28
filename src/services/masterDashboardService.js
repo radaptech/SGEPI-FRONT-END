@@ -52,6 +52,11 @@ export const masterDashboardService = {
     return api.get(`${BASE_URL}/dados-empresas`);
   },
 
+  editarEmpresa: async (id, payload) => {
+
+    return api.patch(`${BASE_URL}/${id}/empresa`, payload)
+  },
+
   buscarUsuarios: async () => {
     return api.get(`${BASE_URL}/dados-usuarios`); 
   },
