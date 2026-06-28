@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import ModalNovaEmpresa from "../../components/modals/master/ModalNovaEmpresa";
 import ModalVerEmpresa from "../../components/modals/master/ModalVerEmpresa";
 import ModalEditarEmpresa from "../../components/modals/master/ModalEditarEmpresa";
+import { toast } from "react-toastify";
 
 import masterDashboardService from "../../services/masterDashboardService"; 
 
@@ -10,7 +11,7 @@ function Empresas() {
   const [statusFiltro, setStatusFiltro] = useState("Todos");
   
   const [empresas, setEmpresas] = useState([]); 
-  const [planosDisponiveis, setPlanosDisponiveis] = useState([]); // 👈 1. Estado para os planos
+  const [planosDisponiveis, setPlanosDisponiveis] = useState([]); 
 
   const [empresaSelecionada, setEmpresaSelecionada] = useState(null);
   const [modalNovaEmpresaAberto, setModalNovaEmpresaAberto] = useState(false);
@@ -23,12 +24,10 @@ function Empresas() {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        // Busca as empresas
         const responseEmpresas = await masterDashboardService.buscarEmpresas();
         const dadosEmpresas = responseEmpresas?.data || responseEmpresas;
         setEmpresas(Array.isArray(dadosEmpresas) ? dadosEmpresas : []); 
 
-        // 👇 2. Busca os planos simultaneamente
         const responsePlanos = await masterDashboardService.buscarPlanos();
         const dadosPlanos = responsePlanos?.data || responsePlanos;
         setPlanosDisponiveis(Array.isArray(dadosPlanos) ? dadosPlanos : []);
@@ -84,16 +83,12 @@ function Empresas() {
     setModalEditarAberto(false);
   };
 
-  // Atualizado para lidar com a nova empresa (ainda apenas no visual, até você integrar a API)
   const salvarNovaEmpresa = async (payloadApi) => {
-    // Aqui você pode colocar a chamada da API depois (ex: empresaService.criar(payloadApi))
-    
-    // Pegando o nome do plano para aparecer bonito na tabela imediatamente
     const planoSelecionado = planosDisponiveis.find(p => String(p.id) === String(payloadApi.planoId));
 
     const empresaFormatada = {
       ...payloadApi,
-      id: Date.now(), // ID provisório até a API retornar o real
+      id: Date.now(), 
       plano: planoSelecionado ? planoSelecionado.nome : "Básico", 
     };
 
@@ -101,17 +96,31 @@ function Empresas() {
     setModalNovaEmpresaAberto(false);
   };
 
-  // Atualizado para bater com a assinatura que fizemos no ModalEditarEmpresa
+  // ==========================================
+  // INTEGRAÇÃO DA ROTA DE EDIÇÃO DE EMPRESA
+  // ==========================================
   const salvarEdicaoEmpresa = async (id, payloadApi, empresaAtualizadaParaTela) => {
-    // Aqui você pode colocar a chamada da API depois (ex: empresaService.atualizar(id, payloadApi))
+    const promessa = masterDashboardService.editarEmpresa(id, payloadApi);
 
-    setEmpresas((prev) =>
-      prev.map((empresa) =>
-        empresa.id === id ? empresaAtualizadaParaTela : empresa
-      )
-    );
+    toast.promise(promessa, {
+      pending: "A guardar as alterações da empresa...",
+      success: "Empresa atualizada com sucesso!",
+      error: "Erro ao atualizar os dados da empresa no servidor.",
+    });
 
-    fecharModais();
+    try {
+      await promessa;
+
+      setEmpresas((prev) =>
+        prev.map((empresa) =>
+          empresa.id === id ? empresaAtualizadaParaTela : empresa
+        )
+      );
+
+      fecharModais();
+    } catch (error) {
+      console.error("Erro ao salvar edição da empresa:", error);
+    }
   };
 
   const formatarMoeda = (valor) => {
@@ -235,7 +244,6 @@ function Empresas() {
                   </td>
 
                   <td className="px-6 py-4 text-center font-bold text-slate-600">
-                    {/* Alterado para pegar planoNome, pois agora a API manda o planoId numérico */}
                     {empresa.planoNome || empresa.plano || "-"}
                   </td>
 
@@ -303,7 +311,7 @@ function Empresas() {
 
       <ModalNovaEmpresa
         aberto={modalNovaEmpresaAberto}
-        planos={planosDisponiveis} // 👇 3. Passando os planos pro modal de criação
+        planos={planosDisponiveis}
         onFechar={() => setModalNovaEmpresaAberto(false)}
         onSalvar={salvarNovaEmpresa}
       />
@@ -317,7 +325,7 @@ function Empresas() {
       <ModalEditarEmpresa
         aberto={modalEditarAberto}
         empresa={empresaSelecionada}
-        planos={planosDisponiveis} // 👇 4. Passando os planos pro modal de edição
+        planos={planosDisponiveis}
         onFechar={fecharModais}
         onSalvar={salvarEdicaoEmpresa}
       />
