@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { api } from "../../../services/api"; 
 import { toast } from "react-toastify"; 
 import formatarData from "../../../utils/DatasFormater"; // 👈 Import da sua função de datas
+import masterDashboardService from "../../../services/masterDashboardService"
 
 function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
   const [form, setForm] = useState({
@@ -24,7 +25,7 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
     if (aberto) {
       const buscarPlanos = async () => {
         try {
-          const resposta = await api.get("/painel/planos");
+          const resposta = await masterDashboardService.buscarPlanos();
           const dados = resposta.data || resposta;
           
           if (Array.isArray(dados)) {
