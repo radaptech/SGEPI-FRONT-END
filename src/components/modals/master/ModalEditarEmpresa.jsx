@@ -1,24 +1,6 @@
 import React, { useEffect, useState } from "react";
+import formatarData from "../../../utils/DatasFormater";
 
-// Função auxiliar para converter a data do formato BR para o formato do input HTML
-const converterDataParaInput = (dataString) => {
-  if (!dataString) return "";
-  
-  // Se já estiver no formato AAAA-MM-DD (ex: vem direto do banco sem formatar)
-  if (dataString.includes("-")) {
-    return dataString.split("T")[0]; // Remove possíveis horas (T00:00:00)
-  }
-  
-  // Se estiver no formato DD/MM/AAAA
-  if (dataString.includes("/")) {
-    const [dia, mes, ano] = dataString.split("/");
-    if (dia && mes && ano) {
-      return `${ano}-${mes}-${dia}`;
-    }
-  }
-  
-  return dataString;
-};
 
 function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }) {
   const [form, setForm] = useState({
@@ -30,6 +12,7 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
     planoId: "",
     vencimento: "",
     status: "Ativa",
+    observacoes: "", // 👈 Adicionado ao estado inicial
   });
 
   const [erro, setErro] = useState("");
@@ -51,15 +34,14 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
         email: empresa.email || "",
         telefone: empresa.telefone || "",
         planoId: planoInicial, 
-        vencimento: converterDataParaInput(empresa.vencimento),
+        vencimento: formatarData(empresa.vencimento),
         status: empresa.status || "Ativa",
+        observacoes: empresa.observacoes || "", // 👈 Carrega do banco de dados
       });
 
       setErro("");
     }
     
-    // 👇 A SOLUÇÃO DEFINITIVA: Observar apenas o ID (número) e o aberto (booleano).
-    // Como números e booleanos não mudam de endereço de memória, o loop acaba aqui!
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa?.id, aberto]);
 
@@ -104,8 +86,9 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
       email: form.email.trim(),
       telefone: form.telefone.trim(),
       planoId: Number(form.planoId),
-      vencimento: form.vencimento,
+      vencimento: formatarData(form.vencimento),
       status: form.status,
+      observacoes: form.observacoes.trim(), // 👈 Adicionado ao payload enviado ao Go
     };
 
     const planoSelecionado = planos.find(p => String(p.id) === String(form.planoId));
@@ -139,8 +122,7 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
               </h2>
 
               <p className="text-sm text-slate-500 mt-1">
-                Atualize informações administrativas, plano, e
-                status.
+                Atualize informações administrativas, plano, observações e status.
               </p>
             </div>
 
@@ -196,7 +178,6 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
               onChange={(e) => alterarCampo("telefone", e.target.value)}
             />
 
-            {/* A MÁGICA ESTÁ AQUI: Conversão do ID do plano para String */}
             <CampoSelect
               label="Plano"
               value={String(form.planoId || "")}
@@ -226,6 +207,21 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
                 { value: "Em teste", label: "Em teste" },
               ]}
             />
+
+            {/* 👈 Campo de Observações adicionado ocupando a largura total */}
+            <div className="lg:col-span-2">
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.16em] mb-2">
+                Observações
+              </label>
+
+              <textarea
+                value={form.observacoes}
+                onChange={(e) => alterarCampo("observacoes", e.target.value)}
+                placeholder="Informações internas sobre essa empresa..."
+                rows={4}
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 resize-none text-sm text-slate-700"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-8">
@@ -250,19 +246,13 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
   );
 }
 
-function CampoTexto({
-  label,
-  obrigatorio,
-  type = "text",
-  value,
-  onChange,
-}) {
+// Sub-componentes mantidos inalterados
+function CampoTexto({ label, obrigatorio, type = "text", value, onChange }) {
   return (
     <div>
       <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.16em] mb-2">
         {label} {obrigatorio && <span className="text-red-500">*</span>}
       </label>
-
       <input
         type={type}
         value={value}
@@ -273,8 +263,8 @@ function CampoTexto({
   );
 }
 
+ 
 function CampoSelect({ label, value, onChange, options }) {
-  // Proteção extra: garante que options seja sempre um array
   const listaOpcoes = Array.isArray(options) ? options : [];
 
   return (
@@ -282,17 +272,14 @@ function CampoSelect({ label, value, onChange, options }) {
       <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.16em] mb-2">
         {label}
       </label>
-
       <select
-        value={value || ""} // Se não tiver valor, fica em branco (segurança)
+        value={value || ""} 
         onChange={onChange}
         className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 bg-white text-sm text-slate-700"
       >
-        {/* Opção padrão bonita enquanto os dados não chegam */}
         <option value="" disabled>
           {listaOpcoes.length === 0 ? "Carregando planos..." : "Selecione uma opção"}
         </option>
-
         {listaOpcoes.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
