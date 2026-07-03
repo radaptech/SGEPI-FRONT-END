@@ -15,6 +15,10 @@ export default function AbaFuncoes() {
     id_departamento: "",
   });
 
+  // --- ESTADOS DA PAGINAÇÃO ---
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 8;
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -168,6 +172,19 @@ export default function AbaFuncoes() {
     }
   };
 
+  // --- LÓGICA DE PAGINAÇÃO ---
+  const totalPaginas = Math.ceil(funcoes.length / itensPorPagina);
+  const indiceUltimoItem = paginaAtual * itensPorPagina;
+  const indicePrimeiroItem = indiceUltimoItem - itensPorPagina;
+  const funcoesPaginadas = funcoes.slice(indicePrimeiroItem, indiceUltimoItem);
+
+  // Ajusta a página caso o último item de uma página seja excluído
+  useEffect(() => {
+    if (paginaAtual > totalPaginas && totalPaginas > 0) {
+      setPaginaAtual(totalPaginas);
+    }
+  }, [funcoes.length, paginaAtual, totalPaginas]);
+
   return (
     <div className="animate-fade-in">
       {toast && (
@@ -291,6 +308,7 @@ export default function AbaFuncoes() {
         </div>
       </div>
 
+      {/* --- DESKTOP TABLE --- */}
       <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-200">
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-100 text-slate-600 font-bold uppercase">
@@ -302,14 +320,14 @@ export default function AbaFuncoes() {
           </thead>
 
           <tbody className="divide-y divide-slate-100">
-            {funcoes.length === 0 ? (
+            {funcoesPaginadas.length === 0 ? (
               <tr>
                 <td colSpan="3" className="p-6 text-center text-gray-400 italic">
                   Nenhuma função cadastrada.
                 </td>
               </tr>
             ) : (
-              funcoes.map((f) => (
+              funcoesPaginadas.map((f) => (
                 <tr key={f.id} className="hover:bg-slate-50">
                   <td className="p-3 font-medium text-slate-800 capitalize">
                     {f.cargo || f.funcao || "-"}
@@ -345,13 +363,14 @@ export default function AbaFuncoes() {
         </table>
       </div>
 
+      {/* --- MOBILE LIST --- */}
       <div className="md:hidden space-y-3">
-        {funcoes.length === 0 ? (
+        {funcoesPaginadas.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-gray-400 italic">
             Nenhuma função cadastrada.
           </div>
         ) : (
-          funcoes.map((f) => (
+          funcoesPaginadas.map((f) => (
             <div
               key={f.id}
               className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"
@@ -397,6 +416,31 @@ export default function AbaFuncoes() {
           ))
         )}
       </div>
+
+      {/* --- CONTROLES DA PAGINAÇÃO --- */}
+      {totalPaginas > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <button
+            onClick={() => setPaginaAtual((prev) => Math.max(prev - 1, 1))}
+            disabled={paginaAtual === 1}
+            className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Anterior
+          </button>
+          
+          <span className="text-sm font-medium text-slate-500">
+            Página <strong className="text-slate-700">{paginaAtual}</strong> de <strong className="text-slate-700">{totalPaginas}</strong>
+          </span>
+
+          <button
+            onClick={() => setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))}
+            disabled={paginaAtual === totalPaginas}
+            className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Próxima
+          </button>
+        </div>
+      )}
     </div>
   );
 }
