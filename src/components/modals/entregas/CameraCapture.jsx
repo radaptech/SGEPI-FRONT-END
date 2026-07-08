@@ -17,7 +17,7 @@ function CameraCapture({ fecharCamera, onFotoCapturada }) {
       <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
         <h3 className="text-lg font-bold text-slate-800 mb-2">Capturar Foto</h3>
         <p className="text-sm text-slate-500 mb-6">
-          Posicione o EPI e tire uma foto para confirmar a entrega.
+          Posicione  e tire uma foto para confirmar a entrega.
         </p>
 
         <div className="flex flex-col gap-3">
