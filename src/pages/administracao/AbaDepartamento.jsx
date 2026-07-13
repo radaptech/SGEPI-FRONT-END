@@ -27,8 +27,8 @@ export default function AbaDepartamentos() {
 
   const campoComErro = () => {
     return erros.departamento
-      ? "border-red-400 focus:ring-red-400"
-      : "border-slate-200 focus:ring-slate-500";
+      ? "border-red-400 focus:ring-red-400 dark:border-red-500 dark:focus:ring-red-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+      : "border-slate-200 focus:ring-slate-500 dark:border-slate-600 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white";
   };
 
   const limparErroCampo = () => {
@@ -146,13 +146,13 @@ export default function AbaDepartamentos() {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in transition-colors duration-300">
       {toast && (
         <div
           className={`fixed top-5 left-1/2 z-[9999] w-[90%] max-w-sm -translate-x-1/2 rounded-xl border px-5 py-4 shadow-2xl animate-fade-in sm:left-auto sm:right-5 sm:translate-x-0 ${
             toast.tipo === "sucesso"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-red-50 border-red-200 text-red-800"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400"
+              : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400"
           }`}
         >
           <div className="flex items-start gap-3">
@@ -165,12 +165,12 @@ export default function AbaDepartamentos() {
                 {toast.tipo === "sucesso" ? "Sucesso!" : "Atenção!"}
               </p>
 
-              <p className="text-sm mt-0.5">{toast.mensagem}</p>
+              <p className="text-sm mt-0.5 opacity-90">{toast.mensagem}</p>
             </div>
 
             <button
               onClick={() => setToast(null)}
-              className="ml-auto text-lg leading-none opacity-60 hover:opacity-100"
+              className="ml-auto text-lg leading-none opacity-60 hover:opacity-100 transition-opacity"
             >
               ×
             </button>
@@ -178,24 +178,24 @@ export default function AbaDepartamentos() {
         </div>
       )}
 
-      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
-        <h3 className="text-xs font-bold text-slate-500 uppercase mb-3">
+      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700 mb-6 transition-colors">
+        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">
           {editandoId ? "✏️ Editando Departamento" : "Novo Departamento"}
         </h3>
 
-        <p className="text-xs text-slate-500 mb-4">
-          Campos marcados com <span className="text-red-500">*</span> são
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Campos marcados com <span className="text-red-500 dark:text-red-400">*</span> são
           obrigatórios.
         </p>
 
         <div className="flex flex-col md:flex-row gap-3 md:items-start">
           <div className="flex-1 w-full">
-            <label className="text-xs text-slate-500 mb-1 block">
-              Nome do Departamento <span className="text-red-500">*</span>
+            <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+              Nome do Departamento <span className="text-red-500 dark:text-red-400">*</span>
             </label>
 
             <input
-              className={`w-full p-2 border rounded focus:ring-2 outline-none text-sm ${campoComErro()}`}
+              className={`w-full p-2 border rounded focus:ring-2 outline-none text-sm transition-colors ${campoComErro()}`}
               value={novoDepto}
               onChange={(e) => {
                 setNovoDepto(e.target.value);
@@ -205,7 +205,7 @@ export default function AbaDepartamentos() {
             />
 
             {erros.departamento && (
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                 {erros.departamento}
               </p>
             )}
@@ -216,7 +216,7 @@ export default function AbaDepartamentos() {
               <button
                 onClick={cancelarEdicao}
                 disabled={carregando}
-                className="px-4 py-2 text-slate-500 hover:text-slate-700 font-bold rounded transition text-sm disabled:opacity-50"
+                className="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold rounded transition-colors text-sm disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -225,10 +225,10 @@ export default function AbaDepartamentos() {
             <button
               onClick={salvarDepartamento}
               disabled={carregando}
-              className={`w-full md:w-auto px-6 text-white font-bold py-2 rounded transition text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`w-full md:w-auto px-6 text-white font-bold py-2 rounded transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                 editandoId
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-emerald-600 hover:bg-emerald-700"
+                  ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                  : "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
               }`}
             >
               {carregando
@@ -243,23 +243,23 @@ export default function AbaDepartamentos() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {!Array.isArray(departamentos) || departamentos.length === 0 ? (
-          <div className="col-span-full p-4 text-center text-slate-400 italic text-sm">
+          <div className="col-span-full p-4 text-center text-slate-400 dark:text-slate-500 italic text-sm">
             Nenhum departamento cadastrado.
           </div>
         ) : (
           departamentosPaginados.map((d) => (
             <div
               key={d.id}
-              className="flex justify-between items-center p-3 border rounded-lg bg-white shadow-sm hover:shadow-md transition"
+              className="flex justify-between items-center p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:shadow-md dark:shadow-none transition-all"
             >
-              <span className="px-2 py-1 rounded text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+              <span className="px-2 py-1 rounded text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
                 {d.departamento}
               </span>
 
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => iniciarEdicao(d)}
-                  className="text-blue-500 hover:text-blue-700 font-bold text-xs transition"
+                  className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold text-xs transition-colors"
                   title="Editar departamento"
                 >
                   Editar
@@ -267,7 +267,7 @@ export default function AbaDepartamentos() {
 
                 <button
                   onClick={() => removerDepartamento(d.id)}
-                  className="text-slate-300 hover:text-red-500 font-bold transition"
+                  className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 font-bold transition-colors"
                   title="Excluir departamento"
                 >
                   ✕
@@ -279,16 +279,16 @@ export default function AbaDepartamentos() {
       </div>
 
       {totalPaginas > 1 && (
-        <div className="flex items-center justify-between mt-6 bg-slate-50 p-3 rounded-lg border border-slate-200">
+        <div className="flex items-center justify-between mt-6 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors">
           <button
             onClick={() => setPaginaAtual((prev) => Math.max(prev - 1, 1))}
             disabled={paginaAtual === 1}
-            className="px-3 py-1 rounded border bg-white text-slate-600 disabled:opacity-50 text-sm font-bold hover:bg-slate-50 transition"
+            className="px-3 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-50 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
             ← Anterior
           </button>
 
-          <span className="text-xs font-bold text-slate-500">
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
             Página {paginaAtual} de {totalPaginas}
           </span>
 
@@ -297,7 +297,7 @@ export default function AbaDepartamentos() {
               setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))
             }
             disabled={paginaAtual === totalPaginas}
-            className="px-3 py-1 rounded border bg-white text-slate-600 disabled:opacity-50 text-sm font-bold hover:bg-slate-50 transition"
+            className="px-3 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-50 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
             Próxima →
           </button>

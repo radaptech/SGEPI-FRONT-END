@@ -1,15 +1,9 @@
 import { useEffect, useState } from "react";
-
-// Importações do Toastify
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 import Login from "./pages/Login";
 import Header from "./components/Header";
-
-// Importação da tela de Redefinir Senha
 import RedefinirSenha from "./pages/RedefinirSenha"; 
-
 import Dashboard from "./pages/Dashboard";
 import Estoque from "./pages/Estoque";
 import Entradas from "./pages/Entradas";
@@ -19,7 +13,6 @@ import Funcionarios from "./pages/Funcionários";
 import Fornecedores from "./pages/Fornecedores";
 import Administracao from "./pages/Administracao";
 import Departamentos from "./pages/Departamentos";
-
 import DashboardMaster from "./pages/master/DashboardMaster";
 import Empresas from "./pages/master/Empresas";
 import DetalhesEmpresa from "./pages/master/DetalhesEmpresa";
@@ -31,8 +24,6 @@ function App() {
   const [usuario, setUsuario] = useState(null);
   const [paginaAtual, setPaginaAtual] = useState("Dashboard");
   const [carregandoSessao, setCarregandoSessao] = useState(true);
-  
-  // Estado já nasce sabendo se o usuário quer redefinir a senha lendo a URL
   const [isRedefinindoSenha, setIsRedefinindoSenha] = useState(
     window.location.pathname === "/redefinir-senha"
   );
@@ -175,17 +166,17 @@ function App() {
 
   const renderizarAcessoNegado = () => {
     return (
-      <div className="bg-white border border-red-100 rounded-2xl p-8 shadow-sm">
+      <div className="bg-white dark:bg-slate-800 border border-red-100 dark:border-red-900/30 rounded-2xl p-8 shadow-sm transition-colors duration-300">
         <div className="max-w-2xl">
-          <p className="text-xs font-black text-red-400 uppercase tracking-[0.25em]">
+          <p className="text-xs font-black text-red-400 dark:text-red-500 uppercase tracking-[0.25em]">
             Acesso restrito
           </p>
 
-          <h1 className="text-2xl font-black text-slate-800 mt-2">
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white mt-2 transition-colors">
             Você não tem permissão para acessar esta área.
           </h1>
 
-          <p className="text-slate-500 mt-3">
+          <p className="text-slate-500 dark:text-slate-400 mt-3 transition-colors">
             Essa página pertence a outro nível de acesso do sistema. Entre com
             um usuário autorizado ou volte para a página inicial do seu perfil.
           </p>
@@ -193,7 +184,7 @@ function App() {
           <button
             type="button"
             onClick={() => setPaginaAtual(definirPaginaInicialPorPerfil(usuario))}
-            className="mt-6 px-5 py-3 rounded-xl bg-slate-800 text-white text-sm font-bold hover:bg-slate-700 transition"
+            className="mt-6 px-5 py-3 rounded-xl bg-slate-800 dark:bg-slate-700 text-white text-sm font-bold hover:bg-slate-700 dark:hover:bg-slate-600 transition"
           >
             Voltar para minha área
           </button>
@@ -260,21 +251,18 @@ function App() {
 
   if (carregandoSessao) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0B1120] text-slate-800 dark:text-white transition-colors duration-300">
         Carregando...
       </div>
     );
   }
 
-  // 👇 PRIORIDADE MÁXIMA: Intercepta tudo se a URL for /redefinir-senha
-  // Fica ANTES de checar se o usuário está logado!
   if (isRedefinindoSenha) {
     return (
       <>
         <RedefinirSenha 
           onIrParaLogin={() => {
             setIsRedefinindoSenha(false);
-            // Limpa a URL do navegador voltando para a raiz "/"
             window.history.pushState({}, '', '/'); 
           }} 
         />
@@ -283,7 +271,6 @@ function App() {
     );
   }
 
-  // Se não for redefinição, verifica se está deslogado e mostra o Login normal
   if (!usuario) {
     return (
       <>
@@ -293,9 +280,8 @@ function App() {
     );
   }
 
-  // Se passou por tudo e tem usuário, mostra o sistema por dentro (Dashboard)
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B1120] font-sans text-slate-800 dark:text-slate-100 transition-colors duration-300">
       <Header
         paginaAtual={paginaAtual}
         setPagina={trocarPaginaComPermissao}
@@ -307,7 +293,6 @@ function App() {
         {renderizarPagina()}
       </main>
 
-      {/* O ToastContainer para todo o sistema logado */}
       <ToastContainer 
         position="top-right" 
         autoClose={4000} 
