@@ -22,6 +22,7 @@ export default function AbaFuncionarios() {
   const [form, setForm] = useState({
     id: null,
     nome: "",
+    cpf: "",
     matricula: "",
     id_departamento: "",
     id_funcao: "",
@@ -68,10 +69,13 @@ export default function AbaFuncionarios() {
     return funcionarios.filter((f) => {
       const nomeDepto = f.funcao?.departamento?.departamento || "";
       const nomeFuncao = f.funcao?.cargo || "";
+      const cpfLimpo = (f.cpf || "").replace(/\D/g, "");
 
       return (
         (f.nome || "").toLowerCase().includes(termo) ||
         (f.matricula || "").toLowerCase().includes(termo) ||
+        (f.cpf || "").toLowerCase().includes(termo) ||
+        cpfLimpo.includes(termo) ||
         nomeDepto.toLowerCase().includes(termo) ||
         nomeFuncao.toLowerCase().includes(termo)
       );
@@ -127,6 +131,13 @@ export default function AbaFuncionarios() {
       novosErros.nome = "Informe o nome completo do funcionário.";
     }
 
+    const cpfLimpo = form.cpf.replace(/\D/g, "");
+    if (!cpfLimpo) {
+      novosErros.cpf = "Informe o CPF do funcionário.";
+    } else if (cpfLimpo.length !== 11) {
+      novosErros.cpf = "O CPF deve conter exatamente 11 dígitos.";
+    }
+
     if (!form.id_departamento) {
       novosErros.id_departamento = "Selecione o departamento.";
     }
@@ -147,6 +158,7 @@ export default function AbaFuncionarios() {
     setForm({
       id: null,
       nome: "",
+      cpf: "",
       matricula: "AUTOMÁTICA",
       id_departamento: "",
       id_funcao: "",
@@ -162,6 +174,7 @@ export default function AbaFuncionarios() {
     setForm({
       id: func.id,
       nome: func.nome || "",
+      cpf: func.cpf || "",
       matricula: func.matricula || "",
       id_departamento: func.funcao?.departamento?.id || "",
       id_funcao: func.funcao?.id || "",
@@ -185,6 +198,7 @@ export default function AbaFuncionarios() {
 
       const payload = {
         nome: form.nome.trim(),
+        cpf: form.cpf.replace(/\D/g, ""),
         id_departamento: Number(form.id_departamento),
         id_funcao: Number(form.id_funcao),
       };
@@ -268,7 +282,7 @@ export default function AbaFuncionarios() {
               className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-500 outline-none text-sm"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Nome, matrícula, departamento ou função"
+              placeholder="Nome, CPF, matrícula, departamento ou função"
             />
           </div>
 
@@ -295,7 +309,7 @@ export default function AbaFuncionarios() {
           <thead className="bg-slate-100 text-slate-600 font-bold uppercase">
             <tr>
               <th className="p-3">Matrícula</th>
-              <th className="p-3">Nome</th>
+              <th className="p-3">Nome / CPF</th>
               <th className="p-3">Departamento</th>
               <th className="p-3">Função</th>
               <th className="p-3 text-center">Ações</th>
@@ -316,7 +330,12 @@ export default function AbaFuncionarios() {
                     {f.matricula}
                   </td>
 
-                  <td className="p-3 font-medium text-slate-800">{f.nome}</td>
+                  <td className="p-3">
+                    <div className="font-medium text-slate-800">{f.nome}</div>
+                    <div className="text-xs text-slate-400 font-mono mt-0.5">
+                      {f.cpf || "CPF não informado"}
+                    </div>
+                  </td>
 
                   <td className="p-3">
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase">
@@ -362,8 +381,10 @@ export default function AbaFuncionarios() {
             <div key={f.id} className="border rounded-lg p-4 bg-white shadow-sm">
               <div>
                 <h3 className="font-bold text-slate-800">{f.nome}</h3>
-
-                <p className="text-xs text-slate-500 font-mono mt-1">
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  CPF: {f.cpf || "Não informado"}
+                </p>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
                   Mat: {f.matricula}
                 </p>
               </div>
@@ -471,6 +492,28 @@ export default function AbaFuncionarios() {
 
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">
+                  CPF <span className="text-red-500">*</span>
+                </label>
+
+                <input
+                  className={`w-full p-3 border rounded-lg focus:ring-2 outline-none text-sm font-mono ${campoComErro(
+                    "cpf"
+                  )}`}
+                  value={form.cpf}
+                  onChange={(e) => {
+                    const valorLimpo = e.target.value.replace(/\D/g, "").slice(0, 11);
+                    atualizarCampo("cpf", valorLimpo);
+                  }}
+                  placeholder="Apenas números (11 dígitos)"
+                />
+
+                {erros.cpf && (
+                  <p className="text-xs text-red-500 mt-1">{erros.cpf}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">
                   Matrícula
                 </label>
 
@@ -482,7 +525,7 @@ export default function AbaFuncionarios() {
                 />
 
                 <p className="text-[11px] text-slate-400 mt-1">
-                  A matrícula será gerada automaticamente pelo sistema.
+                  Gerada automaticamente pelo sistema.
                 </p>
               </div>
 
@@ -523,7 +566,7 @@ export default function AbaFuncionarios() {
                 )}
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <label className="text-xs text-slate-500 mb-1 block">
                   Função <span className="text-red-500">*</span>
                 </label>

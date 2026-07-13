@@ -24,14 +24,25 @@ function ModalDetalhesFuncionario({ aberto, funcionario, onClose }) {
         </div>
 
         <div className="p-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <InfoCard label="Nome" value={funcionario.nome} />
-            <InfoCard label="Matrícula" value={funcionario.matricula || "-"} />
+            <InfoCard 
+              label="CPF" 
+              value={funcionario.cpf || "Não informado"} 
+              isMono
+            />
+            <InfoCard 
+              label="Matrícula" 
+              value={funcionario.matricula || "-"} 
+              isMono
+            />
             <InfoCard
               label="Departamento"
               value={funcionario.departamentoNome || "-"}
             />
-            <InfoCard label="Função" value={funcionario.funcaoNome || "-"} />
+            <div className="md:col-span-2">
+              <InfoCard label="Função" value={funcionario.funcaoNome || "-"} />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -68,13 +79,15 @@ function ModalDetalhesFuncionario({ aberto, funcionario, onClose }) {
   );
 }
 
-function InfoCard({ label, value }) {
+function InfoCard({ label, value, isMono = false }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
       <span className="text-[11px] uppercase tracking-wide text-slate-500 font-bold block mb-1">
         {label}
       </span>
-      <strong className="text-slate-800">{value}</strong>
+      <strong className={`text-slate-800 ${isMono ? "font-mono text-sm" : ""}`}>
+        {value}
+      </strong>
     </div>
   );
 }

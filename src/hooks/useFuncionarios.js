@@ -11,6 +11,7 @@ export function useFuncionarios() {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [carregando, setCarregando] = useState(true);
   const [erroTela, setErroTela] = useState("");
+
   const [funcionarioDetalhe, setFuncionarioDetalhe] = useState(null);
 
   useEffect(() => {
@@ -50,9 +51,15 @@ export function useFuncionarios() {
     }
 
     return listaOrdenada.filter((funcionario) => {
+      // Limpa pontuações tanto da busca quanto do CPF do banco para uma comparação infalível
+      const cpfLimpoBanco = String(funcionario.cpf || "").replace(/\D/g, "");
+      const termoLimpo = termo.replace(/\D/g, "");
+
       return (
         (funcionario.nome || "").toLowerCase().includes(termo) ||
         String(funcionario.matricula || "").toLowerCase().includes(termo) ||
+        String(funcionario.cpf || "").toLowerCase().includes(termo) ||
+        (termoLimpo.length > 0 && cpfLimpoBanco.includes(termoLimpo)) ||
         (funcionario.departamentoNome || "").toLowerCase().includes(termo) ||
         (funcionario.funcaoNome || "").toLowerCase().includes(termo)
       );
@@ -139,4 +146,4 @@ export function useFuncionarios() {
     funcionariosVisiveis,
     resumo,
   };
-} 
+}
