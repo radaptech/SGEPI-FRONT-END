@@ -10,6 +10,7 @@ export function normalizarFuncionario(item) {
   return {
     id: Number(item?.id ?? 0),
     nome: item?.nome ?? "",
+    cpf: formatarCPF(item?.cpf), 
     matricula: String(item?.matricula ?? "-"),
     idFuncao: Number(item?.funcao?.id ?? 0),
     funcaoNome: item?.funcao?.cargo ?? "Sem função",
@@ -56,6 +57,22 @@ export function normalizarDevolucao(item) {
     assinatura: item?.assinatura_digital ?? "",
     itens: Array.isArray(item?.itens) ? item.itens : []
   };
+}
+
+// 👉 NOVA FUNÇÃO: Aplica a máscara 000.000.000-00 visualmente
+export function formatarCPF(cpf) {
+  if (!cpf) return "";
+
+  // Remove qualquer coisa que não seja número
+  const limpo = String(cpf).replace(/\D/g, "");
+
+  // Se não tiver os 11 dígitos originais, devolve como veio sem tentar aplicar regex inválido
+  if (limpo.length !== 11) {
+    return String(cpf);
+  }
+
+  // Aplica a máscara padrão brasileira
+  return limpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 }
 
 export function formatarData(data) {

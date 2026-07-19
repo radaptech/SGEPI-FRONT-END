@@ -89,7 +89,7 @@ function Funcionarios({ usuarioLogado }) {
           </span>
           <input
             type="text"
-            placeholder="Buscar por nome, matrícula, departamento ou função..."
+            placeholder="Buscar por nome, CPF, matrícula, departamento ou função..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm lg:text-base"
@@ -107,7 +107,7 @@ function Funcionarios({ usuarioLogado }) {
                 <thead className="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider">
                   <tr>
                     <th className="p-4 font-semibold">Matrícula</th>
-                    <th className="p-4 font-semibold">Nome</th>
+                    <th className="p-4 font-semibold">Nome / CPF</th>
                     <th className="p-4 font-semibold">Departamento</th>
                     <th className="p-4 font-semibold">Função</th>
                     <th className="p-4 font-semibold text-center">Entregas</th>
@@ -136,6 +136,9 @@ function Funcionarios({ usuarioLogado }) {
                         <td className="p-4">
                           <div className="font-medium text-gray-800">
                             {f.nome}
+                          </div>
+                          <div className="text-xs text-gray-400 font-mono mt-0.5">
+                            {f.cpf || "CPF não informado"}
                           </div>
                         </td>
 
@@ -189,7 +192,10 @@ function Funcionarios({ usuarioLogado }) {
                         <h3 className="font-bold text-gray-800 text-lg">
                           {f.nome}
                         </h3>
-                        <p className="text-xs text-gray-500 font-mono mt-1">
+                        <p className="text-xs text-gray-400 font-mono mt-0.5">
+                          CPF: {f.cpf || "Não informado"}
+                        </p>
+                        <p className="text-xs text-gray-500 font-mono mt-0.5">
                           Matrícula: {f.matricula || "-"}
                         </p>
                       </div>
