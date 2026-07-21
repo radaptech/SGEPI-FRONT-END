@@ -1,11 +1,16 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import * as XLSX from "xlsx"; // 👉 Importa a biblioteca de Excel
 import { api } from "../../services/api";
 
 export default function AbaDepartamentos() {
   const [departamentos, setDepartamentos] = useState([]);
   const [novoDepto, setNovoDepto] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
+  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+
+  const fileInputRef = useRef(null);
 
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itensPorPagina = 7;
@@ -49,6 +54,80 @@ export default function AbaDepartamentos() {
       mostrarToast("Erro ao carregar departamentos.", "erro");
     }
   };
+
+  // --- GERADOR DE PLANILHA EXCEL REAL (.XLSX) ---
+
+  const baixarModeloExcel = () => {
+  // 1. Estrutura dos dados com instruções no topo + exemplos
+  const dadosComFluFlu = [
+    { "Instruções": "📌 Orientações de Preenchimento:" },
+    { "Instruções": "1. Digite um departamento por linha na coluna 'Nome do Departamento'." },
+    { "Instruções": "2. Não altere o nome do cabeçalho na linha 5." },
+    { "Instruções": "3. Salve o arquivo e faça o upload no sistema." },
+    {}, // Linha em branco para dar um respiro visual
+    { "Nome do Departamento": "TI" },
+    { "Nome do Departamento": "Produção" },
+    { "Nome do Departamento": "Logística e Almoxarifado" },
+    { "Nome do Departamento": "Segurança do Trabalho" },
+    { "Nome do Departamento": "Administrativo e RH" },
+  ];
+
+  // 2. Cria a aba a partir do JSON
+  const worksheet = XLSX.utils.json_to_sheet(dadosComFluFlu, {
+    header: ["Nome do Departamento"], // Garante o cabeçalho correto
+    skipHeader: false,
+  });
+
+  // 3. Define a largura das colunas (largura em caracteres)
+  worksheet["!cols"] = [
+    { wch: 45 }, // Coluna A bem larga para nomes compridos e instruções
+  ];
+
+  // 4. Cria a pasta de trabalho (Workbook) e insere a aba
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Departamentos");
+
+  // 5. Dispara o download nativo do arquivo .xlsx
+  XLSX.writeFile(workbook, "modelo_departamentos.xlsx");
+};
+  const enviarPlanilhaDepartamentos = async () => {
+    if (!arquivoPlanilha) {
+      mostrarToast("Selecione um arquivo de planilha antes de enviar.", "erro");
+      return;
+    }
+
+    try {
+      setEnviandoPlanilha(true);
+
+      const formData = new FormData();
+      formData.append("file", arquivoPlanilha);
+
+      await api.post("/gerencial/importar-departamentos", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      mostrarToast("Planilha de departamentos importada com sucesso!", "sucesso");
+
+      setArquivoPlanilha(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      await carregarDepartamentos();
+    } catch (erro) {
+      console.error("Erro ao importar planilha:", erro);
+      mostrarToast(
+        erro?.response?.data?.message || "Erro ao importar planilha de departamentos.",
+        "erro"
+      );
+    } finally {
+      setEnviandoPlanilha(false);
+    }
+  };
+
+  // ----------------------------------------------
 
   const totalPaginas = Math.ceil(departamentos.length / itensPorPagina);
 
@@ -178,6 +257,48 @@ export default function AbaDepartamentos() {
         </div>
       )}
 
+      {/* BLOCO DE IMPORTAÇÃO VIA EXCEL (.XLSX) */}
+      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700 mb-6 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">
+              📊 Importação em Lote por Planilha Excel
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Baixe o modelo do Excel, preencha os setores da empresa e envie o arquivo (.xlsx).
+            </p>
+          </div>
+
+          <button
+            onClick={baixarModeloExcel}
+            type="button"
+            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shrink-0 flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
+          >
+            📗 Baixar Modelo Excel (.xlsx)
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx, .xls, .csv"
+            onChange={(e) => setArquivoPlanilha(e.target.files[0] || null)}
+            className="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-slate-700 dark:file:text-slate-200 cursor-pointer"
+          />
+
+          <button
+            onClick={enviarPlanilhaDepartamentos}
+            disabled={!arquivoPlanilha || enviandoPlanilha}
+            type="button"
+            className="px-5 py-2 rounded bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          >
+            {enviandoPlanilha ? "Enviando..." : "🚀 Enviar Planilha"}
+          </button>
+        </div>
+      </div>
+
+      {/* BLOCO DE CADASTRO MANUAL / EDIÇÃO */}
       <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700 mb-6 transition-colors">
         <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">
           {editandoId ? "✏️ Editando Departamento" : "Novo Departamento"}

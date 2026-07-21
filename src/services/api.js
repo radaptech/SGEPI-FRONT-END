@@ -34,7 +34,6 @@ function isFormData(valor) {
 function montarHeaders(headersExtras = {}, body = null) {
     const token = getToken();
 
-    console.log("MONTANDO CABEÇALHOS! O token encontrado foi:", token ? "ACHOU UM TOKEN" : "VAAAAAAZIO");
     const tenantId = getTenantId();
     const headers = { ...headersExtras };
 
