@@ -102,11 +102,8 @@ export default function AbaDepartamentos() {
       const formData = new FormData();
       formData.append("file", arquivoPlanilha);
 
-      await api.post("/gerencial/importar-departamentos", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+    const resposta = await api.post("/gerencial/importar-departamentos", formData)
+      console.log("Resposta da importação:", resposta);
 
       mostrarToast("Planilha de departamentos importada com sucesso!", "sucesso");
 

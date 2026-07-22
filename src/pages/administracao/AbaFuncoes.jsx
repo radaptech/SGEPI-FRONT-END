@@ -1,11 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import { api } from "../../services/api";
 
 export default function AbaFuncoes() {
   const [funcoes, setFuncoes] = useState([]);
   const [departamentos, setDepartamentos] = useState([]);
   const [carregando, setCarregando] = useState(false);
+  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
+  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+
+  // --- ESTADOS DE PAGINAÇÃO ---
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 10;
+
+  const fileInputRef = useRef(null);
 
   const [erros, setErros] = useState({});
   const [toast, setToast] = useState(null);
@@ -52,6 +61,117 @@ export default function AbaFuncoes() {
     limparErroCampo(campo);
   };
 
+  const carregarDados = async () => {
+    try {
+      const [respFuncoes, respDepartamentos] = await Promise.all([
+        api.get("/funcoes"),
+        api.get("/departamentos"),
+      ]);
+
+      const listaFuncoes = respFuncoes?.funcoes || [];
+
+      setFuncoes(listaFuncoes);
+      setDepartamentos(respDepartamentos?.departamentos || []);
+    } catch (erro) {
+      console.error("Erro ao carregar dados de funções:", erro);
+      mostrarToast("Erro ao carregar dados de funções.", "erro");
+    }
+  };
+
+  // --- LÓGICA DE CÁLCULO DE PAGINAÇÃO ---
+  const totalPaginas = Math.ceil(funcoes.length / itensPorPagina) || 1;
+  const indiceInicial = (paginaAtual - 1) * itensPorPagina;
+  const indiceFinal = indiceInicial + itensPorPagina;
+  const funcoesPaginadas = funcoes.slice(indiceInicial, indiceFinal);
+
+  const irParaPagina = (numeroPagina) => {
+    if (numeroPagina >= 1 && numeroPagina <= totalPaginas) {
+      setPaginaAtual(numeroPagina);
+    }
+  };
+
+  // --- GERADOR E ENVIADOR DE PLANILHA EXCEL (.XLSX) ---
+
+  const baixarModeloExcel = () => {
+    if (!Array.isArray(departamentos) || departamentos.length === 0) {
+      mostrarToast("Cadastre ao menos um departamento antes de baixar a planilha.", "erro");
+      return;
+    }
+
+    const dadosModelo = [
+      { "Nome da Função": "📌 Orientações de Preenchimento:" },
+      { "Nome da Função": "1. Escreva a função desejada na Coluna A." },
+      { "Nome da Função": "2. Na Coluna B, mantivemos os departamentos da empresa pré-preenchidos." },
+      { "Nome da Função": "3. Você pode duplicar ou adicionar linhas mantendo o nome do departamento." },
+      {}, // Linha em branco para separação visual
+    ];
+
+    departamentos.forEach((d) => {
+      const nomeDepto = d.departamento || d.nome || d;
+
+      dadosModelo.push({
+        "Nome da Função": "",
+        "Departamento Vinculado": nomeDepto,
+      });
+
+      dadosModelo.push({
+        "Nome da Função": "",
+        "Departamento Vinculado": nomeDepto,
+      });
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dadosModelo, {
+      header: ["Nome da Função", "Departamento Vinculado"],
+      skipHeader: false,
+    });
+
+    worksheet["!cols"] = [
+      { wch: 40 },
+      { wch: 35 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Funções");
+
+    XLSX.writeFile(workbook, "modelo_funcoes.xlsx");
+  };
+
+  const enviarPlanilhaFuncoes = async () => {
+    if (!arquivoPlanilha) {
+      mostrarToast("Selecione um arquivo de planilha antes de enviar.", "erro");
+      return;
+    }
+
+    try {
+      setEnviandoPlanilha(true);
+
+      const formData = new FormData();
+      formData.append("file", arquivoPlanilha);
+
+      const resposta = await api.post("/gerencial/importar-funcoes", formData);
+
+      mostrarToast(resposta?.message || "Planilha de funções importada com sucesso!", "sucesso");
+
+      setArquivoPlanilha(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      setPaginaAtual(1);
+      await carregarDados();
+    } catch (erro) {
+      console.error("Erro ao importar planilha de funções:", erro);
+      mostrarToast(
+        erro?.response?.data?.message || "Erro ao importar planilha de funções.",
+        "erro"
+      );
+    } finally {
+      setEnviandoPlanilha(false);
+    }
+  };
+
+  // ----------------------------------------------------
+
   const validarFormulario = () => {
     const novosErros = {};
 
@@ -78,23 +198,6 @@ export default function AbaFuncoes() {
     setErros({});
   };
 
-  const carregarDados = async () => {
-    try {
-      const [respFuncoes, respDepartamentos] = await Promise.all([
-        api.get("/funcoes"),
-        api.get("/departamentos"),
-      ]);
-
-      const listaFuncoes = respFuncoes?.funcoes || [];
-
-      setFuncoes(listaFuncoes);
-      setDepartamentos(respDepartamentos?.departamentos || []);
-    } catch (erro) {
-      console.error("Erro ao carregar dados de funções:", erro);
-      mostrarToast("Erro ao carregar dados de funções.", "erro");
-    }
-  };
-
   const salvarFuncao = async () => {
     const formularioValido = validarFormulario();
 
@@ -117,6 +220,7 @@ export default function AbaFuncoes() {
       }
 
       limparFormulario();
+      setPaginaAtual(1);
 
       await carregarDados();
 
@@ -160,6 +264,11 @@ export default function AbaFuncoes() {
 
       await carregarDados();
 
+      // Ajusta a página caso o último item da página atual tenha sido excluído
+      if (funcoesPaginadas.length === 1 && paginaAtual > 1) {
+        setPaginaAtual((prev) => prev - 1);
+      }
+
       mostrarToast("Função excluída com sucesso!", "sucesso");
     } catch (erro) {
       console.error("Erro ao remover função:", erro);
@@ -201,6 +310,48 @@ export default function AbaFuncoes() {
         </div>
       )}
 
+      {/* BLOCO DE IMPORTAÇÃO VIA EXCEL (.XLSX) */}
+      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-xs font-bold text-slate-500 uppercase">
+              📊 Importação em Lote por Planilha Excel
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Baixe o modelo com os departamentos pré-preenchidos, digite as funções e envie o arquivo (.xlsx).
+            </p>
+          </div>
+
+          <button
+            onClick={baixarModeloExcel}
+            type="button"
+            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shrink-0 flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
+          >
+            📗 Baixar Modelo Excel (.xlsx)
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 border-t border-slate-200">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx, .xls, .csv"
+            onChange={(e) => setArquivoPlanilha(e.target.files[0] || null)}
+            className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+          />
+
+          <button
+            onClick={enviarPlanilhaFuncoes}
+            disabled={!arquivoPlanilha || enviandoPlanilha}
+            type="button"
+            className="px-5 py-2 rounded bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          >
+            {enviandoPlanilha ? "Enviando..." : "🚀 Enviar Planilha"}
+          </button>
+        </div>
+      </div>
+
+      {/* BLOCO DE CADASTRO MANUAL / EDIÇÃO */}
       <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
         <h3 className="text-xs font-bold text-slate-500 uppercase mb-3">
           {editandoId ? "✏️ Editando Função" : "Nova Função"}
@@ -291,6 +442,7 @@ export default function AbaFuncoes() {
         </div>
       </div>
 
+      {/* TABELA DE FUNÇÕES - DESKTOP */}
       <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-200">
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-100 text-slate-600 font-bold uppercase">
@@ -309,7 +461,7 @@ export default function AbaFuncoes() {
                 </td>
               </tr>
             ) : (
-              funcoes.map((f) => (
+              funcoesPaginadas.map((f) => (
                 <tr key={f.id} className="hover:bg-slate-50">
                   <td className="p-3 font-medium text-slate-800 capitalize">
                     {f.cargo || f.funcao || "-"}
@@ -345,13 +497,14 @@ export default function AbaFuncoes() {
         </table>
       </div>
 
+      {/* CARDS DE FUNÇÕES - MOBILE */}
       <div className="md:hidden space-y-3">
         {funcoes.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-gray-400 italic">
             Nenhuma função cadastrada.
           </div>
         ) : (
-          funcoes.map((f) => (
+          funcoesPaginadas.map((f) => (
             <div
               key={f.id}
               className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"
@@ -397,6 +550,48 @@ export default function AbaFuncoes() {
           ))
         )}
       </div>
+
+      {/* BARRA DE CONTROLE DA PAGINAÇÃO */}
+      {funcoes.length > 0 && (
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600">
+          <div>
+            Mostrando{" "}
+            <span className="font-bold text-slate-800">
+              {indiceInicial + 1}
+            </span>{" "}
+            até{" "}
+            <span className="font-bold text-slate-800">
+              {Math.min(indiceFinal, funcoes.length)}
+            </span>{" "}
+            de <span className="font-bold text-slate-800">{funcoes.length}</span>{" "}
+            função(ões)
+          </div>
+
+          {totalPaginas > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => irParaPagina(paginaAtual - 1)}
+                disabled={paginaAtual === 1}
+                className="px-2.5 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition"
+              >
+                Anterior
+              </button>
+
+              <span className="px-2 font-bold text-slate-700">
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+
+              <button
+                onClick={() => irParaPagina(paginaAtual + 1)}
+                disabled={paginaAtual === totalPaginas}
+                className="px-2.5 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition"
+              >
+                Próxima
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
