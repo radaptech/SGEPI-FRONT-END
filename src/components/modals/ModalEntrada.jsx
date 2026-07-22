@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-
+import { toast } from "react-toastify";
 import {
   listarEpis,
   listarFornecedores,
@@ -20,6 +20,13 @@ function ModalEntrada({ onClose, onSalvar }) {
   const [epis, setEpis] = useState([]);
   const [tamanhos, setTamanhos] = useState([]);
   const [carregandoDados, setCarregandoDados] = useState(true);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
 
   const [dataEntrada, setDataEntrada] = useState(() => {
     const hoje = new Date();
@@ -96,16 +103,17 @@ function ModalEntrada({ onClose, onSalvar }) {
     [itensEntrada]
   );
 
+  // AJUSTADOS PARA INCLUIR O MODO ESCURO
   const campoNotaComErro = (campo) => {
     return errosNota[campo]
-      ? "border-red-400 focus:ring-red-400"
-      : "border-slate-300 focus:ring-emerald-500";
+      ? "border-red-400 focus:ring-red-400 dark:border-red-500 dark:focus:ring-red-500"
+      : "border-slate-300 focus:ring-emerald-500 dark:border-slate-600 dark:focus:ring-emerald-500";
   };
 
   const campoItemComErro = (campo) => {
     return errosItem[campo]
-      ? "border-red-400 focus:ring-red-400"
-      : "border-slate-300 focus:ring-emerald-500";
+      ? "border-red-400 focus:ring-red-400 dark:border-red-500 dark:focus:ring-red-500"
+      : "border-slate-300 focus:ring-emerald-500 dark:border-slate-600 dark:focus:ring-emerald-500";
   };
 
   const limparErroNota = (campo) => {
@@ -285,9 +293,9 @@ function ModalEntrada({ onClose, onSalvar }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-200">
-        <div className="bg-emerald-600 px-6 py-4 flex justify-between items-center shadow-md">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm">
+      <div className="bg-white dark:bg-[#0B1120] rounded-xl shadow-2xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-200 dark:border-slate-800 transition-colors duration-300">
+        <div className="bg-emerald-600 dark:bg-emerald-700 px-6 py-4 flex justify-between items-center shadow-md shrink-0 transition-colors duration-300">
           <div>
             <h2 className="text-xl font-bold text-white">
               Nova Entrada de Estoque
@@ -301,26 +309,28 @@ function ModalEntrada({ onClose, onSalvar }) {
 
           <button
             onClick={onClose}
-            className="text-white hover:bg-emerald-700 p-1 rounded-full transition-colors"
+            className="text-white hover:bg-emerald-700 dark:hover:bg-emerald-600 p-2 rounded-full transition-colors flex items-center justify-center"
+            title="Fechar"
           >
             ✕
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-6">
-          <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-400 uppercase mb-4 border-b pb-2">
+        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 p-6 space-y-6 transition-colors duration-300">
+          
+          <div className="bg-white dark:bg-slate-800/80 p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-colors duration-300">
+            <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase mb-4 border-b dark:border-slate-700 pb-2 transition-colors">
               1. Dados da Nota / Fornecedor
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
                   FORNECEDOR <span className="text-red-500">*</span>
                 </label>
 
                 <select
-                  className={`w-full p-2 border rounded text-sm bg-white outline-none focus:ring-2 ${campoNotaComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 disabled:bg-slate-100 dark:disabled:bg-slate-800 transition-colors ${campoNotaComErro(
                     "fornecedorId"
                   )}`}
                   value={fornecedorId}
@@ -342,20 +352,20 @@ function ModalEntrada({ onClose, onSalvar }) {
                 </select>
 
                 {errosNota.fornecedorId && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosNota.fornecedorId}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
                   DATA <span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="date"
-                  className={`w-full p-2 border rounded text-sm outline-none focus:ring-2 ${campoNotaComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 transition-colors ${campoNotaComErro(
                     "dataEntrada"
                   )}`}
                   value={dataEntrada}
@@ -366,21 +376,21 @@ function ModalEntrada({ onClose, onSalvar }) {
                 />
 
                 {errosNota.dataEntrada && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosNota.dataEntrada}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
                   NF Nº <span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="text"
                   inputMode="numeric"
-                  className={`w-full p-2 border rounded text-sm outline-none focus:ring-2 ${campoNotaComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 placeholder-slate-400 dark:placeholder-slate-500 transition-colors ${campoNotaComErro(
                     "notaFiscalNumero"
                   )}`}
                   value={notaFiscalNumero}
@@ -392,21 +402,21 @@ function ModalEntrada({ onClose, onSalvar }) {
                 />
 
                 {errosNota.notaFiscalNumero && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosNota.notaFiscalNumero}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
                   SÉRIE
                 </label>
 
                 <input
                   type="text"
                   inputMode="numeric"
-                  className="w-full p-2 border border-slate-300 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 placeholder-slate-400 dark:placeholder-slate-500 transition-colors"
                   value={notaFiscalSerie}
                   onChange={(e) => setNotaFiscalSerie(e.target.value)}
                   placeholder="Padrão: 1"
@@ -415,19 +425,19 @@ function ModalEntrada({ onClose, onSalvar }) {
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-400 uppercase mb-4 border-b pb-2">
+          <div className="bg-white dark:bg-slate-800/80 p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-colors duration-300">
+            <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase mb-4 border-b dark:border-slate-700 pb-2 transition-colors">
               2. Itens do Lote
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-slate-50 p-4 rounded-lg border">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors">
               <div className="md:col-span-3">
-                <label className="text-xs font-bold text-slate-500 mb-1 block">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
                   EPI <span className="text-red-500">*</span>
                 </label>
 
                 <select
-                  className={`w-full p-2 border rounded text-sm bg-white outline-none focus:ring-2 ${campoItemComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 disabled:bg-slate-100 dark:disabled:bg-slate-800 transition-colors ${campoItemComErro(
                     "epiId"
                   )}`}
                   value={epiId}
@@ -451,17 +461,17 @@ function ModalEntrada({ onClose, onSalvar }) {
                 </select>
 
                 {errosItem.epiId && (
-                  <p className="text-xs text-red-500 mt-1">{errosItem.epiId}</p>
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errosItem.epiId}</p>
                 )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-xs font-bold text-slate-500 mb-1 block">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
                   TAMANHO <span className="text-red-500">*</span>
                 </label>
 
                 <select
-                  className={`w-full p-2 border rounded text-sm bg-white outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed ${campoItemComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:cursor-not-allowed transition-colors ${campoItemComErro(
                     "tamanhoTemp"
                   )}`}
                   value={tamanhoTemp}
@@ -483,21 +493,21 @@ function ModalEntrada({ onClose, onSalvar }) {
                 </select>
 
                 {errosItem.tamanhoTemp && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosItem.tamanhoTemp}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-1">
-                <label className="text-xs font-bold text-slate-500 mb-1 block">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
                   QTD <span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="number"
                   min="1"
-                  className={`w-full p-2 border rounded text-sm outline-none focus:ring-2 ${campoItemComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 transition-colors ${campoItemComErro(
                     "qtdTemp"
                   )}`}
                   value={qtdTemp}
@@ -508,14 +518,14 @@ function ModalEntrada({ onClose, onSalvar }) {
                 />
 
                 {errosItem.qtdTemp && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosItem.qtdTemp}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-xs font-bold text-slate-500 mb-1 block">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
                   VLR UNIT. <span className="text-red-500">*</span>
                 </label>
 
@@ -523,7 +533,7 @@ function ModalEntrada({ onClose, onSalvar }) {
                   type="number"
                   min="0"
                   step="0.01"
-                  className={`w-full p-2 border rounded text-sm outline-none focus:ring-2 ${campoItemComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 placeholder-slate-400 dark:placeholder-slate-500 transition-colors ${campoItemComErro(
                     "precoTemp"
                   )}`}
                   value={precoTemp}
@@ -535,20 +545,20 @@ function ModalEntrada({ onClose, onSalvar }) {
                 />
 
                 {errosItem.precoTemp && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosItem.precoTemp}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-xs font-bold text-slate-500 mb-1 block">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
                   LOTE <span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="text"
-                  className={`w-full p-2 border rounded text-sm outline-none focus:ring-2 ${campoItemComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 placeholder-slate-400 dark:placeholder-slate-500 transition-colors ${campoItemComErro(
                     "loteTemp"
                   )}`}
                   value={loteTemp}
@@ -560,7 +570,7 @@ function ModalEntrada({ onClose, onSalvar }) {
                 />
 
                 {errosItem.loteTemp && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosItem.loteTemp}
                   </p>
                 )}
@@ -570,20 +580,20 @@ function ModalEntrada({ onClose, onSalvar }) {
                 <button
                   type="button"
                   onClick={adicionarItem}
-                  className="w-full py-2 bg-slate-800 text-white font-bold rounded text-sm hover:bg-slate-900 transition-colors mt-5"
+                  className="w-full py-2 bg-slate-800 dark:bg-slate-700 text-white font-bold rounded text-sm hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors mt-5"
                 >
                   INCLUIR
                 </button>
               </div>
 
               <div className="md:col-span-3">
-                <label className="text-xs font-bold text-slate-500 mb-1 block">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
                   FABRICAÇÃO <span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="date"
-                  className={`w-full p-2 border rounded text-sm outline-none focus:ring-2 ${campoItemComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 transition-colors ${campoItemComErro(
                     "dataFabricacaoTemp"
                   )}`}
                   value={dataFabricacaoTemp}
@@ -594,20 +604,20 @@ function ModalEntrada({ onClose, onSalvar }) {
                 />
 
                 {errosItem.dataFabricacaoTemp && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosItem.dataFabricacaoTemp}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-3">
-                <label className="text-xs font-bold text-slate-500 mb-1 block">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
                   VALIDADE <span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="date"
-                  className={`w-full p-2 border rounded text-sm outline-none focus:ring-2 ${campoItemComErro(
+                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 transition-colors ${campoItemComErro(
                     "validadeTemp"
                   )}`}
                   value={validadeTemp}
@@ -618,7 +628,7 @@ function ModalEntrada({ onClose, onSalvar }) {
                 />
 
                 {errosItem.validadeTemp && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     {errosItem.validadeTemp}
                   </p>
                 )}
@@ -626,15 +636,15 @@ function ModalEntrada({ onClose, onSalvar }) {
             </div>
 
             {errosNota.itensEntrada && (
-              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 font-medium">
+              <div className="mt-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600 dark:text-red-400 font-medium transition-colors">
                 {errosNota.itensEntrada}
               </div>
             )}
 
             <div className="mt-6 overflow-x-auto">
-              <table className="w-full text-xs text-left border rounded-lg">
-                <thead className="bg-slate-100 text-slate-600 border-b">
-                  <tr className="divide-x">
+              <table className="w-full text-xs text-left border dark:border-slate-700 rounded-lg overflow-hidden transition-colors">
+                <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b dark:border-slate-700 transition-colors">
+                  <tr className="divide-x dark:divide-slate-700">
                     <th className="p-3">EPI / CA</th>
                     <th className="p-3 text-center">TAM.</th>
                     <th className="p-3 text-center">QTD</th>
@@ -645,40 +655,39 @@ function ModalEntrada({ onClose, onSalvar }) {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y">
+                <tbody className="divide-y dark:divide-slate-700 transition-colors">
                   {itensEntrada.length === 0 ? (
                     <tr>
                       <td
                         colSpan="7"
-                        className="p-4 text-center text-slate-400 italic"
+                        className="p-4 text-center text-slate-400 dark:text-slate-500 italic bg-white dark:bg-slate-800"
                       >
                         Nenhum item adicionado ainda.
                       </td>
                     </tr>
                   ) : (
                     itensEntrada.map((item) => (
-                      <tr key={item.id} className="divide-x hover:bg-slate-50">
-                        <td className="p-3 font-bold">
+                      <tr key={item.id} className="divide-x dark:divide-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="p-3 font-bold text-slate-800 dark:text-white">
                           {item.epiNome}
-
-                          <span className="block font-normal text-slate-400">
+                          <span className="block font-normal text-slate-400 dark:text-slate-500 mt-0.5">
                             CA: {item.ca}
                           </span>
                         </td>
 
-                        <td className="p-3 text-center">{item.tamanhoNome}</td>
+                        <td className="p-3 text-center text-slate-700 dark:text-slate-300">{item.tamanhoNome}</td>
 
-                        <td className="p-3 text-center font-bold text-blue-600">
+                        <td className="p-3 text-center font-bold text-blue-600 dark:text-blue-400">
                           {item.quantidade}
                         </td>
 
-                        <td className="p-3 text-center">{item.lote}</td>
+                        <td className="p-3 text-center text-slate-700 dark:text-slate-300">{item.lote}</td>
 
-                        <td className="p-3 text-center">
+                        <td className="p-3 text-center text-slate-700 dark:text-slate-300">
                           {formatarDataParaGo(item.data_validade) || "-"}
                         </td>
 
-                        <td className="p-3 text-right font-bold text-emerald-600">
+                        <td className="p-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
                           {item.totalItem.toLocaleString("pt-BR", {
                             style: "currency",
                             currency: "BRL",
@@ -692,7 +701,7 @@ function ModalEntrada({ onClose, onSalvar }) {
                                 prev.filter((i) => i.id !== item.id)
                               )
                             }
-                            className="text-red-500 hover:underline"
+                            className="text-red-500 dark:text-red-400 hover:underline transition-colors"
                           >
                             Remover
                           </button>
@@ -706,8 +715,8 @@ function ModalEntrada({ onClose, onSalvar }) {
           </div>
         </div>
 
-        <div className="bg-white px-6 py-4 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center border-t">
-          <div className="font-bold text-slate-600 uppercase text-xs">
+        <div className="bg-white dark:bg-[#0B1120] px-6 py-4 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center border-t dark:border-slate-800 shrink-0 transition-colors duration-300">
+          <div className="font-bold text-slate-600 dark:text-slate-300 uppercase text-xs transition-colors">
             Total:{" "}
             {valorTotalEntrada.toLocaleString("pt-BR", {
               style: "currency",
@@ -718,7 +727,7 @@ function ModalEntrada({ onClose, onSalvar }) {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={onClose}
-              className="px-5 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg"
+              className="px-5 py-2 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             >
               Cancelar
             </button>
@@ -726,7 +735,7 @@ function ModalEntrada({ onClose, onSalvar }) {
             <button
               onClick={salvarEntradaFinal}
               disabled={carregando}
-              className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-emerald-600 dark:bg-emerald-700 text-white font-bold rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               {carregando ? "Salvando..." : "Finalizar Entrada"}
             </button>
