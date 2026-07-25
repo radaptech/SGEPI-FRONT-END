@@ -18,7 +18,6 @@ import {
   normalizarTamanhoEntrada,
 } from "../utils/entradaNormalizers";
 
-// Bibliotecas para PDF
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -220,8 +219,8 @@ function Entradas({ usuarioLogado }) {
 
   if (!podeVisualizar) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 max-w-full">
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-4 text-amber-700">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 max-w-full transition-colors duration-300">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-4 text-amber-700 dark:text-amber-400">
           Você não tem permissão para visualizar a tela de entradas.
         </div>
       </div>
@@ -230,20 +229,20 @@ function Entradas({ usuarioLogado }) {
 
   return (
     <>
-      <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 animate-fade-in max-w-full">
+      <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 animate-fade-in max-w-full transition-colors duration-300">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
           <div>
-            <h2 className="text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2 transition-colors">
               📥 Registro de Entradas
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">
               Histórico de entradas de estoque.
             </p>
           </div>
           {podeCadastrar && (
             <button
               onClick={() => setModalAberto(true)}
-              className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm justify-center w-full lg:w-auto"
+              className="bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors flex items-center gap-2 shadow-sm justify-center w-full lg:w-auto"
             >
               <span>➕</span> Nova Entrada
             </button>
@@ -251,34 +250,34 @@ function Entradas({ usuarioLogado }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-            <span className="text-[11px] text-emerald-700 uppercase font-bold block mb-1">
+          <div className="rounded-xl border border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 transition-colors">
+            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 uppercase font-bold block mb-1">
               Registros
             </span>
-            <strong className="text-2xl text-emerald-900">
+            <strong className="text-2xl text-emerald-900 dark:text-emerald-100">
               {carregandoTela ? "--" : resumoTela.totalRegistros}
             </strong>
           </div>
-          <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-            <span className="text-[11px] text-blue-700 uppercase font-bold block mb-1">
+          <div className="rounded-xl border border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4 transition-colors">
+            <span className="text-[11px] text-blue-700 dark:text-blue-400 uppercase font-bold block mb-1">
               Qtd Total
             </span>
-            <strong className="text-2xl text-blue-900">
+            <strong className="text-2xl text-blue-900 dark:text-blue-100">
               {carregandoTela ? "--" : resumoTela.totalItens}
             </strong>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <span className="text-[11px] text-gray-600 uppercase font-bold block mb-1">
+          <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 p-4 transition-colors">
+            <span className="text-[11px] text-gray-600 dark:text-slate-400 uppercase font-bold block mb-1">
               Valor Total
             </span>
-            <strong className="text-2xl text-gray-900">
+            <strong className="text-2xl text-gray-900 dark:text-white">
               {carregandoTela ? "--" : formatarMoedaEntrada(resumoTela.valorTotal)}
             </strong>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row mb-6 shadow-sm ring-1 ring-gray-200 rounded-lg overflow-hidden">
-          <div className="relative bg-gray-50 border-b md:border-b-0 md:border-r border-gray-200">
+        <div className="flex flex-col md:flex-row mb-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 rounded-lg overflow-hidden transition-colors">
+          <div className="relative bg-gray-50 dark:bg-slate-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700 transition-colors">
             <select
               value={filtroAtivo}
               onChange={(e) => {
@@ -286,7 +285,7 @@ function Entradas({ usuarioLogado }) {
                 setBusca("");
                 setPaginaAtual(1);
               }}
-              className="appearance-none w-full md:w-48 bg-transparent text-gray-700 py-3 pl-4 pr-10 focus:outline-none font-bold text-xs uppercase tracking-wider cursor-pointer"
+              className="appearance-none w-full md:w-48 bg-transparent text-gray-700 dark:text-slate-300 py-3 pl-4 pr-10 focus:outline-none font-bold text-xs uppercase tracking-wider cursor-pointer"
             >
               <option value="epiNome">EPI / Item</option>
               <option value="data_entrada">Data de Entrada</option>
@@ -294,12 +293,12 @@ function Entradas({ usuarioLogado }) {
               <option value="lote">Lote</option>
               <option value="nota_fiscal_numero">Nota Fiscal</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 text-[10px]">
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 dark:text-slate-500 text-[10px]">
               ▼
             </div>
           </div>
-          <div className="relative flex-1 bg-white">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+          <div className="relative flex-1 bg-white dark:bg-slate-900 transition-colors">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-slate-500">
               🔍
             </span>
             <input
@@ -310,12 +309,12 @@ function Entradas({ usuarioLogado }) {
                 setBusca(e.target.value);
                 setPaginaAtual(1);
               }}
-              className="w-full pl-10 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition text-sm lg:text-base"
+              className="w-full pl-10 pr-10 py-3 bg-transparent text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors text-sm lg:text-base placeholder-gray-400 dark:placeholder-slate-500"
             />
             {busca && (
               <button
                 onClick={() => setBusca("")}
-                className="absolute inset-y-0 right-0 px-3 text-gray-300 hover:text-red-500 transition"
+                className="absolute inset-y-0 right-0 px-3 text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition"
               >
                 ✕
               </button>
@@ -324,14 +323,14 @@ function Entradas({ usuarioLogado }) {
         </div>
 
         {carregandoTela ? (
-          <div className="border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">
+          <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-10 text-center text-slate-500 dark:text-slate-400 transition-colors">
             Carregando...
           </div>
         ) : (
           <>
-            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200">
+            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 transition-colors">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
+                <thead className="bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-sm uppercase transition-colors">
                   <tr>
                     <th className="p-4 font-semibold">Data</th>
                     <th className="p-4 font-semibold">EPI / Item</th>
@@ -342,10 +341,10 @@ function Entradas({ usuarioLogado }) {
                     <th className="p-4 font-semibold text-center">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-700 transition-colors">
                   {entradasVisiveis.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="p-8 text-center text-gray-500">
+                      <td colSpan="7" className="p-8 text-center text-gray-500 dark:text-slate-400">
                         Nenhuma entrada encontrada.
                       </td>
                     </tr>
@@ -356,41 +355,41 @@ function Entradas({ usuarioLogado }) {
                         Number(entrada.valor_unitario || 0);
 
                       return (
-                        <tr key={entrada.id} className="hover:bg-gray-50 transition">
-                          <td className="p-4 text-gray-600 font-mono text-sm">
+                        <tr key={entrada.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="p-4 text-gray-600 dark:text-slate-400 font-mono text-sm">
                             {entrada.data_entrada}
                           </td>
                           <td className="p-4">
-                            <div className="font-medium text-gray-800">
+                            <div className="font-medium text-gray-800 dark:text-white transition-colors">
                               {entrada.epiNome}
                             </div>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-gray-400 dark:text-slate-500 transition-colors">
                               CA: {entrada.epiCA}
                             </div>
                           </td>
-                          <td className="p-4 text-center text-gray-600">
+                          <td className="p-4 text-center text-gray-600 dark:text-slate-300 transition-colors">
                             {entrada.tamanhoNome}
                           </td>
                           <td className="p-4 text-center">
-                            <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">
+                            <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 text-xs font-bold px-2 py-1 rounded transition-colors">
                               +{entrada.quantidade}
                             </span>
                           </td>
-                          <td className="p-4 text-sm text-gray-600">
+                          <td className="p-4 text-sm text-gray-600 dark:text-slate-300 transition-colors">
                             <div className="font-bold truncate max-w-[150px]">
                               {entrada.fornecedorNome}
                             </div>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-gray-400 dark:text-slate-500">
                               Lote: {entrada.lote}
                             </div>
                           </td>
-                          <td className="p-4 text-right text-emerald-700 font-bold font-mono text-sm">
+                          <td className="p-4 text-right text-emerald-700 dark:text-emerald-400 font-bold font-mono text-sm transition-colors">
                             {formatarMoedaEntrada(total)}
                           </td>
                           <td className="p-4 text-center">
                             <button
                               onClick={() => gerarPDFEntrada(entrada)}
-                              className="bg-gray-100 hover:bg-emerald-50 text-emerald-700 p-2 rounded-lg transition"
+                              className="bg-gray-100 dark:bg-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 p-2 rounded-lg transition-colors"
                               title="Baixar Comprovante"
                             >
                               📄 PDF
@@ -408,25 +407,25 @@ function Entradas({ usuarioLogado }) {
               {entradasVisiveis.map((entrada) => (
                 <div
                   key={entrada.id}
-                  className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative"
+                  className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 shadow-sm relative transition-colors"
                 >
                   <div className="flex justify-between mb-2">
-                    <span className="text-xs font-mono text-gray-500">
+                    <span className="text-xs font-mono text-gray-500 dark:text-slate-400">
                       {entrada.data_entrada}
                     </span>
                     <button
                       onClick={() => gerarPDFEntrada(entrada)}
-                      className="text-emerald-600 text-sm font-bold"
+                      className="text-emerald-600 dark:text-emerald-400 text-sm font-bold transition-colors"
                     >
                       📥 PDF
                     </button>
                   </div>
-                  <h3 className="font-bold text-gray-800">{entrada.epiNome}</h3>
+                  <h3 className="font-bold text-gray-800 dark:text-white transition-colors">{entrada.epiNome}</h3>
                   <div className="flex justify-between mt-2 items-center">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 dark:text-slate-300 transition-colors">
                       Lote: {entrada.lote}
                     </span>
-                    <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">
+                    <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 text-xs font-bold px-2 py-1 rounded transition-colors">
                       +{entrada.quantidade} un
                     </span>
                   </div>
@@ -439,17 +438,25 @@ function Entradas({ usuarioLogado }) {
                 <button
                   onClick={() => setPaginaAtual((p) => Math.max(p - 1, 1))}
                   disabled={paginaAtual === 1}
-                  className="px-4 py-2 rounded text-sm font-bold border disabled:opacity-50"
+                  className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${
+                    paginaAtual === 1 
+                      ? "bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed" 
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600"
+                  }`}
                 >
                   ← Anterior
                 </button>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-slate-400 transition-colors">
                   Pág. {paginaAtual} de {totalPaginas}
                 </span>
                 <button
                   onClick={() => setPaginaAtual((p) => Math.min(p + 1, totalPaginas))}
                   disabled={paginaAtual === totalPaginas}
-                  className="px-4 py-2 rounded text-sm font-bold border disabled:opacity-50"
+                  className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${
+                    paginaAtual === totalPaginas 
+                      ? "bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed" 
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600"
+                  }`}
                 >
                   Próxima →
                 </button>
