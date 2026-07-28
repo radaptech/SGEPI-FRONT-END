@@ -1,4 +1,4 @@
-import { api } from './api'; // 👈Correção do import com chaves
+import { api } from './api';
 
 export const realizarLogin = async (email, senha) => {
   try {
@@ -7,22 +7,13 @@ export const realizarLogin = async (email, senha) => {
       senha: senha
     });
 
-    
-
-    // Se o backend Go envia o token dentro da chave "token" (ex: {"token": "eyJ..."})
-    if (resposta && resposta.token) {
-      sessionStorage.setItem('token', resposta.token);
-      
-      console.log("Login realizado com sucesso!");
-      return true; 
-    } else {
-      // Se a resposta vier sem token (um erro inesperado da API)
-      throw new Error("Token não retornado pelo servidor.");
-    }
+    // O cookie HttpOnly já foi gravado pelo navegador via Set-Cookie da resposta da API.
+    // Retornamos os dados do usuário (ex: resposta.usuario) ou true indicando sucesso.
+    console.log("Login realizado com sucesso!");
+    return resposta?.usuario || true; 
 
   } catch (erro) {
     console.error("Falha no login:", erro.message);
-    
     return false;
   }
 };

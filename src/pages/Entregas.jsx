@@ -75,8 +75,8 @@ function Entregas({ usuarioLogado }) {
 
   if (!podeVisualizar) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-4 text-amber-700">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 transition-colors duration-300">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-4 text-amber-700 dark:text-amber-400 transition-colors">
           Você não tem permissão para visualizar a tela de entregas.
         </div>
       </div>
@@ -85,13 +85,13 @@ function Entregas({ usuarioLogado }) {
 
   return (
     <>
-      <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 max-w-full">
+      <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 max-w-full transition-colors duration-300">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
           <div>
-            <h2 className="text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2 transition-colors">
               📤 Registro de Entregas
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">
               Controle das entregas realizadas para os colaboradores.
             </p>
           </div>
@@ -99,7 +99,7 @@ function Entregas({ usuarioLogado }) {
           {podeCadastrar && (
             <button
               onClick={() => setModalAberto(true)}
-              className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-bold transition shadow-sm w-full lg:w-auto"
+              className="bg-blue-700 dark:bg-blue-600 hover:bg-blue-800 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-sm w-full lg:w-auto"
             >
               + Nova Entrega
             </button>
@@ -128,7 +128,7 @@ function Entregas({ usuarioLogado }) {
         </div>
 
         <div className="relative mb-6">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-slate-500">
             🔍
           </span>
           <input
@@ -136,19 +136,20 @@ function Entregas({ usuarioLogado }) {
             placeholder="Buscar por funcionário, matrícula, token ou itens..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm lg:text-base"
+            className="w-full pl-10 pr-4 py-3 bg-transparent text-gray-800 dark:text-white border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-colors text-sm lg:text-base placeholder-gray-400 dark:placeholder-slate-500"
           />
         </div>
 
         {carregando ? (
-          <div className="border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">
+          <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-10 text-center text-slate-500 dark:text-slate-400 transition-colors">
             Carregando dados...
           </div>
         ) : (
           <>
-            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200">
+
+            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 transition-colors">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
+                <thead className="bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-sm uppercase transition-colors">
                   <tr>
                     <th className="p-4">Data</th>
                     <th className="p-4">Colaborador</th>
@@ -157,7 +158,7 @@ function Entregas({ usuarioLogado }) {
                     <th className="p-4 text-center">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-700 transition-colors">
                   {entregasVisiveis.map((entrega) => {
                     const nomeFunc =
                       entrega.funcionario?.nome ||
@@ -170,25 +171,25 @@ function Entregas({ usuarioLogado }) {
                     const isBaixando = baixandoPdfId === entrega.id;
 
                     return (
-                      <tr key={entrega.id} className="hover:bg-gray-50 transition">
-                        <td className="p-4 text-gray-600 font-mono text-sm">
+                      <tr key={entrega.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="p-4 text-gray-600 dark:text-slate-400 font-mono text-sm">
                           {entrega.dataEntrega}
                         </td>
                         <td className="p-4">
-                          <div className="font-medium text-gray-800">
+                          <div className="font-medium text-gray-800 dark:text-white transition-colors">
                             {nomeFunc}
                           </div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-gray-400 dark:text-slate-500 transition-colors">
                             Matrícula: {matriculaFunc}
                           </div>
                         </td>
-                        <td className="p-4 text-gray-600 text-sm max-w-[400px]">
-                          <span className="line-clamp-2">
+                        <td className="p-4 text-gray-600 dark:text-slate-300 text-sm max-w-[400px]">
+                          <span className="line-clamp-2 transition-colors">
                             {resumirItens(entrega)}
                           </span>
                         </td>
                         <td className="p-4 text-center">
-                          <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
+                          <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-xs font-bold px-2 py-1 rounded transition-colors border dark:border-blue-800">
                             {totalItensEntrega(entrega)}
                           </span>
                         </td>
@@ -201,8 +202,8 @@ function Entregas({ usuarioLogado }) {
                             title="Baixar Recibo PDF"
                             className={`p-2 rounded-lg transition-colors border ${
                               isBaixando
-                                ? "bg-gray-100 border-gray-200 text-gray-400 cursor-wait"
-                                : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
+                                ? "bg-gray-100 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-400 cursor-wait"
+                                : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 hover:border-red-300 dark:hover:border-red-700"
                             }`}
                           >
                             {isBaixando ? "⏳" : "📄 PDF"}
@@ -230,19 +231,21 @@ function Entregas({ usuarioLogado }) {
                 return (
                   <div
                     key={entrega.id}
-                    className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative"
+                    className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 shadow-sm relative transition-colors"
                   >
                     <div className="flex justify-between mb-2">
-                      <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 rounded">
+                      <span className="text-xs font-mono text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 border dark:border-slate-600 px-2 py-0.5 rounded transition-colors">
                         {entrega.dataEntrega}
                       </span>
-                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 rounded">
+                      <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border dark:border-blue-800 text-xs font-bold px-2 py-0.5 rounded transition-colors">
                         {totalItensEntrega(entrega)} itens
                       </span>
                     </div>
 
-                    <h3 className="font-bold text-gray-800 pr-10">{nomeFunc}</h3>
-                    <p className="text-gray-600 text-sm italic mt-1">
+                    <h3 className="font-bold text-gray-800 dark:text-white pr-10 transition-colors">
+                      {nomeFunc}
+                    </h3>
+                    <p className="text-gray-600 dark:text-slate-300 text-sm italic mt-1 transition-colors">
                       {resumirItens(entrega)}
                     </p>
 
@@ -253,8 +256,8 @@ function Entregas({ usuarioLogado }) {
                       disabled={isBaixando}
                       className={`mt-4 w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border ${
                         isBaixando
-                          ? "bg-gray-100 border-gray-200 text-gray-400"
-                          : "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                          ? "bg-gray-100 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-400"
+                          : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40"
                       }`}
                     >
                       {isBaixando ? "⏳ Gerando..." : "📄 Baixar PDF"}
@@ -271,7 +274,7 @@ function Entregas({ usuarioLogado }) {
                   disabled={paginaAtual === 1}
                   onClick={() => setPaginaAtual((p) => p - 1)}
                 />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-slate-400 transition-colors">
                   Pág. <b>{paginaAtual}</b> de <b>{totalPaginas}</b>
                 </span>
                 <PaginationButton
@@ -298,24 +301,25 @@ function Entregas({ usuarioLogado }) {
 }
 
 const colorVariants = {
-  blue: "border-blue-100 bg-blue-50 text-blue-700 text-blue-900",
-  emerald: "border-emerald-100 bg-emerald-50 text-emerald-700 text-emerald-900",
-  slate: "border-slate-200 bg-slate-50 text-slate-600 text-slate-900",
+  blue: "border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-blue-900 dark:text-blue-200",
+  emerald: "border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-emerald-900 dark:text-emerald-200",
+  slate: "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-slate-900 dark:text-white",
 };
 
 const StatCard = ({ label, value, color, loading }) => {
   const baseClasses = colorVariants[color] || colorVariants.blue;
   const classesArray = baseClasses.split(" ");
-  const borderBgClasses = `${classesArray[0]} ${classesArray[1]}`;
-  const labelClass = classesArray[2];
-  const valueClass = classesArray[3];
+  // A string agora tem 6 partes, agrupamos para formar o visual completo
+  const borderBgClasses = `${classesArray[0]} ${classesArray[1]} ${classesArray[2]} ${classesArray[3]}`;
+  const labelClass = `${classesArray[4]} ${classesArray[5]}`;
+  const valueClass = `${classesArray[6]} ${classesArray[7]}`;
 
   return (
-    <div className={`rounded-xl border p-4 ${borderBgClasses}`}>
-      <span className={`text-[11px] uppercase font-bold block mb-1 ${labelClass}`}>
+    <div className={`rounded-xl border p-4 transition-colors duration-300 ${borderBgClasses}`}>
+      <span className={`text-[11px] uppercase font-bold block mb-1 transition-colors ${labelClass}`}>
         {label}
       </span>
-      <strong className={`text-2xl ${valueClass}`}>
+      <strong className={`text-2xl transition-colors ${valueClass}`}>
         {loading ? "--" : value}
       </strong>
     </div>
@@ -326,10 +330,10 @@ const PaginationButton = ({ label, disabled, onClick }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`px-4 py-2 rounded text-sm font-bold border ${
+    className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${
       disabled
-        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-        : "bg-white text-blue-700 hover:bg-blue-50 border-blue-200"
+        ? "bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed"
+        : "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 border-blue-200 dark:border-slate-600"
     }`}
   >
     {label}

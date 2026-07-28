@@ -1,10 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import { api } from "../../services/api";
 
 export default function AbaFornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
   const [carregando, setCarregando] = useState(false);
+  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
+  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+
+  const fileInputRef = useRef(null);
 
   const [erros, setErros] = useState({});
   const [toast, setToast] = useState(null);
@@ -52,6 +57,105 @@ export default function AbaFornecedores() {
 
     limparErroCampo(campo);
   };
+
+  // --- GERADOR E ENVIADOR DE PLANILHA EXCEL (.XLSX) ---
+
+  const baixarModeloExcel = () => {
+    // Organiza com as orientações nas primeiras linhas e o cabeçalho oficial abaixo delas
+    const dadosModelo = [
+      {
+        "Razão Social": "📌 ORIENTAÇÕES DE PREENCHIMENTO:",
+        "Nome Fantasia": "",
+        "CNPJ": "",
+        "Inscrição Estadual": "",
+      },
+      {
+        "Razão Social": "1. Preencha a Razão Social e o Nome Fantasia.",
+        "Nome Fantasia": "",
+        "CNPJ": "",
+        "Inscrição Estadual": "",
+      },
+      {
+        "Razão Social": "2. O CNPJ pode conter apenas números (14 dígitos) ou estar formatado.",
+        "Nome Fantasia": "",
+        "CNPJ": "",
+        "Inscrição Estadual": "",
+      },
+      {}, // Linha em branco para separação visual
+      // Linha de cabeçalho oficial que o leitor Go vai buscar
+      {
+        "Razão Social": "Razão Social",
+        "Nome Fantasia": "Nome Fantasia",
+        "CNPJ": "CNPJ",
+        "Inscrição Estadual": "Inscrição Estadual",
+      },
+    ];
+
+    // skipHeader: true impede que a biblioteca crie uma linha duplicada no topo
+    const worksheet = XLSX.utils.json_to_sheet(dadosModelo, { skipHeader: true });
+
+    // Ajusta a largura das colunas
+    worksheet["!cols"] = [
+      { wch: 45 }, // Coluna A: Razão Social
+      { wch: 30 }, // Coluna B: Nome Fantasia
+      { wch: 22 }, // Coluna C: CNPJ
+      { wch: 22 }, // Coluna D: Inscrição Estadual
+    ];
+
+    // Força colunas de CNPJ e Inscrição como texto puro ('s') para preservar formatação/zeros
+    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      const cellC = worksheet[XLSX.utils.encode_cell({ r: R, c: 2 })];
+      if (cellC && typeof cellC.v === "string") cellC.t = "s";
+
+      const cellD = worksheet[XLSX.utils.encode_cell({ r: R, c: 3 })];
+      if (cellD && typeof cellD.v === "string") cellD.t = "s";
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Fornecedores");
+
+    XLSX.writeFile(workbook, "modelo_importacao_fornecedores.xlsx");
+  };
+
+  const enviarPlanilhaFornecedores = async () => {
+    if (!arquivoPlanilha) {
+      mostrarToast("Selecione um arquivo de planilha antes de enviar.", "erro");
+      return;
+    }
+
+    try {
+      setEnviandoPlanilha(true);
+
+      const formData = new FormData();
+      formData.append("file", arquivoPlanilha);
+
+      // Chamada passando 2 parâmetros (evita o problema de CORS)
+      const resposta = await api.post("/gerencial/importar-fornecedores", formData);
+
+      mostrarToast(
+        resposta?.message || "Planilha de fornecedores importada com sucesso!",
+        "sucesso"
+      );
+
+      setArquivoPlanilha(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      await carregarFornecedores();
+    } catch (erro) {
+      console.error("Erro ao importar planilha de fornecedores:", erro);
+      mostrarToast(
+        erro?.response?.data?.message || "Erro ao importar planilha de fornecedores.",
+        "erro"
+      );
+    } finally {
+      setEnviandoPlanilha(false);
+    }
+  };
+
+  // ----------------------------------------------------
 
   const validarCNPJ = (cnpj) => {
     const cnpjLimpo = String(cnpj).replace(/\D/g, "");
@@ -258,6 +362,48 @@ export default function AbaFornecedores() {
         </div>
       )}
 
+      {/* BLOCO DE IMPORTAÇÃO VIA EXCEL (.XLSX) */}
+      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-xs font-bold text-slate-500 uppercase">
+              📊 Importação em Lote por Planilha Excel
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Baixe o modelo com os campos necessários, preencha as empresas e envie o arquivo (.xlsx).
+            </p>
+          </div>
+
+          <button
+            onClick={baixarModeloExcel}
+            type="button"
+            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shrink-0 flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
+          >
+            📗 Baixar Modelo Excel (.xlsx)
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 border-t border-slate-200">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx, .xls, .csv"
+            onChange={(e) => setArquivoPlanilha(e.target.files[0] || null)}
+            className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+          />
+
+          <button
+            onClick={enviarPlanilhaFornecedores}
+            disabled={!arquivoPlanilha || enviandoPlanilha}
+            type="button"
+            className="px-5 py-2 rounded bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          >
+            {enviandoPlanilha ? "Enviando..." : "🚀 Enviar Planilha"}
+          </button>
+        </div>
+      </div>
+
+      {/* BLOCO DE CADASTRO MANUAL / EDIÇÃO */}
       <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
         <h3 className="text-xs font-bold text-slate-500 uppercase mb-3">
           {editandoId ? "✏️ Editando Fornecedor" : "Novo Fornecedor"}
@@ -383,6 +529,7 @@ export default function AbaFornecedores() {
         </div>
       </div>
 
+      {/* LISTAGEM DE FORNECEDORES */}
       <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-xs font-bold text-slate-500 uppercase">
@@ -400,6 +547,7 @@ export default function AbaFornecedores() {
           </div>
         ) : (
           <>
+            {/* CARDS MOBILE */}
             <div className="md:hidden space-y-3">
               {fornecedores.map((f) => (
                 <div
@@ -469,6 +617,7 @@ export default function AbaFornecedores() {
               ))}
             </div>
 
+            {/* TABELA DESKTOP */}
             <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-200 bg-white">
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-100 text-slate-600 font-bold uppercase">

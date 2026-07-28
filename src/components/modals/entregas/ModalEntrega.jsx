@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useModalEntrega } from "../../../hooks/useModalEntrega";
 import { useSignaturePad } from "../../../hooks/useSignaturePad";
 
@@ -6,12 +7,16 @@ import EntregaForm from "./EntregaForm";
 import EntregaItensForm from "./EntregaItensForm";
 import EntregaFooter from "./EntregaFooter";
 import ModalAssinatura from "./ModalAssinatura";
+import ModalFoto from "./ModalFoto";
 
 function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
   const assinatura = useSignaturePad();
+  const [modalFotoAberto, setModalFotoAberto] = useState(false);
+  const [fotoCapturada, setFotoCapturada] = useState(null);
+  const previewFinal = fotoCapturada || assinatura.assinaturaPreview;
 
   const entrega = useModalEntrega({
-    assinaturaPreview: assinatura.assinaturaPreview,
+    assinaturaPreview: previewFinal,
     onClose,
     onSalvar,
     funcionarios,
@@ -20,6 +25,14 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
   const handleMudancaEpi = (valor) => {
     entrega.setIdEpiTemp(valor);
     entrega.setIdTamanhoTemp("");
+  };
+
+  const handleLimparConfirmacao = () => {
+    if (fotoCapturada) {
+      setFotoCapturada(null);
+    } else {
+      assinatura.limparAssinatura();
+    }
   };
 
   return (
@@ -39,9 +52,10 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
               funcionarioSelecionado={entrega.funcionarioSelecionado}
               dataEntrega={entrega.dataEntrega}
               setDataEntrega={entrega.setDataEntrega}
-              assinaturaPreview={assinatura.assinaturaPreview}
-              limparAssinatura={assinatura.limparAssinatura}
+              assinaturaPreview={previewFinal}
+              limparAssinatura={handleLimparConfirmacao}
               abrirAssinatura={assinatura.abrirModalAssinatura}
+              abrirCamera={() => setModalFotoAberto(true)}
             />
 
             <EntregaItensForm
@@ -57,7 +71,6 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
               adicionarItem={entrega.adicionarItem}
               itensParaEntregar={entrega.itensParaEntregar}
               removerItem={entrega.removerItem}
-              // 🌟 NOVO: Passando o objeto selecionado para o formulário travar a tela
               tamanhoSelecionadoObj={entrega.tamanhoSelecionadoObj}
             />
           </div>
@@ -86,6 +99,11 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
         fecharAssinatura={assinatura.fecharModalAssinatura}
         painelFerramentasAberto={assinatura.painelFerramentasAberto}
         setPainelFerramentasAberto={assinatura.setPainelFerramentasAberto}
+      />
+      <ModalFoto
+        aberto={modalFotoAberto}
+        fecharFoto={() => setModalFotoAberto(false)}
+        onFotoCapturada={(url) => setFotoCapturada(url)}
       />
     </>
   );

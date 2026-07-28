@@ -17,10 +17,6 @@ function normalizarRota(rota = "") {
     return rota.startsWith("/") ? rota : `/${rota}`;
 }
 
-function getToken() {
-    return sessionStorage.getItem("token");
-}
-
 function getTenantId() {
     const hostname = window.location.hostname;
     const partes = hostname.split(".");
@@ -32,18 +28,11 @@ function isFormData(valor) {
 }
 
 function montarHeaders(headersExtras = {}, body = null) {
-    const token = getToken();
-
-    console.log("MONTANDO CABEÇALHOS! O token encontrado foi:", token ? "ACHOU UM TOKEN" : "VAAAAAAZIO");
     const tenantId = getTenantId();
     const headers = { ...headersExtras };
 
     if (!isFormData(body) && !headers["Content-Type"]) {
         headers["Content-Type"] = "application/json";
-    }
-
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
     }
 
     if (tenantId) {
@@ -88,11 +77,8 @@ async function tratarResposta(resposta, rota, mensagemErroPadrao) {
     const dados = await lerCorpoResposta(resposta);
     
     if (!resposta.ok) {
-        
-        // ==========================================
         if (resposta.status === 401) {
-            console.warn("Token expirado ou inválido.");
-            sessionStorage.removeItem("token"); // Limpa o token estragado
+            console.warn("Sessão expirada ou não autorizada.");
             
             // Só redireciona se a URL atual NÃO for a de login 
             // E se a rota da API que deu erro NÃO for a tentativa de "/login"
@@ -101,13 +87,10 @@ async function tratarResposta(resposta, rota, mensagemErroPadrao) {
                 window.location.href = "/login"; 
             }
         }
-        // ==========================================
 
         const fallback = `${mensagemErroPadrao} ${rota}`;
         const mensagemFinal = extrairMensagemErro(dados, fallback);
         
-        // Dispara o erro globalmente 
-        // (Isso vai mostrar o erro de "Senha incorreta" quando a rota for /login)
         toast.error(mensagemFinal);
         
         throw new Error(mensagemFinal);
@@ -123,6 +106,8 @@ async function request(method, rota, dados = null, headersExtras = {}) {
     const opcoes = {
         method,
         headers: montarHeaders(headersExtras, dados),
+        // 🔑 Habilita o envio/recebimento de cookies HttpOnly nas chamadas de rede
+        credentials: "include", 
     };
 
     if (dados !== null && dados !== undefined) {
@@ -142,5 +127,3 @@ export const api = {
     patch: (rota, d, h) => request("PATCH", rota, d, h),
     delete: (rota, h) => request("DELETE", rota, null, h),
 };
-
-export { getToken };
