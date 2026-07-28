@@ -30,31 +30,22 @@ function Login({ onLogin }) {
     try {
       setCarregando(true);
 
-      // Chamada real para a sua API (via Traefik)
+      // Chamada para a API (o navegador salvará o cookie HttpOnly enviado pelo Go no Set-Cookie)
       const resposta = await api.post("/login", {
         email: loginLimpo,
         senha: senhaLimpa,
       });
 
-      const token = resposta.data?.token || resposta.token;
-      const usuario = resposta.data?.usuario || resposta.usuario;
-
-      if (!token) {
-        throw new Error("Token de acesso não retornado pelo servidor.");
-      }
+      // Extrai os dados do usuário do retorno da API
+      const usuario = resposta?.usuario || resposta?.data?.usuario || resposta?.data || resposta;
 
       if (!usuario) {
         throw new Error("Dados do usuário não retornados pelo servidor.");
       }
 
-      sessionStorage.setItem("token", token);
-      sessionStorage.setItem("usuario", JSON.stringify(usuario));
-
+      // Repassa o usuário logado para o App.js atualizar o estado em memória
       if (onLogin) {
-        onLogin({
-          token,
-          usuario,
-        });
+        onLogin(usuario);
       }
     } catch (err) {
       setErro(err?.response?.data?.error || err?.message || "Erro ao realizar login.");
