@@ -1,0 +1,77 @@
+import { useMemo } from "react";
+import { formatarMoeda } from "../utils/dashboardFormatters";
+
+export function useDashboardCards(
+  resumo,
+  carregandoResumo
+) {
+  return useMemo(
+    () => [
+      {
+        id: "estoque",
+        titulo: "Total em Estoque",
+        valor: carregandoResumo
+          ? "--"
+          : resumo.totalItens,
+        descricao:
+          "Clique para ver item por tamanho",
+        icone: "📦",
+        iconeBox:
+          "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+        ring:
+          "hover:border-blue-200 dark:hover:border-blue-700 hover:bg-blue-50/40 dark:hover:bg-slate-800/80",
+        badge:
+          "Estoque atual detalhado",
+      },
+      {
+        id: "entregas",
+        titulo: "Entregas no Mês",
+        valor: carregandoResumo
+          ? "--"
+          : resumo.entregasMes,
+        descricao:
+          "Clique para pesquisar no histórico",
+        icone: "🚀",
+        iconeBox:
+          "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
+        ring:
+          "hover:border-purple-200 dark:hover:border-purple-700 hover:bg-purple-50/40 dark:hover:bg-slate-800/80",
+        badge: "Movimento do mês",
+      },
+      {
+        id: "alertas",
+        titulo: "Alertas",
+        valor: carregandoResumo
+          ? "--"
+          : resumo.alertas,
+        descricao:
+          "Clique para ver os itens acabando",
+        icone: "⚠️",
+        iconeBox:
+          "bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
+        ring:
+          "hover:border-orange-200 dark:hover:border-orange-700 hover:bg-orange-50/40 dark:hover:bg-slate-800/80",
+        badge: "Estoque baixo",
+      },
+      {
+        id: "valor",
+        titulo: "Valor em Estoque",
+        valor: carregandoResumo
+          ? "--"
+          : formatarMoeda(
+              resumo.valorTotal
+            ),
+        descricao:
+          "Clique para ver item, tamanho, quantidade e valor",
+        icone: "💲",
+        iconeBox:
+          "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400",
+        ring:
+          "hover:border-green-200 dark:hover:border-green-700 hover:bg-green-50/40 dark:hover:bg-slate-800/80",
+        badge:
+          "Financeiro do estoque",
+      },
+    ],
+    [resumo, carregandoResumo]
+  );
+}
