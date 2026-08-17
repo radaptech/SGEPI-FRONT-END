@@ -1,11 +1,11 @@
 import ModalDetalhesDashboard from "../components/modals/ModalDetalhesDashboard";
 
-import DashboardHeader from "../dashboard/DashboardHeader";
-import DashboardStatus from "../dashboard/DashboardStatus";
-import DashboardCards from "../dashboard/DashboardCards";
-import DashboardResumoRapido from "../dashboard/DashboardResumoRapido";
-import DashboardAcoesRapidas from "../dashboard/DashboardAcoesRapidas";
-import DashboardModals from "../dashboard/DashboardModals";
+import DashboardHeader from "../components/dashboard/DashboardHeader";
+import DashboardStatus from "../components/dashboard/DashboardStatus";
+import DashboardCards from "../components/dashboard/DashboardCards";
+import DashboardResumoRapido from "../components/dashboard/DashboardResumoRapido";
+import DashboardAcoesRapidas from "../components/dashboard/DashboardAcoesRapidas";
+import DashboardModals from "../components/dashboard/DashboardModals";
 
 import { useDashboardResumo } from "../hooks/useDashboardResumo";
 import { useDashboardCards } from "../hooks/useDashboardCards";

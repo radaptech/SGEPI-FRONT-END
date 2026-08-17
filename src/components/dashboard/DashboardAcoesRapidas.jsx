@@ -1,4 +1,4 @@
-import QuickActionCard from "../components/QuickActionCard";
+import QuickActionCard from "../QuickActionCard";
 
 function DashboardAcoesRapidas({
   abrirModal,

@@ -1,4 +1,4 @@
-import DashboardCard from "../components/DashboardCard";
+import DashboardCard from "../DashboardCard";
 
 function DashboardCards({
   cards,

@@ -1,7 +1,7 @@
-import ModalEntrada from "../components/modals/ModalEntrada";
-import ModalEntrega from "../components/modals/entregas/ModalEntrega";
-import ModalBaixa from "../components/modals/ModalBaixa";
-import ModalBusca from "../components/modals/ModalBusca";
+import ModalEntrada from "../modals/ModalEntrada";
+import ModalEntrega from "../modals/entregas/ModalEntrega";
+import ModalBaixa from "../modals/ModalBaixa";
+import ModalBusca from "../modals/ModalBusca";
 
 function DashboardModals({
   modal,
