@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { formatarMoeda } from "../utils/dashboardFormatters";
+import { Package, Truck, AlertTriangle, CircleDollarSign } from "lucide-react"; 
 
 export function useDashboardCards(
   resumo,
@@ -15,7 +16,7 @@ export function useDashboardCards(
           : resumo.totalItens,
         descricao:
           "Clique para ver item por tamanho",
-        icone: "📦",
+        icone: <Package className="w-6 h-6" strokeWidth={2} />,
         iconeBox:
           "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
         ring:
@@ -31,7 +32,7 @@ export function useDashboardCards(
           : resumo.entregasMes,
         descricao:
           "Clique para pesquisar no histórico",
-        icone: "🚀",
+        icone: <Truck className="w-6 h-6" strokeWidth={2} />,
         iconeBox:
           "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
         ring:
@@ -46,7 +47,7 @@ export function useDashboardCards(
           : resumo.alertas,
         descricao:
           "Clique para ver os itens acabando",
-        icone: "⚠️",
+        icone: <AlertTriangle className="w-6 h-6" strokeWidth={2} />,
         iconeBox:
           "bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
         ring:
@@ -63,7 +64,7 @@ export function useDashboardCards(
             ),
         descricao:
           "Clique para ver item, tamanho, quantidade e valor",
-        icone: "💲",
+        icone: <CircleDollarSign className="w-6 h-6" strokeWidth={2} />,
         iconeBox:
           "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400",
         ring:
