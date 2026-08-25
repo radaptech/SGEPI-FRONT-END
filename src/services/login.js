@@ -1,28 +1,27 @@
-import { api } from './api'; // 👈Correção do import com chaves
+import { api } from "./api";
 
 export const realizarLogin = async (email, senha) => {
   try {
-    const resposta = await api.post('/login', {
-      email: email,
-      senha: senha
+    const resposta = await api.post("/login", {
+      email,
+      senha,
     });
 
-    
-
-    // Se o backend Go envia o token dentro da chave "token" (ex: {"token": "eyJ..."})
-    if (resposta && resposta.token) {
-      sessionStorage.setItem('token', resposta.token);
-      
-      console.log("Login realizado com sucesso!");
-      return true; 
-    } else {
-      // Se a resposta vier sem token (um erro inesperado da API)
-      throw new Error("Token não retornado pelo servidor.");
+    if (!resposta?.usuario) {
+      throw new Error("Dados do usuário não retornados pelo servidor.");
     }
 
+    sessionStorage.setItem(
+      "usuario",
+      JSON.stringify(resposta.usuario)
+    );
+
+    console.log("Login realizado com sucesso!");
+
+    return resposta.usuario;
   } catch (erro) {
     console.error("Falha no login:", erro.message);
-    
+
     return false;
   }
 };
