@@ -171,12 +171,6 @@ function DashboardMaster({ usuarioLogado }) {
       <div className="w-full max-w-7xl mx-auto px-6 lg:px-8 pt-10">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                Painel Master
-              </span>
-            </div>
             <h1 className="text-3xl font-semibold tracking-tight">Gestão da Plataforma</h1>
             <p className="text-zinc-500 mt-2 text-sm max-w-lg leading-relaxed">
               Acompanhe empresas clientes, mensalidades e indicadores gerais de forma centralizada.

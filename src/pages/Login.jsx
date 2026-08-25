@@ -4,7 +4,6 @@ import EsqueciSenha from "./EsqueciSenha";
 
 function Login({ onLogin }) {
   const [mostrarEsqueciSenha, setMostrarEsqueciSenha] = useState(false);
-
   const [login, setLogin] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -59,19 +58,16 @@ function Login({ onLogin }) {
   };
 
   if (mostrarEsqueciSenha) {
-    return (
-      <EsqueciSenha
-        onVoltar={() => setMostrarEsqueciSenha(false)}
-      />
-    );
+    return <EsqueciSenha onVoltar={() => setMostrarEsqueciSenha(false)} />;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center transition-colors duration-500 p-4 bg-slate-50 font-sans animate-fade-in">
-      <div className="bg-white p-8 sm:p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 w-full max-w-[420px] relative">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-blue-600 font-sans">
+      <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-2xl shadow-blue-900/50 w-full max-w-[400px] animate-fade-in">
+        
         <div className="flex justify-center mb-6">
-          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-md shadow-blue-600/20">
-            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
@@ -79,10 +75,10 @@ function Login({ onLogin }) {
 
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Bem-vindo ao SGEPI
+            SGEPI
           </h1>
-          <p className="text-sm text-slate-500 mt-2 font-medium">
-            Insira suas credenciais para acessar o sistema.
+          <p className="text-sm text-slate-500 mt-1.5 font-medium">
+            Gestão de Estoque
           </p>
         </div>
 
@@ -102,7 +98,7 @@ function Login({ onLogin }) {
             </label>
             <input
               type="text"
-              className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all text-sm text-slate-900 placeholder:text-slate-400"
+              className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-sm text-slate-900 placeholder:text-slate-400"
               placeholder="seu@email.com"
               value={login}
               onChange={(e) => setLogin(e.target.value)}
@@ -118,14 +114,14 @@ function Login({ onLogin }) {
               <button
                 type="button"
                 onClick={() => setMostrarEsqueciSenha(true)}
-                className="text-[13px] font-medium text-blue-600 hover:text-blue-700 hover:underline transition-all"
+                className="text-[13px] font-medium text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Esqueceu a senha?
               </button>
             </div>
             <input
               type="password"
-              className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all text-sm text-slate-900 placeholder:text-slate-400 tracking-wider"
+              className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-sm text-slate-900 placeholder:text-slate-400 tracking-wider"
               placeholder="••••••••"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
@@ -136,10 +132,10 @@ function Login({ onLogin }) {
           <button
             type="submit"
             disabled={carregando}
-            className={`w-full py-3.5 rounded-xl text-white font-semibold text-sm shadow-sm transition-all mt-2 flex items-center justify-center gap-2 ${
+            className={`w-full py-3.5 rounded-xl text-white font-semibold text-sm transition-all mt-2 flex items-center justify-center gap-2 ${
               carregando
                 ? "bg-blue-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-600/20 active:scale-[0.98]"
+                : "bg-blue-600 hover:bg-blue-700 active:scale-[0.98]"
             }`}
           >
             {carregando ? (
@@ -158,7 +154,7 @@ function Login({ onLogin }) {
 
         <div className="mt-8 text-center pt-6 border-t border-slate-100">
           <p className="text-[11px] text-slate-400 font-medium">
-            SGEPI - Gestão de Estoque © {new Date().getFullYear()}
+            SGEPI © {new Date().getFullYear()}
           </p>
         </div>
       </div>
