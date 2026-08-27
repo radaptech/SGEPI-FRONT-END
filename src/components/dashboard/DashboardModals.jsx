@@ -4,7 +4,7 @@ import ModalBaixa from "../modals/ModalBaixa";
 import ModalBusca from "../modals/ModalBusca";
 
 function DashboardModals({
-  modal,
+  modalAberto, 
   fecharModal,
   aoSalvar,
   epis,
@@ -12,52 +12,32 @@ function DashboardModals({
 }) {
   return (
     <>
-      {modal ===
-        "entrada" && (
+      {modalAberto === "entrada" && (
         <ModalEntrada
-          onClose={
-            fecharModal
-          }
-          onSalvar={
-            aoSalvar
-          }
+          onClose={fecharModal}
+          onSalvar={aoSalvar}
         />
       )}
 
-      {modal ===
-        "entrega" && (
+      {modalAberto === "entrega" && (
         <ModalEntrega
-          onClose={
-            fecharModal
-          }
-          onSalvar={
-            aoSalvar
-          }
+          onClose={fecharModal}
+          onSalvar={aoSalvar}
           epis={epis}
-          funcionarios={
-            funcionarios
-          }
+          funcionarios={funcionarios}
         />
       )}
 
-      {modal ===
-        "baixa" && (
+      {modalAberto === "baixa" && (
         <ModalBaixa
-          onClose={
-            fecharModal
-          }
-          onSalvar={
-            aoSalvar
-          }
+          onClose={fecharModal}
+          onSalvar={aoSalvar}
         />
       )}
 
-      {modal ===
-        "busca" && (
+      {modalAberto === "busca" && (
         <ModalBusca
-          onClose={
-            fecharModal
-          }
+          onClose={fecharModal}
         />
       )}
     </>

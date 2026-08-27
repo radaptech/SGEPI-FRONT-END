@@ -1,148 +1,63 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AbaDepartamentos from "./administracao/AbaDepartamento";
 import AbaFuncoes from "./administracao/AbaFuncoes";
 import AbaFuncionarios from "./administracao/AbaFuncionario";
 import AbaEpis from "./administracao/AbaEpi";
 import AbaFornecedores from "./administracao/AbaFornecedores";
-import AbaPerfil from "./administracao/AbaPerfil";
+import { Settings, Factory, Building2, Briefcase, Users, ShieldCheck } from "lucide-react";
 
 function Administracao() {
-  const [abaAtiva, setAbaAtiva] = useState("departamentos");
-  const [acessoLiberado, setAcessoLiberado] = useState(true);
-  const [senhaAcesso, setSenhaAcesso] = useState("");
-  const [erroSenha, setErroSenha] = useState("");
-  const adminPorPerfil = true;
-  const adminPorPermissao = true;
+  const [abaAtiva, setAbaAtiva] = useState("fornecedores");
 
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [isDarkMode]);
-
-  const toggleTema = () => {
-    setIsDarkMode(!isDarkMode);
-  };
+  const tabs = [
+    { id: "fornecedores", label: "Fornecedores", icone: <Factory className="w-4 h-4" /> },
+    { id: "departamentos", label: "Departamentos", icone: <Building2 className="w-4 h-4" /> },
+    { id: "funcoes", label: "Funções", icone: <Briefcase className="w-4 h-4" /> },
+    { id: "funcionarios", label: "Funcionários", icone: <Users className="w-4 h-4" /> },
+    { id: "epis", label: "EPIs", icone: <ShieldCheck className="w-4 h-4" /> },
+  ];
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 animate-fade-in max-w-full transition-colors duration-300">
-      <div className="mb-6 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2 transition-colors">
-            ⚙️ Painel Administrativo
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">
-            Gerencie os cadastros base conforme a estrutura do banco.
-          </p>
+    <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 animate-fade-in max-w-full transition-colors duration-300">
+      <div className="mb-8 flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 transition-colors duration-300">
+            <Settings className="w-5 h-5" strokeWidth={2.5} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
+              Painel Administrativo
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+              Gerencie os cadastros base conforme a estrutura do sistema.
+            </p>
+          </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4 border-b border-slate-200/80 dark:border-slate-700/80 pb-6 mb-6 transition-colors w-full">
+        {tabs.map((tab) => (
           <button
-            onClick={toggleTema}
-            className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+            key={tab.id}
+            onClick={() => setAbaAtiva(tab.id)}
+            className={`flex items-center justify-center gap-2 px-2 py-3 rounded-xl text-[13px] font-bold transition-all duration-300 active:scale-[0.98] ${
+              abaAtiva === tab.id
+                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20 border border-transparent"
+                : "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
+            }`}
           >
-            {isDarkMode ? "☀️ Modo Claro" : "🌙 Modo Escuro"}
+            {tab.icone}
+            <span className="truncate">{tab.label}</span>
           </button>
-
-          {!adminPorPerfil && !adminPorPermissao && (
-            <button
-              onClick={() => {
-                setAcessoLiberado(false);
-                setSenhaAcesso("");
-                setErroSenha("");
-                setAbaAtiva("fornecedores");
-              }}
-              className="px-4 py-2 rounded-lg text-sm font-bold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 transition w-full sm:w-auto"
-            >
-              🔐 Bloquear Área
-            </button>
-          )}
-        </div>
+        ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-slate-700 pb-4 mb-6 transition-colors">
-        <button
-          onClick={() => setAbaAtiva("fornecedores")}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
-            abaAtiva === "fornecedores"
-              ? "bg-slate-800 text-white shadow-md dark:bg-slate-700"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-          }`}
-        >
-          🏭 Fornecedores
-        </button>
-
-        <button
-          onClick={() => setAbaAtiva("departamentos")}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
-            abaAtiva === "departamentos"
-              ? "bg-slate-800 text-white shadow-md dark:bg-slate-700"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-          }`}
-        >
-          🏢 Departamentos
-        </button>
-
-        <button
-          onClick={() => setAbaAtiva("funcoes")}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
-            abaAtiva === "funcoes"
-              ? "bg-slate-800 text-white shadow-md dark:bg-slate-700"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-          }`}
-        >
-          💼 Funções
-        </button>
-
-        <button
-          onClick={() => setAbaAtiva("funcionarios")}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
-            abaAtiva === "funcionarios"
-              ? "bg-slate-800 text-white shadow-md dark:bg-slate-700"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-          }`}
-        >
-          👥 Funcionários
-        </button>
-
-        <button
-          onClick={() => setAbaAtiva("epis")}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
-            abaAtiva === "epis"
-              ? "bg-slate-800 text-white shadow-md dark:bg-slate-700"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-          }`}
-        >
-          🦺 EPIs
-        </button>
-
-        <button
-          onClick={() => setAbaAtiva("perfil")}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition ml-auto ${
-            abaAtiva === "perfil"
-              ? "bg-indigo-600 text-white shadow-md dark:bg-indigo-500"
-              : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
-          }`}
-        >
-          👤 Meu Perfil
-        </button>
-      </div>
-
-      <div className="mt-4">
+      <div className="mt-4 transition-all duration-300">
         {abaAtiva === "fornecedores" && <AbaFornecedores />}
         {abaAtiva === "departamentos" && <AbaDepartamentos />}
         {abaAtiva === "funcoes" && <AbaFuncoes />}
         {abaAtiva === "funcionarios" && <AbaFuncionarios />}
         {abaAtiva === "epis" && <AbaEpis />}
-        {abaAtiva === "perfil" && <AbaPerfil />}
       </div>
     </div>
   );
