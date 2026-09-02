@@ -21,6 +21,12 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+import {
+  PackagePlus, AlertTriangle, Plus, Search,
+  X, ChevronLeft, ChevronRight, FileDown,
+  Layers, Hash, DollarSign, ChevronDown
+} from "lucide-react";
+
 function Entradas({ usuarioLogado }) {
   const [entradas, setEntradas] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
@@ -219,8 +225,9 @@ function Entradas({ usuarioLogado }) {
 
   if (!podeVisualizar) {
     return (
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 max-w-full transition-colors duration-300">
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-4 text-amber-700 dark:text-amber-400">
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex items-center justify-center transition-colors duration-300">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-6 text-amber-700 dark:text-amber-400 flex items-center gap-3 font-medium">
+          <AlertTriangle className="w-5 h-5" />
           Você não tem permissão para visualizar a tela de entradas.
         </div>
       </div>
@@ -229,55 +236,74 @@ function Entradas({ usuarioLogado }) {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 animate-fade-in max-w-full transition-colors duration-300">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-          <div>
-            <h2 className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2 transition-colors">
-              📥 Registro de Entradas
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">
-              Histórico de entradas de estoque.
-            </p>
+      <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 animate-fade-in max-w-full transition-colors duration-300">
+        
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 transition-colors duration-300">
+              <PackagePlus className="w-5 h-5" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
+                Registro de Entradas
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+                Histórico de abastecimento e entradas de estoque.
+              </p>
+            </div>
           </div>
+
           {podeCadastrar && (
             <button
               onClick={() => setModalAberto(true)}
-              className="bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors flex items-center gap-2 shadow-sm justify-center w-full lg:w-auto"
+              className="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] shadow-sm shadow-emerald-600/20 flex items-center justify-center gap-2"
             >
-              <span>➕</span> Nova Entrada
+              <Plus className="w-4 h-4" strokeWidth={3} />
+              Nova Entrada
             </button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl border border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 transition-colors">
-            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 uppercase font-bold block mb-1">
-              Registros
-            </span>
-            <strong className="text-2xl text-emerald-900 dark:text-emerald-100">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-8">
+          <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-5 transition-colors flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+              <Layers className="w-4 h-4" />
+              <p className="text-[11px] uppercase font-bold tracking-widest">
+                Registros
+              </p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mt-auto tracking-tight transition-colors">
               {carregandoTela ? "--" : resumoTela.totalRegistros}
-            </strong>
+            </p>
           </div>
-          <div className="rounded-xl border border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4 transition-colors">
-            <span className="text-[11px] text-blue-700 dark:text-blue-400 uppercase font-bold block mb-1">
-              Qtd Total
-            </span>
-            <strong className="text-2xl text-blue-900 dark:text-blue-100">
+
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-2xl p-5 transition-colors flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+              <Hash className="w-4 h-4" />
+              <p className="text-[11px] uppercase font-bold tracking-widest">
+                Quantidade Total
+              </p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-black text-blue-800 dark:text-blue-300 mt-auto tracking-tight transition-colors">
               {carregandoTela ? "--" : resumoTela.totalItens}
-            </strong>
+            </p>
           </div>
-          <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 p-4 transition-colors">
-            <span className="text-[11px] text-gray-600 dark:text-slate-400 uppercase font-bold block mb-1">
-              Valor Total
-            </span>
-            <strong className="text-2xl text-gray-900 dark:text-white">
+
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-2xl p-5 transition-colors flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-500">
+              <DollarSign className="w-4 h-4" />
+              <p className="text-[11px] uppercase font-bold tracking-widest">
+                Valor Total
+              </p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-black text-emerald-800 dark:text-emerald-400 mt-auto tracking-tight transition-colors">
               {carregandoTela ? "--" : formatarMoedaEntrada(resumoTela.valorTotal)}
-            </strong>
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row mb-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 rounded-lg overflow-hidden transition-colors">
-          <div className="relative bg-gray-50 dark:bg-slate-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700 transition-colors">
+        <div className="relative mb-8 flex flex-col md:flex-row items-stretch md:items-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 transition-colors p-1.5 gap-1.5 md:gap-0">
+          <div className="relative w-full md:w-auto bg-white dark:bg-slate-800 rounded-xl md:rounded-l-xl md:rounded-r-none border border-slate-200/60 dark:border-slate-700 md:border-r-0 flex items-center px-4 py-1 h-[46px]">
             <select
               value={filtroAtivo}
               onChange={(e) => {
@@ -285,22 +311,21 @@ function Entradas({ usuarioLogado }) {
                 setBusca("");
                 setPaginaAtual(1);
               }}
-              className="appearance-none w-full md:w-48 bg-transparent text-gray-700 dark:text-slate-300 py-3 pl-4 pr-10 focus:outline-none font-bold text-xs uppercase tracking-wider cursor-pointer"
+              className="bg-transparent text-slate-600 dark:text-slate-300 font-bold text-[11px] uppercase tracking-widest outline-none pr-6 appearance-none w-full md:w-40 cursor-pointer h-full"
             >
               <option value="epiNome">EPI / Item</option>
-              <option value="data_entrada">Data de Entrada</option>
+              <option value="data_entrada">Data</option>
               <option value="fornecedorNome">Fornecedor</option>
               <option value="lote">Lote</option>
               <option value="nota_fiscal_numero">Nota Fiscal</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 dark:text-slate-500 text-[10px]">
-              ▼
-            </div>
+            <ChevronDown className="absolute right-3 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
-          <div className="relative flex-1 bg-white dark:bg-slate-900 transition-colors">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-slate-500">
-              🔍
-            </span>
+
+          <div className="relative flex items-center bg-white dark:bg-slate-800 rounded-xl md:rounded-r-xl md:rounded-l-none border border-slate-200/60 dark:border-slate-700 flex-1 w-full transition-colors h-[46px]">
+            <div className="pl-4 text-slate-400 dark:text-slate-500">
+              <Search className="w-4 h-4" />
+            </div>
             <input
               type={filtroAtivo === "data_entrada" ? "date" : "text"}
               placeholder="Pesquisar..."
@@ -309,42 +334,46 @@ function Entradas({ usuarioLogado }) {
                 setBusca(e.target.value);
                 setPaginaAtual(1);
               }}
-              className="w-full pl-10 pr-10 py-3 bg-transparent text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors text-sm lg:text-base placeholder-gray-400 dark:placeholder-slate-500"
+              className="w-full bg-transparent border-none py-3 pl-3 pr-10 focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-200 outline-none placeholder-slate-400 h-full"
             />
             {busca && (
               <button
-                onClick={() => setBusca("")}
-                className="absolute inset-y-0 right-0 px-3 text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition"
+                onClick={() => {
+                  setBusca("");
+                  setPaginaAtual(1);
+                }}
+                className="absolute right-3 p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
 
         {carregandoTela ? (
-          <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-10 text-center text-slate-500 dark:text-slate-400 transition-colors">
-            Carregando...
+          <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
+            <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-sm font-bold tracking-wide">Carregando entradas...</span>
           </div>
         ) : (
           <>
-            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 transition-colors">
+            <div className="hidden lg:block overflow-x-auto rounded-2xl border border-slate-200/60 dark:border-slate-700/60 transition-colors">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-sm uppercase transition-colors">
+                <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200/60 dark:border-slate-700/60 transition-colors">
                   <tr>
-                    <th className="p-4 font-semibold">Data</th>
-                    <th className="p-4 font-semibold">EPI / Item</th>
-                    <th className="p-4 font-semibold text-center">Tam.</th>
-                    <th className="p-4 font-semibold text-center">Qtd.</th>
-                    <th className="p-4 font-semibold">Fornecedor / Lote</th>
-                    <th className="p-4 font-semibold text-right">Total</th>
-                    <th className="p-4 font-semibold text-center">Ações</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Data</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">EPI / Item</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Tam.</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Qtd.</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Fornecedor / Lote</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Total</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-slate-700 transition-colors">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 transition-colors">
                   {entradasVisiveis.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="p-8 text-center text-gray-500 dark:text-slate-400">
+                      <td colSpan="7" className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                         Nenhuma entrada encontrada.
                       </td>
                     </tr>
@@ -355,44 +384,46 @@ function Entradas({ usuarioLogado }) {
                         Number(entrada.valor_unitario || 0);
 
                       return (
-                        <tr key={entrada.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                          <td className="p-4 text-gray-600 dark:text-slate-400 font-mono text-sm">
-                            {entrada.data_entrada}
+                        <tr key={entrada.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition duration-150 group">
+                          <td className="p-4">
+                            <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded block w-fit">
+                              {entrada.data_entrada}
+                            </span>
                           </td>
                           <td className="p-4">
-                            <div className="font-medium text-gray-800 dark:text-white transition-colors">
+                            <div className="font-extrabold text-sm text-slate-800 dark:text-slate-200 transition-colors">
                               {entrada.epiNome}
                             </div>
-                            <div className="text-xs text-gray-400 dark:text-slate-500 transition-colors">
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5 uppercase tracking-widest transition-colors">
                               CA: {entrada.epiCA}
                             </div>
                           </td>
-                          <td className="p-4 text-center text-gray-600 dark:text-slate-300 transition-colors">
+                          <td className="p-4 text-center font-semibold text-sm text-slate-600 dark:text-slate-300 transition-colors">
                             {entrada.tamanhoNome}
                           </td>
                           <td className="p-4 text-center">
-                            <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 text-xs font-bold px-2 py-1 rounded transition-colors">
+                            <span className="bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 text-xs font-black px-2.5 py-1 rounded-md transition-colors shadow-sm">
                               +{entrada.quantidade}
                             </span>
                           </td>
-                          <td className="p-4 text-sm text-gray-600 dark:text-slate-300 transition-colors">
-                            <div className="font-bold truncate max-w-[150px]">
+                          <td className="p-4">
+                            <div className="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[150px] transition-colors">
                               {entrada.fornecedorNome}
                             </div>
-                            <div className="text-xs text-gray-400 dark:text-slate-500">
-                              Lote: {entrada.lote}
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5 uppercase tracking-widest transition-colors">
+                              LOTE: {entrada.lote}
                             </div>
                           </td>
-                          <td className="p-4 text-right text-emerald-700 dark:text-emerald-400 font-bold font-mono text-sm transition-colors">
+                          <td className="p-4 text-right text-emerald-700 dark:text-emerald-400 font-black font-mono text-sm transition-colors">
                             {formatarMoedaEntrada(total)}
                           </td>
                           <td className="p-4 text-center">
                             <button
                               onClick={() => gerarPDFEntrada(entrada)}
-                              className="bg-gray-100 dark:bg-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 p-2 rounded-lg transition-colors"
-                              title="Baixar Comprovante"
+                              className="p-2 mx-auto rounded-xl bg-slate-100 text-slate-600 border border-transparent hover:border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-400 dark:hover:border-emerald-800/50 transition-all flex items-center justify-center"
+                              title="Baixar Comprovante PDF"
                             >
-                              📄 PDF
+                              <FileDown className="w-4 h-4" />
                             </button>
                           </td>
                         </tr>
@@ -404,61 +435,87 @@ function Entradas({ usuarioLogado }) {
             </div>
 
             <div className="lg:hidden space-y-4">
-              {entradasVisiveis.map((entrada) => (
-                <div
-                  key={entrada.id}
-                  className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 shadow-sm relative transition-colors"
-                >
-                  <div className="flex justify-between mb-2">
-                    <span className="text-xs font-mono text-gray-500 dark:text-slate-400">
-                      {entrada.data_entrada}
-                    </span>
-                    <button
-                      onClick={() => gerarPDFEntrada(entrada)}
-                      className="text-emerald-600 dark:text-emerald-400 text-sm font-bold transition-colors"
-                    >
-                      📥 PDF
-                    </button>
-                  </div>
-                  <h3 className="font-bold text-gray-800 dark:text-white transition-colors">{entrada.epiNome}</h3>
-                  <div className="flex justify-between mt-2 items-center">
-                    <span className="text-sm text-gray-600 dark:text-slate-300 transition-colors">
-                      Lote: {entrada.lote}
-                    </span>
-                    <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 text-xs font-bold px-2 py-1 rounded transition-colors">
-                      +{entrada.quantidade} un
-                    </span>
-                  </div>
+              {entradasVisiveis.length === 0 ? (
+                 <div className="text-center py-8 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 transition-colors text-sm font-medium">
+                  Nenhuma entrada encontrada.
                 </div>
-              ))}
+              ) : (
+                entradasVisiveis.map((entrada) => (
+                  <div
+                    key={entrada.id}
+                    className="bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-2xl p-5 shadow-sm transition-colors"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="text-[10px] font-bold font-mono text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">
+                        {entrada.data_entrada}
+                      </span>
+                      <button
+                        onClick={() => gerarPDFEntrada(entrada)}
+                        className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 p-1.5 rounded-lg border border-emerald-100 dark:border-emerald-800/50 transition-colors"
+                        title="Baixar PDF"
+                      >
+                        <FileDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <h3 className="font-extrabold text-slate-900 dark:text-white transition-colors text-lg leading-tight">
+                      {entrada.epiNome}
+                    </h3>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-1 uppercase tracking-widest transition-colors mb-4">
+                      CA: {entrada.epiCA} • LOTE: {entrada.lote}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 text-sm transition-colors">
+                      <div>
+                        <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-0.5">Fornecedor</span>
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">{entrada.fornecedorNome}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-0.5">Total</span>
+                        <span className="text-xs font-black font-mono text-emerald-700 dark:text-emerald-400 block">
+                          {formatarMoedaEntrada(Number(entrada.quantidade || 0) * Number(entrada.valor_unitario || 0))}
+                        </span>
+                      </div>
+                      <div className="col-span-2 pt-2 border-t border-slate-200 dark:border-slate-700/80 mt-1 flex justify-between items-center">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Quantidade</span>
+                        <span className="bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 text-xs font-black px-2 py-0.5 rounded-md shadow-sm">
+                          +{entrada.quantidade} un
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {totalPaginas > 1 && (
-              <div className="flex justify-between items-center mt-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
                 <button
                   onClick={() => setPaginaAtual((p) => Math.max(p - 1, 1))}
                   disabled={paginaAtual === 1}
-                  className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${
-                    paginaAtual === 1 
-                      ? "bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed" 
-                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600"
+                  className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-1 ${
+                    paginaAtual === 1
+                      ? "bg-slate-50 dark:bg-slate-800/30 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                      : "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-slate-700 shadow-sm hover:border-emerald-200 dark:hover:border-slate-600"
                   }`}
                 >
-                  ← Anterior
+                  <ChevronLeft className="w-4 h-4" /> Anterior
                 </button>
-                <span className="text-sm text-gray-600 dark:text-slate-400 transition-colors">
-                  Pág. {paginaAtual} de {totalPaginas}
+
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-700 transition-colors">
+                  Página <span className="text-slate-800 dark:text-white">{paginaAtual}</span> de {totalPaginas}
                 </span>
+
                 <button
                   onClick={() => setPaginaAtual((p) => Math.min(p + 1, totalPaginas))}
                   disabled={paginaAtual === totalPaginas}
-                  className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${
-                    paginaAtual === totalPaginas 
-                      ? "bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed" 
-                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600"
+                  className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-1 ${
+                    paginaAtual === totalPaginas
+                      ? "bg-slate-50 dark:bg-slate-800/30 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                      : "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-slate-700 shadow-sm hover:border-emerald-200 dark:hover:border-slate-600"
                   }`}
                 >
-                  Próxima →
+                  Próxima <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             )}

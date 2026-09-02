@@ -8,30 +8,35 @@ import {
   calcularStatusValidade,
   formatarPreco,
   formatarValidade,
-  getStatusColor,
   getStatusTexto,
 } from "../utils/estoqueHelpers";
 import { normalizarEntradaCompleta } from "../utils/estoqueNormalizers";
+
+import { 
+  PackageSearch, AlertTriangle, CheckCircle2, Clock, Trash2, 
+  Search, ListFilter, Eye, ChevronLeft, ChevronRight, X, 
+  LayoutGrid, Package, AlertCircle, PackageX, DollarSign, ShieldAlert
+} from "lucide-react";
 
 function getAlertaValidade(status) {
   if (status === "vencido") {
     return {
       texto: "Validade vencida",
-      classe: "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
-      icone: "⚠️",
+      classe: "bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50",
+      icone: <AlertTriangle className="w-3 h-3" strokeWidth={2.5} />,
     };
   }
   if (status === "proximo" || status === "proximo_vencimento") {
     return {
       texto: "Próximo do vencimento",
-      classe: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
-      icone: "🟡",
+      classe: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50",
+      icone: <Clock className="w-3 h-3" strokeWidth={2.5} />,
     };
   }
   return {
     texto: "Dentro da validade",
-    classe: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800",
-    icone: "✅",
+    classe: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50",
+    icone: <CheckCircle2 className="w-3 h-3" strokeWidth={2.5} />,
   };
 }
 
@@ -52,14 +57,16 @@ function Estoque({ usuarioLogado }) {
     setErroTela("");
 
     try {
-      const resp = await api.get("/entradas-estoque");
-      const dados = resp?.data ?? resp;
-      const estoquePronto = (Array.isArray(dados) ? dados : []).map(
-        normalizarEntradaCompleta
-      );
-      setEntradas(estoquePronto);
+      const response = await api.get("/estoque"); 
+      const dados = response?.data?.entradas || response?.data || response || [];
+      
+      const dadosNormalizados = Array.isArray(dados) 
+        ? dados.map(normalizarEntradaCompleta) 
+        : [];
+
+      setEntradas(dadosNormalizados);
     } catch (erro) {
-      console.error(erro);
+      console.error("Erro ao buscar estoque:", erro);
       setErroTela("Não foi possível carregar o estoque.");
     } finally {
       setCarregando(false);
@@ -209,8 +216,9 @@ function Estoque({ usuarioLogado }) {
 
   if (!podeVisualizar) {
     return (
-      <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 max-w-full relative transition-colors duration-300">
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-4 text-amber-700 dark:text-amber-400">
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex items-center justify-center transition-colors duration-300">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-6 text-amber-700 dark:text-amber-400 flex items-center gap-3 font-medium">
+          <AlertTriangle className="w-5 h-5" />
           Você não tem permissão para visualizar a tela de estoque.
         </div>
       </div>
@@ -219,79 +227,132 @@ function Estoque({ usuarioLogado }) {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 max-w-full relative transition-colors duration-300">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-          <div>
-            <h2 className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-              📦 Controle de Estoque
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Visualize lotes, tamanhos e validade dos EPIs.
-            </p>
+      <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 max-w-full relative transition-colors duration-300">
+        <div className="mb-8 flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 transition-colors duration-300">
+              <PackageSearch className="w-5 h-5" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
+                Controle de Estoque
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+                Visualize lotes, tamanhos e validade dos EPIs.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* CARDS DE RESUMO SUPERIORES */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4 mb-8">
           <div
             onClick={() => aplicarFiltroRapido("nome", "")}
-            className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 cursor-pointer hover:shadow-md hover:border-slate-400 dark:hover:border-slate-500 transition-all group"
+            className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800/50 p-4 sm:p-5 cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-[0.98] group flex flex-col gap-2"
           >
-            <span className="text-[11px] uppercase text-slate-500 dark:text-slate-400 font-bold block mb-1 group-hover:text-slate-700 dark:group-hover:text-slate-300">
-              Lotes (Ver todos)
-            </span>
-            <strong className="text-2xl text-slate-800 dark:text-white">
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+              <LayoutGrid className="w-4 h-4" />
+              <span className="text-[11px] uppercase font-bold tracking-widest">Todos Lotes</span>
+            </div>
+            <strong className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight">
               {carregando ? "--" : resumo.totalLotes}
             </strong>
           </div>
 
           <div
             onClick={() => aplicarFiltroRapido("logica_estoque", "disponivel")}
-            className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4 cursor-pointer hover:shadow-md hover:border-blue-400 dark:hover:border-blue-600 transition-all group"
+            className="rounded-2xl border border-blue-100 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/20 p-4 sm:p-5 cursor-pointer hover:shadow-md hover:border-blue-200 dark:hover:border-blue-700 transition-all active:scale-[0.98] group flex flex-col gap-2"
           >
-            <span className="text-[11px] uppercase text-blue-600 dark:text-blue-400 font-bold block mb-1">
-              Itens em estoque
-            </span>
-            <strong className="text-2xl text-blue-800 dark:text-blue-200">
+            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+              <Package className="w-4 h-4" />
+              <span className="text-[11px] uppercase font-bold tracking-widest">Em Estoque</span>
+            </div>
+            <strong className="text-2xl sm:text-3xl font-black text-blue-800 dark:text-blue-300 tracking-tight">
               {carregando ? "--" : resumo.totalItens}
             </strong>
           </div>
 
           <div
             onClick={() => aplicarFiltroRapido("logica_estoque", "baixo")}
-            className="rounded-xl border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-4 cursor-pointer hover:shadow-md hover:border-yellow-400 dark:hover:border-yellow-600 transition-all group"
+            className="rounded-2xl border border-amber-100 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 p-4 sm:p-5 cursor-pointer hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700 transition-all active:scale-[0.98] group flex flex-col gap-2"
           >
-            <span className="text-[11px] uppercase text-yellow-700 dark:text-yellow-500 font-bold block mb-1">
-              Estoque baixo
-            </span>
-            <strong className="text-2xl text-yellow-800 dark:text-yellow-200">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-500">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-[11px] uppercase font-bold tracking-widest">Estoque Baixo</span>
+            </div>
+            <strong className="text-2xl sm:text-3xl font-black text-amber-800 dark:text-amber-400 tracking-tight">
               {carregando ? "--" : resumo.estoqueBaixo}
             </strong>
           </div>
 
           <div
             onClick={() => aplicarFiltroRapido("logica_estoque", "vazio")}
-            className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 cursor-pointer hover:shadow-md hover:border-red-400 dark:hover:border-red-600 transition-all group"
+            className="rounded-2xl border border-red-100 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 p-4 sm:p-5 cursor-pointer hover:shadow-md hover:border-red-200 dark:hover:border-red-700 transition-all active:scale-[0.98] group flex flex-col gap-2"
           >
-            <span className="text-[11px] uppercase text-red-700 dark:text-red-400 font-bold block mb-1">
-              Sem estoque
-            </span>
-            <strong className="text-2xl text-red-800 dark:text-red-200">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+              <PackageX className="w-4 h-4" />
+              <span className="text-[11px] uppercase font-bold tracking-widest">Sem Estoque</span>
+            </div>
+            <strong className="text-2xl sm:text-3xl font-black text-red-800 dark:text-red-400 tracking-tight">
               {carregando ? "--" : resumo.semEstoque}
             </strong>
           </div>
 
-          <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 shadow-sm">
-            <span className="text-[11px] uppercase text-emerald-700 dark:text-emerald-500 font-bold block mb-1">
-              Valor estimado
-            </span>
-            <strong className="text-lg md:text-2xl text-emerald-800 dark:text-emerald-200">
+          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 p-4 sm:p-5 flex flex-col gap-2 transition-colors">
+            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-500">
+              <DollarSign className="w-4 h-4" />
+              <span className="text-[11px] uppercase font-bold tracking-widest">Valor Estimado</span>
+            </div>
+            <strong className="text-xl sm:text-2xl font-black text-emerald-800 dark:text-emerald-400 tracking-tight mt-auto">
               {carregando ? "--" : formatarPreco(resumo.valorTotal)}
             </strong>
           </div>
         </div>
-        <div className="flex flex-col md:flex-row mb-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 rounded-lg overflow-hidden transition-colors">
-          <div className="relative bg-gray-50 dark:bg-slate-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700">
+
+        <div className="flex flex-col md:flex-row mb-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 transition-colors p-1.5 gap-1.5">
+          
+          <div className="relative flex items-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700 flex-1 transition-colors">
+            <div className="pl-4 text-slate-400 dark:text-slate-500">
+              {filtroAtivo === "status_validade" ? <ShieldAlert className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+            </div>
+
+            {filtroAtivo === "status_validade" ? (
+              <select
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="w-full bg-transparent border-none py-3 pl-3 pr-10 focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-200 outline-none appearance-none cursor-pointer"
+              >
+                <option value="">Todos os status...</option>
+                <option value="vencido">Vencidos</option>
+                <option value="proximo">Próximos de Vencer</option>
+                <option value="normal">Dentro da Validade</option>
+              </select>
+            ) : (
+              <input
+                type={filtroAtivo === "data_entrada" ? "date" : "text"}
+                placeholder="Pesquisar lotes, nomes ou fabricantes..."
+                value={busca}
+                onChange={(e) => {
+                  setBusca(e.target.value);
+                  setPaginaAtual(1);
+                }}
+                className="w-full bg-transparent border-none py-3 pl-3 pr-10 focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-200 outline-none placeholder-slate-400"
+              />
+            )}
+
+            {busca && (
+              <button
+                onClick={() => setBusca("")}
+                className="absolute right-3 p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="relative flex items-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700 md:w-56 transition-colors">
+            <div className="pl-4 text-slate-400 dark:text-slate-500 pointer-events-none">
+               <ListFilter className="w-4 h-4" />
+            </div>
             <select
               value={filtroAtivo}
               onChange={(e) => {
@@ -299,84 +360,43 @@ function Estoque({ usuarioLogado }) {
                 setBusca("");
                 setPaginaAtual(1);
               }}
-              className="appearance-none w-full md:w-48 bg-transparent text-gray-700 dark:text-slate-300 py-3 pl-4 pr-10 focus:outline-none font-bold text-xs uppercase tracking-wider cursor-pointer"
+              className="w-full bg-transparent border-none py-3 pl-3 pr-10 focus:ring-0 text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-300 outline-none appearance-none cursor-pointer"
             >
               <option value="nome">Nome do EPI</option>
-              <option value="status_validade">Status de Validade</option>
-              <option value="data_entrada">Data de Entrada</option>
+              <option value="status_validade">Validade</option>
+              <option value="data_entrada">Entrada</option>
               <option value="fabricante">Fabricante</option>
               <option value="ca">CA</option>
               <option value="lote">Lote</option>
               <option value="tipoProtecao">Proteção</option>
               <option value="tamanho">Tamanho</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 dark:text-slate-500 text-[10px]">
-              ▼
-            </div>
           </div>
 
-          <div className="relative flex-1 bg-white dark:bg-slate-900">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-slate-500">
-              {filtroAtivo === "status_validade" ? "🛡️" : "🔍"}
-            </span>
-
-            {filtroAtivo === "status_validade" ? (
-              <select
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                className="w-full pl-10 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm lg:text-base appearance-none bg-transparent font-medium text-gray-700 dark:text-white"
-              >
-                <option value="">Selecione um status...</option>
-                <option value="vencido">❌ Vencidos</option>
-                <option value="proximo">🟡 Próximos de Vencer</option>
-                <option value="normal">✅ Dentro da Validade</option>
-              </select>
-            ) : (
-              <input
-                type={filtroAtivo === "data_entrada" ? "date" : "text"}
-                placeholder="Pesquisar..."
-                value={busca}
-                onChange={(e) => {
-                  setBusca(e.target.value);
-                  setPaginaAtual(1);
-                }}
-                className="w-full pl-10 pr-10 py-3 bg-transparent text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm lg:text-base"
-              />
-            )}
-
-            {busca && (
-              <button
-                onClick={() => setBusca("")}
-                className="absolute inset-y-0 right-0 px-3 text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition"
-              >
-                ✕
-              </button>
-            )}
-          </div>
         </div>
-
         {carregando ? (
-          <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-10 text-center text-slate-500 dark:text-slate-400">
-            Carregando estoque...
+          <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-sm font-bold tracking-wide">Carregando estoque...</span>
           </div>
         ) : (
           <>
-            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 transition-colors">
+            <div className="hidden lg:block overflow-x-auto rounded-2xl border border-slate-200/60 dark:border-slate-700/60 transition-colors">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-sm uppercase tracking-wider transition-colors">
+                <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200/60 dark:border-slate-700/60 transition-colors">
                   <tr>
-                    <th className="p-4 font-semibold">EPI</th>
-                    <th className="p-4 font-semibold">Entrada</th>
-                    <th className="p-4 font-semibold text-center">Lote / CA</th>
-                    <th className="p-4 font-semibold text-center">Tam.</th>
-                    <th className="p-4 font-semibold text-center">Preço Unit.</th>
-                    <th className="p-4 font-semibold text-center">Qtd. Inicial</th>
-                    <th className="p-4 font-semibold text-center">Qtd. Atual</th>
-                    <th className="p-4 font-semibold text-center">Validade</th>
-                    <th className="p-4 font-semibold text-center">Ações</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">EPI</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Entrada</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Lote / CA</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Tam.</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Preço Unit.</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Qtd. Inicial</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Qtd. Atual</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Validade</th>
+                    <th className="p-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                   {itensVisiveis.length > 0 ? (
                     itensVisiveis.map((item) => {
                       const validadeStatus = calcularStatusValidade(item.validade);
@@ -385,68 +405,69 @@ function Estoque({ usuarioLogado }) {
                       return (
                         <tr
                           key={item.id}
-                          className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition duration-150"
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition duration-150 group"
                         >
                           <td className="p-4">
-                            <div className="font-medium text-gray-800 dark:text-white">
+                            <div className="font-extrabold text-sm text-slate-800 dark:text-slate-200">
                               {item.nome}
                             </div>
-                            <div className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
                               {item.fabricante || "-"}
                             </div>
                           </td>
 
-                          <td className="p-4 text-sm text-gray-600 dark:text-slate-300">
+                          <td className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
                             {formatarValidade(item.data_entrada)}
                           </td>
 
                           <td className="p-4 text-center">
-                            <span className="text-xs font-mono text-gray-500 dark:text-slate-400 block">
+                            <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-300 block">
                               {item.lote}
                             </span>
-                            <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5 block">
                               CA: {item.ca}
                             </span>
                           </td>
 
-                          <td className="p-4 text-center text-gray-600 dark:text-slate-300 text-sm">
+                          <td className="p-4 text-center text-slate-600 dark:text-slate-300 text-sm font-semibold">
                             {item.tamanho}
                           </td>
 
-                          <td className="p-4 text-center text-gray-600 dark:text-slate-300 text-sm">
+                          <td className="p-4 text-center text-slate-600 dark:text-slate-300 text-sm font-semibold">
                             {formatarPreco(item.preco)}
                           </td>
 
                           <td className="p-4 text-center">
-                            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                            <span className="text-sm font-bold text-slate-400 dark:text-slate-500">
                               {item.quantidadeInicial}
                             </span>
                           </td>
 
                           <td className="p-4 text-center">
-                            <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center gap-1">
                               <span
-                                className={`px-2 py-0.5 rounded font-bold border ${Number(item.quantidadeAtual) <= Number(item.alertaMinimo)
-                                    ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
-                                    : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+                                className={`px-2.5 py-1 rounded-md text-xs font-bold border ${Number(item.quantidadeAtual) <= Number(item.alertaMinimo)
+                                    ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50"
+                                    : "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50"
                                   }`}
                               >
                                 {item.quantidadeAtual}
                               </span>
-                              <span className="text-[9px] text-gray-400 dark:text-slate-500 font-medium uppercase mt-1">
+                              <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">
                                 {getStatusTexto(item.quantidadeAtual, item.alertaMinimo)}
                               </span>
                             </div>
                           </td>
 
                           <td className="p-4 text-center">
-                            <div className="flex flex-col items-center gap-1">
-                              <span className="text-gray-600 dark:text-slate-300 text-xs font-medium">
+                            <div className="flex flex-col items-center gap-1.5">
+                              <span className="text-slate-700 dark:text-slate-300 text-sm font-bold">
                                 {formatarValidade(item.validade)}
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded text-[9px] font-bold border ${alertaValidade.classe}`}
+                                className={`px-2 py-0.5 rounded flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest border ${alertaValidade.classe}`}
                               >
+                                {alertaValidade.icone}
                                 {alertaValidade.texto}
                               </span>
                             </div>
@@ -456,16 +477,17 @@ function Estoque({ usuarioLogado }) {
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => setItemDetalhe(item)}
-                                className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border dark:border-slate-700 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                                title="Ver Detalhes"
+                                className="p-2 rounded-xl bg-slate-100 text-slate-600 border border-transparent hover:border-slate-200 hover:bg-white dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-all"
                               >
-                                Ver
+                                <Eye className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleCancelarEntrada(item)}
-                                title="Cancelar entrada"
-                                className="px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition border border-red-100 dark:border-red-800/50"
+                                title="Cancelar Entrada"
+                                className="p-2 rounded-xl bg-red-50 text-red-600 border border-transparent hover:border-red-200 hover:bg-white dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-all"
                               >
-                                🗑️
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
@@ -474,7 +496,7 @@ function Estoque({ usuarioLogado }) {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="9" className="p-8 text-center text-gray-500 dark:text-slate-400">
+                      <td colSpan="9" className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                         Nenhum item encontrado.
                       </td>
                     </tr>
@@ -487,32 +509,34 @@ function Estoque({ usuarioLogado }) {
               {itensVisiveis.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 shadow-sm transition-colors"
+                  className="bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-2xl p-5 shadow-sm transition-colors"
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-gray-800 dark:text-white">{item.nome}</h3>
-                    <span className="text-[10px] bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded text-gray-500 dark:text-slate-300">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-extrabold text-slate-900 dark:text-white">{item.nome}</h3>
+                    <span className="text-[10px] bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-md font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
                       {formatarValidade(item.data_entrada)}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-y-3 text-xs font-semibold mb-4">
                     <p className="dark:text-slate-300">
-                      <span className="text-gray-400 dark:text-slate-500">Lote:</span> {item.lote}
+                      <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase tracking-widest mb-0.5">Lote</span> 
+                      {item.lote}
                     </p>
                     <p className="dark:text-slate-300">
-                      <span className="text-gray-400 dark:text-slate-500">Tam:</span> {item.tamanho}
+                      <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase tracking-widest mb-0.5">Tamanho</span> 
+                      {item.tamanho}
                     </p>
                     <p className="dark:text-slate-300">
-                      <span className="text-gray-400 dark:text-slate-500">Qtd. Inicial:</span>{" "}
+                      <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase tracking-widest mb-0.5">Qtd. Inicial</span>
                       {item.quantidadeInicial}
                     </p>
                     <p>
-                      <span className="text-gray-400 dark:text-slate-500">Qtd. Atual:</span>
+                      <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase tracking-widest mb-0.5">Qtd. Atual</span>
                       <span
-                        className={`ml-1 font-bold ${Number(item.quantidadeAtual) <= Number(item.alertaMinimo)
+                        className={`font-extrabold ${Number(item.quantidadeAtual) <= Number(item.alertaMinimo)
                             ? "text-red-600 dark:text-red-400"
-                            : "text-slate-700 dark:text-emerald-400"
+                            : "text-emerald-600 dark:text-emerald-400"
                           }`}
                       >
                         {item.quantidadeAtual}
@@ -520,39 +544,39 @@ function Estoque({ usuarioLogado }) {
                     </p>
                   </div>
 
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-2 border-t border-slate-100 dark:border-slate-700/50 pt-4">
                     <button
                       onClick={() => setItemDetalhe(item)}
-                      className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-sm transition hover:bg-slate-200 dark:hover:bg-slate-600 border dark:border-slate-600"
+                      className="flex-1 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                     >
-                      Ver detalhes
+                      <Eye className="w-4 h-4" /> Detalhes
                     </button>
                     <button
                       onClick={() => handleCancelarEntrada(item)}
                       title="Cancelar"
-                      className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold rounded-lg text-sm border border-red-100 dark:border-red-800/50 hover:bg-red-100 dark:hover:bg-red-900/40 transition"
+                      className="px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold rounded-xl text-sm border border-transparent hover:border-red-200 dark:hover:border-red-800/50 transition"
                     >
-                      🗑️
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-between items-center mt-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
               <button
                 onClick={() => setPaginaAtual((prev) => Math.max(prev - 1, 1))}
                 disabled={paginaAtual === 1}
-                className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${paginaAtual === 1
-                    ? "bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed"
-                    : "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700"
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-1 ${paginaAtual === 1
+                    ? "bg-slate-50 dark:bg-slate-800/30 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                    : "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700 shadow-sm hover:border-blue-200 dark:hover:border-slate-600"
                   }`}
               >
-                ← Anterior
+                <ChevronLeft className="w-4 h-4" /> Anterior
               </button>
 
-              <span className="text-xs font-bold text-gray-500 dark:text-slate-400">
-                Página {paginaAtual} de {totalPaginas}
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-700">
+                Página <span className="text-slate-800 dark:text-white">{paginaAtual}</span> de {totalPaginas}
               </span>
 
               <button
@@ -560,12 +584,12 @@ function Estoque({ usuarioLogado }) {
                   setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))
                 }
                 disabled={paginaAtual === totalPaginas}
-                className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${paginaAtual === totalPaginas
-                    ? "bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed"
-                    : "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700"
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-1 ${paginaAtual === totalPaginas
+                    ? "bg-slate-50 dark:bg-slate-800/30 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                    : "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700 shadow-sm hover:border-blue-200 dark:hover:border-slate-600"
                   }`}
               >
-                Próxima →
+                Próxima <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </>

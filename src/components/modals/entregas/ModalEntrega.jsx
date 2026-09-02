@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useModalEntrega } from "../../../hooks/useModalEntrega";
 import { useSignaturePad } from "../../../hooks/useSignaturePad";
-
 import EntregaHeader from "./EntregaHeader";
 import EntregaForm from "./EntregaForm";
 import EntregaItensForm from "./EntregaItensForm";
@@ -44,11 +43,11 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm text-slate-700 dark:text-slate-300">
-        <div className="bg-white dark:bg-[#0B1120] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-fade-in flex flex-col max-h-[95vh] border border-gray-200 dark:border-slate-800 transition-colors duration-300">
+      <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm text-slate-700 dark:text-slate-300 animate-fade-in">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-200/60 dark:border-slate-800 transition-colors duration-300">
           <EntregaHeader onClose={onClose} />
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-5 transition-colors duration-300">
+          <div className="flex-1 overflow-y-auto p-6 sm:px-8 bg-slate-50/50 dark:bg-slate-900/50 space-y-6 custom-scrollbar transition-colors duration-300">
             <EntregaForm
               carregandoDados={false}
               buscaFuncionario={entrega.buscaFuncionario}
@@ -107,6 +106,7 @@ function ModalEntrega({ onClose, onSalvar, funcionarios = [], epis = [] }) {
         painelFerramentasAberto={assinatura.painelFerramentasAberto}
         setPainelFerramentasAberto={assinatura.setPainelFerramentasAberto}
       />
+      
       <ModalFoto
         aberto={modalFotoAberto}
         fecharFoto={() => setModalFotoAberto(false)}

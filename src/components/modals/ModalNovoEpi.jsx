@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
+import {
+  X, ShieldPlus, ShieldAlert, CheckCircle2,
+  AlertCircle, Loader2, Plus, PenLine
+} from "lucide-react";
 
 const PROTECOES_PADRAO = [
   "Cabeça",
@@ -13,26 +17,9 @@ const PROTECOES_PADRAO = [
 ];
 
 const TAMANHOS_SUGERIDOS = [
-  "Único",
-  "PP",
-  "P",
-  "M",
-  "G",
-  "GG",
-  "EXG",
-  "34",
-  "35",
-  "36",
-  "37",
-  "38",
-  "39",
-  "40",
-  "41",
-  "42",
-  "43",
-  "44",
-  "45",
-  "46",
+  "Único", "PP", "P", "M", "G", "GG", "EXG",
+  "34", "35", "36", "37", "38", "39", "40",
+  "41", "42", "43", "44", "45", "46",
 ];
 
 function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
@@ -80,7 +67,6 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
         if (epiParaEditar) {
           const formatarDataParaInput = (dataBR) => {
             if (!dataBR || !dataBR.includes("/")) return "";
-
             const [d, m, a] = dataBR.split("/");
             return `${a}-${m}-${d}`;
           };
@@ -111,7 +97,6 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
 
   const mostrarToast = (mensagem, tipo = "sucesso") => {
     setToast({ mensagem, tipo });
-
     setTimeout(() => {
       setToast(null);
     }, 3500);
@@ -119,13 +104,12 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
 
   const campoComErro = (campo) => {
     return erros[campo]
-      ? "border-red-400 focus:ring-red-400"
-      : "border-slate-300 focus:ring-blue-500";
+      ? "border-red-400 dark:border-red-500/50 focus:ring-red-500/20 focus:border-red-500"
+      : "border-slate-200/60 dark:border-slate-700/60 focus:ring-blue-500/20 focus:border-blue-500";
   };
 
   const limparErroCampo = (campo) => {
     if (!erros[campo]) return;
-
     setErros((errosAtuais) => {
       const novosErros = { ...errosAtuais };
       delete novosErros[campo];
@@ -138,14 +122,12 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
       ...prev,
       [campo]: valor,
     }));
-
     limparErroCampo(campo);
   };
 
   const alternarTamanho = (id) => {
     setForm((prev) => {
       const jaSelecionado = prev.id_tamanho.includes(id);
-
       return {
         ...prev,
         id_tamanho: jaSelecionado
@@ -153,39 +135,19 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
           : [...prev.id_tamanho, id],
       };
     });
-
     limparErroCampo("id_tamanho");
   };
 
   const validarFormulario = () => {
     const novosErros = {};
-
     const caApenasNumeros = String(form.ca).replace(/\D/g, "");
 
-    if (!form.nome.trim()) {
-      novosErros.nome = "Informe o nome do EPI.";
-    }
-
-    if (!form.id_protecao) {
-      novosErros.id_protecao = "Selecione o tipo de proteção.";
-    }
-
-    if (!form.fabricante.trim()) {
-      novosErros.fabricante = "Informe o fabricante.";
-    }
-
-    if (!caApenasNumeros) {
-      novosErros.ca = "Informe o número do CA.";
-    }
-
-    if (!form.data_validade_ca) {
-      novosErros.data_validade_ca = "Informe a validade do CA.";
-    }
-
-    if (!form.id_tamanho.length) {
-      novosErros.id_tamanho = "Selecione pelo menos um tamanho.";
-    }
-
+    if (!form.nome.trim()) novosErros.nome = "Informe o nome do EPI.";
+    if (!form.id_protecao) novosErros.id_protecao = "Selecione o tipo de proteção.";
+    if (!form.fabricante.trim()) novosErros.fabricante = "Informe o fabricante.";
+    if (!caApenasNumeros) novosErros.ca = "Informe o número do CA.";
+    if (!form.data_validade_ca) novosErros.data_validade_ca = "Informe a validade do CA.";
+    if (!form.id_tamanho.length) novosErros.id_tamanho = "Selecione pelo menos um tamanho.";
     if (
       form.alerta_minimo !== "" &&
       form.alerta_minimo !== null &&
@@ -195,7 +157,6 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
     }
 
     setErros(novosErros);
-
     return Object.keys(novosErros).length === 0;
   };
 
@@ -204,14 +165,11 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
       mostrarToast("Selecione uma categoria para adicionar.", "erro");
       return;
     }
-
     try {
       setSalvandoNovoTipo(true);
-
       const res = await api.post("/gerencial/cadastro-protecao", {
         nome: novoTipoNome,
       });
-
       const nova = res?.protecao || res;
 
       if (nova && (nova.id || nova.Id)) {
@@ -219,12 +177,10 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
           id: nova.id || nova.Id,
           nome: nova.nome || nova.Nome,
         };
-
         setTiposProtecao((prev) => [...prev, novoItem]);
         atualizarCampo("id_protecao", novoItem.id);
         setNovoTipoNome("");
         setMostrandoAddProtecao(false);
-
         mostrarToast("Tipo de proteção adicionado com sucesso!", "sucesso");
       }
     } catch (erro) {
@@ -240,14 +196,11 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
       mostrarToast("Selecione um tamanho para adicionar.", "erro");
       return;
     }
-
     try {
       setSalvandoNovoTamanho(true);
-
       const res = await api.post("/gerencial/cadastro-tamanho", {
         tamanho: novoTamanhoNome,
       });
-
       const novo = res?.tamanho_criado || res?.data?.tamanho_criado || res;
 
       if (novo && (novo.id || novo.Id || novo.ID)) {
@@ -255,26 +208,18 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
           id: novo.id || novo.Id || novo.ID,
           tamanho: novo.tamanho || novo.Tamanho || novo.nome || novoTamanhoNome,
         };
-
         setTamanhosDisponiveis((prev) => [...prev, novoItem]);
-
         setForm((prev) => ({
           ...prev,
           id_tamanho: [...prev.id_tamanho, novoItem.id],
         }));
-
         setNovoTamanhoNome("");
         setMostrandoAddTamanho(false);
         limparErroCampo("id_tamanho");
-
         mostrarToast("Tamanho adicionado com sucesso!", "sucesso");
       } else {
         const listaAtualizada = await api.get("/tamanhos");
-
-        setTamanhosDisponiveis(
-          Array.isArray(listaAtualizada) ? listaAtualizada : []
-        );
-
+        setTamanhosDisponiveis(Array.isArray(listaAtualizada) ? listaAtualizada : []);
         setMostrandoAddTamanho(false);
       }
     } catch (erro) {
@@ -287,7 +232,6 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
 
   const nomesTamanhosSelecionados = useMemo(() => {
     if (!form.id_tamanho.length) return "Nenhum selecionado";
-
     return tamanhosDisponiveis
       .filter((t) => form.id_tamanho.includes(t.id))
       .map((t) => t.tamanho || t.nome)
@@ -296,17 +240,14 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
 
   async function salvarEpi() {
     const formularioValido = validarFormulario();
-
     if (!formularioValido) return;
 
     try {
       setSalvando(true);
-
       const caApenasNumeros = String(form.ca).replace(/\D/g, "");
 
       const formatarDataParaBR = (dataEstrangeira) => {
         if (!dataEstrangeira) return "";
-
         const [ano, mes, dia] = dataEstrangeira.split("-");
         return `${dia}/${mes}/${ano}`;
       };
@@ -340,140 +281,99 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
       }
 
       if (onSalvar) onSalvar();
-
       onClose();
     } catch (erro) {
       console.error("Erro ao salvar EPI:", erro);
-
-      mostrarToast(
-        "Não foi possível salvar o EPI. Verifique os dados informados.",
-        "erro"
-      );
+      mostrarToast("Não foi possível salvar o EPI. Verifique os dados informados.", "erro");
     } finally {
       setSalvando(false);
     }
   }
 
+  const baseInputClass = "w-full px-4 py-3 rounded-xl text-sm font-medium outline-none transition-all disabled:opacity-50 bg-white dark:bg-slate-900 border focus:ring-2 dark:text-white placeholder-slate-400";
+  const labelClass = "block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 transition-colors";
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 text-slate-700">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 text-slate-700 dark:text-slate-300 animate-fade-in">
       {toast && (
-        <div
-          className={`fixed top-5 left-1/2 z-[9999] w-[90%] max-w-sm -translate-x-1/2 rounded-xl border px-5 py-4 shadow-2xl animate-fade-in sm:left-auto sm:right-5 sm:translate-x-0 ${
-            toast.tipo === "sucesso"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-red-50 border-red-200 text-red-800"
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <div className="text-xl">
-              {toast.tipo === "sucesso" ? "✅" : "⚠️"}
-            </div>
-
-            <div>
-              <p className="text-sm font-bold">
-                {toast.tipo === "sucesso" ? "Sucesso!" : "Atenção!"}
-              </p>
-
-              <p className="text-sm mt-0.5">{toast.mensagem}</p>
-            </div>
-
-            <button
-              onClick={() => setToast(null)}
-              className="ml-auto text-lg leading-none opacity-60 hover:opacity-100"
-            >
-              ×
-            </button>
+        <div className={`fixed top-5 left-1/2 z-[9999] w-[90%] max-w-sm -translate-x-1/2 rounded-2xl border px-5 py-4 shadow-xl flex items-start gap-3 transition-colors sm:left-auto sm:right-5 sm:translate-x-0 animate-fade-in ${toast.tipo === "sucesso"
+            ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300"
+            : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300"
+          }`}>
+          {toast.tipo === "sucesso" ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+          <div className="flex-1">
+            <p className="text-sm font-bold">{toast.tipo === "sucesso" ? "Sucesso!" : "Atenção!"}</p>
+            <p className="text-sm mt-0.5 leading-relaxed">{toast.mensagem}</p>
           </div>
+          <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100 transition-opacity">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
-        <div className="px-6 py-5 border-b bg-slate-50 flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-2xl font-bold ${
-                epiParaEditar ? "bg-amber-500" : "bg-blue-600"
-              }`}
-            >
-              {epiParaEditar ? "✎" : "+"}
+      <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col max-h-[95vh] transition-colors duration-300">
+        <div className="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 flex items-start justify-between shrink-0 transition-colors duration-300">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${epiParaEditar ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" : "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+              }`}>
+              {epiParaEditar ? <PenLine className="w-6 h-6" strokeWidth={2.5} /> : <ShieldPlus className="w-6 h-6" strokeWidth={2.5} />}
             </div>
-
             <div>
-              <h3 className="text-xl font-bold text-slate-800">
-                {epiParaEditar
-                  ? `Editar: ${epiParaEditar.nome}`
-                  : "Cadastrar Novo EPI"}
+              <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
+                {epiParaEditar ? `Editar: ${epiParaEditar.nome}` : "Cadastrar Novo EPI"}
               </h3>
-
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
                 Gestão de Equipamentos de Proteção.
-              </p>
-
-              <p className="text-xs text-slate-500 mt-1">
-                Campos marcados com <span className="text-red-500">*</span> são
-                obrigatórios.
               </p>
             </div>
           </div>
-
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-4xl"
-          >
-            &times;
+          <button onClick={onClose} className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-8">
+        <div className="flex-1 overflow-y-auto p-6 sm:px-8 bg-slate-50/50 dark:bg-slate-900/50 custom-scrollbar transition-colors">
           {carregandoDados ? (
-            <div className="py-12 text-center text-slate-400 font-medium">
-              Carregando dados do formulário...
+            <div className="h-full flex flex-col items-center justify-center py-12 animate-fade-in">
+              <Loader2 className="w-8 h-8 animate-spin text-slate-400 dark:text-slate-500 mb-4" />
+              <p className="text-slate-500 dark:text-slate-400 font-medium">Carregando dados do formulário...</p>
             </div>
           ) : (
-            <div className="space-y-10">
-              <section>
-                <h4 className="text-sm font-extrabold tracking-wide text-slate-400 uppercase mb-5">
-                  Identificação
-                </h4>
+            <div className="space-y-8 animate-fade-in">
+              <section className="bg-white dark:bg-slate-800/80 p-6 sm:p-7 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm transition-colors">
+                <div className="flex items-center gap-2 mb-6">
+                  <ShieldAlert className="w-4 h-4 text-slate-400" />
+                  <h4 className="text-sm font-extrabold tracking-widest text-slate-500 dark:text-slate-400 uppercase">
+                    Identificação
+                  </h4>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-bold mb-2">
+                    <label className={labelClass}>
                       Nome do EPI <span className="text-red-500">*</span>
                     </label>
-
                     <input
                       type="text"
                       value={form.nome}
                       onChange={(e) => atualizarCampo("nome", e.target.value)}
-                      className={`w-full h-12 px-4 border rounded-xl focus:ring-2 outline-none ${campoComErro(
-                        "nome"
-                      )}`}
+                      className={`${baseInputClass} ${campoComErro("nome")}`}
                       placeholder="Ex: Capacete de segurança"
                     />
-
-                    {erros.nome && (
-                      <p className="text-xs text-red-500 mt-1">{erros.nome}</p>
-                    )}
+                    {erros.nome && <p className="text-xs font-medium text-red-500 mt-1.5">{erros.nome}</p>}
                   </div>
 
                   <div>
-                    <label className="flex justify-between items-center text-sm font-bold mb-2">
-                      <span>
-                        Tipo de Proteção{" "}
-                        <span className="text-red-500">*</span>
+                    <label className="flex justify-between items-end mb-1.5 transition-colors">
+                      <span className={labelClass.replace("mb-1.5", "")}>
+                        Tipo de Proteção <span className="text-red-500">*</span>
                       </span>
-
                       <button
                         type="button"
-                        onClick={() =>
-                          setMostrandoAddProtecao(!mostrandoAddProtecao)
-                        }
-                        className="text-blue-600 text-xs font-extrabold"
+                        onClick={() => setMostrandoAddProtecao(!mostrandoAddProtecao)}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-[10px] uppercase tracking-widest font-bold flex items-center gap-1 transition-colors"
                       >
-                        {mostrandoAddProtecao
-                          ? "✕ Voltar"
-                          : "+ Nova Categoria"}
+                        {mostrandoAddProtecao ? <><X className="w-3 h-3" /> Voltar</> : <><Plus className="w-3 h-3" /> Nova Categoria</>}
                       </button>
                     </label>
 
@@ -481,171 +381,174 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
                       <>
                         <select
                           value={form.id_protecao}
-                          onChange={(e) =>
-                            atualizarCampo("id_protecao", e.target.value)
-                          }
-                          className={`w-full h-12 px-4 border rounded-xl bg-white outline-none focus:ring-2 ${campoComErro(
-                            "id_protecao"
-                          )}`}
+                          onChange={(e) => atualizarCampo("id_protecao", e.target.value)}
+                          className={`${baseInputClass} ${campoComErro("id_protecao")}`}
                         >
                           <option value="">Selecione...</option>
-
                           {tiposProtecao.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.nome}
-                            </option>
+                            <option key={t.id} value={t.id}>{t.nome}</option>
                           ))}
                         </select>
-
-                        {erros.id_protecao && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {erros.id_protecao}
-                          </p>
-                        )}
+                        {erros.id_protecao && <p className="text-xs font-medium text-red-500 mt-1.5">{erros.id_protecao}</p>}
                       </>
                     ) : (
-                      <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="flex gap-2 animate-fade-in">
                         <select
                           autoFocus
                           value={novoTipoNome}
                           onChange={(e) => setNovoTipoNome(e.target.value)}
-                          className="flex-1 h-12 px-4 border-2 border-blue-200 rounded-xl outline-none"
+                          className={`${baseInputClass} !border-blue-300 dark:!border-blue-700/50 !bg-blue-50/50 dark:!bg-blue-900/10 focus:!ring-blue-500/20`}
                         >
                           <option value="">Escolha...</option>
-
                           {PROTECOES_PADRAO.map((p) => (
-                            <option key={p} value={p}>
-                              {p}
-                            </option>
+                            <option key={p} value={p}>{p}</option>
                           ))}
                         </select>
-
                         <button
                           onClick={handleAddNovoTipo}
                           disabled={salvandoNovoTipo}
-                          className="px-4 h-12 bg-blue-600 text-white rounded-xl font-bold disabled:opacity-50"
+                          className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-sm shadow-blue-600/20 disabled:opacity-50"
                         >
-                          {salvandoNovoTipo ? "..." : "Add"}
+                          {salvandoNovoTipo ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add"}
                         </button>
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold mb-2">
+                    <label className={labelClass}>
                       Fabricante <span className="text-red-500">*</span>
                     </label>
-
                     <input
                       type="text"
                       value={form.fabricante}
-                      onChange={(e) =>
-                        atualizarCampo("fabricante", e.target.value)
-                      }
-                      className={`w-full h-12 px-4 border rounded-xl outline-none focus:ring-2 ${campoComErro(
-                        "fabricante"
-                      )}`}
+                      onChange={(e) => atualizarCampo("fabricante", e.target.value)}
+                      className={`${baseInputClass} ${campoComErro("fabricante")}`}
                       placeholder="Ex: 3M"
                     />
-
-                    {erros.fabricante && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {erros.fabricante}
-                      </p>
-                    )}
+                    {erros.fabricante && <p className="text-xs font-medium text-red-500 mt-1.5">{erros.fabricante}</p>}
                   </div>
                 </div>
               </section>
 
-              <section>
-                <label className="block text-sm font-bold mb-2 text-slate-700">
-                  Descrição do Equipamento
-                </label>
-
-                <textarea
-                  value={form.descricao}
-                  onChange={(e) =>
-                    atualizarCampo("descricao", e.target.value)
-                  }
-                  className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px] resize-none"
-                  maxLength={250}
-                  placeholder="Observações ou detalhes do equipamento"
-                />
-              </section>
-
-              <section>
-                <div className="flex items-center justify-between mb-5 gap-3">
+              <section className="bg-white dark:bg-slate-800/80 p-6 sm:p-7 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm transition-colors">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
                   <div>
-                    <h4 className="text-sm font-extrabold tracking-wide text-slate-400 uppercase">
-                      Grade de Tamanhos <span className="text-red-500">*</span>
-                    </h4>
-
-                    <p className="text-xs text-slate-400 mt-1">
-                      Selecionados: {nomesTamanhosSelecionados}
-                    </p>
+                    <label className={labelClass}>
+                      Número do CA <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={form.ca}
+                      onChange={(e) => atualizarCampo("ca", e.target.value.replace(/\D/g, ""))}
+                      className={`${baseInputClass} ${campoComErro("ca")} font-mono`}
+                      placeholder="Apenas números"
+                    />
+                    {erros.ca && <p className="text-xs font-medium text-red-500 mt-1.5">{erros.ca}</p>}
                   </div>
 
+                  <div>
+                    <label className={labelClass}>
+                      Validade do CA <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={form.data_validade_ca}
+                      onChange={(e) => atualizarCampo("data_validade_ca", e.target.value)}
+                      className={`${baseInputClass} ${campoComErro("data_validade_ca")}`}
+                    />
+                    {erros.data_validade_ca && <p className="text-xs font-medium text-red-500 mt-1.5">{erros.data_validade_ca}</p>}
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>
+                      Alerta Estoque Mín.
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.alerta_minimo}
+                      onChange={(e) => atualizarCampo("alerta_minimo", e.target.value)}
+                      className={`${baseInputClass} ${campoComErro("alerta_minimo")}`}
+                      placeholder="Ex: 10"
+                    />
+                    {erros.alerta_minimo && <p className="text-xs font-medium text-red-500 mt-1.5">{erros.alerta_minimo}</p>}
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <label className={labelClass}>
+                      Descrição do Equipamento
+                    </label>
+                    <textarea
+                      value={form.descricao}
+                      onChange={(e) => atualizarCampo("descricao", e.target.value)}
+                      className={`${baseInputClass} min-h-[100px] resize-none border-slate-200/60 dark:border-slate-700/60 focus:ring-blue-500/20 focus:border-blue-500`}
+                      maxLength={250}
+                      placeholder="Observações ou detalhes adicionais do equipamento..."
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section className="bg-white dark:bg-slate-800/80 p-6 sm:p-7 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
+                  <div>
+                    <h4 className="text-sm font-extrabold tracking-widest text-slate-500 dark:text-slate-400 uppercase">
+                      Grade de Tamanhos <span className="text-red-500">*</span>
+                    </h4>
+                    <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1">
+                      Selecionados: <span className="text-slate-700 dark:text-slate-300 font-bold">{nomesTamanhosSelecionados}</span>
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      setMostrandoAddTamanho(!mostrandoAddTamanho)
-                    }
-                    className="text-blue-600 text-xs font-extrabold"
+                    onClick={() => setMostrandoAddTamanho(!mostrandoAddTamanho)}
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-[10px] uppercase tracking-widest font-bold flex items-center gap-1 transition-colors w-fit"
                   >
-                    {mostrandoAddTamanho ? "✕ Voltar" : "+ Novo Tamanho"}
+                    {mostrandoAddTamanho ? <><X className="w-3 h-3" /> Cancelar</> : <><Plus className="w-3 h-3" /> Novo Tamanho</>}
                   </button>
                 </div>
 
                 {mostrandoAddTamanho && (
-                  <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-100 rounded-2xl flex flex-col sm:flex-row gap-3">
+                  <div className="mb-6 p-4 sm:p-5 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-2xl flex flex-col sm:flex-row gap-3 animate-fade-in transition-colors">
                     <select
                       value={novoTamanhoNome}
                       onChange={(e) => setNovoTamanhoNome(e.target.value)}
-                      className="flex-1 h-11 px-4 rounded-xl border border-blue-200 outline-none"
+                      className={`${baseInputClass} !border-blue-300 dark:!border-blue-700/50 !bg-white dark:!bg-slate-900 focus:!ring-blue-500/20`}
                     >
-                      <option value="">Selecione...</option>
-
+                      <option value="">Selecione da lista...</option>
                       {TAMANHOS_SUGERIDOS.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
+                        <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
-
                     <button
                       onClick={handleAddNovoTamanho}
                       disabled={salvandoNovoTamanho}
-                      className="px-6 h-11 bg-blue-600 text-white rounded-xl font-bold disabled:opacity-50"
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-sm shadow-blue-600/20 disabled:opacity-50"
                     >
-                      {salvandoNovoTamanho ? "..." : "Add"}
+                      {salvandoNovoTamanho ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
                     </button>
                   </div>
                 )}
 
-                <div
-                  className={`border rounded-2xl p-6 bg-slate-50/50 ${
-                    erros.id_tamanho ? "border-red-300" : "border-slate-200"
-                  }`}
-                >
+                <div className={`rounded-2xl p-5 border ${erros.id_tamanho ? "border-red-300 dark:border-red-500/50 bg-red-50/30 dark:bg-red-900/10" : "border-slate-200/60 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/30"} transition-colors`}>
                   {tamanhosDisponiveis.length === 0 ? (
-                    <p className="text-sm text-slate-400 italic">
+                    <p className="text-sm font-medium text-slate-400 dark:text-slate-500 italic text-center py-2">
                       Nenhum tamanho disponível.
                     </p>
                   ) : (
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2.5">
                       {tamanhosDisponiveis.map((tam) => {
                         const isSelected = form.id_tamanho.includes(tam.id);
-
                         return (
                           <button
                             key={tam.id}
                             type="button"
                             onClick={() => alternarTamanho(tam.id)}
-                            className={`min-w-[54px] h-11 px-4 rounded-xl border-2 font-bold transition-all duration-200 ${
-                              isSelected
-                                ? "bg-blue-600 border-blue-600 text-white shadow-md scale-105"
-                                : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
-                            }`}
+                            className={`min-w-[56px] h-[42px] px-4 rounded-xl border text-sm font-bold transition-all duration-200 ${isSelected
+                                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/20"
+                                : "bg-white dark:bg-slate-800 border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:border-blue-300 dark:hover:border-blue-700"
+                              }`}
                           >
                             {tam.tamanho || tam.nome}
                           </button>
@@ -654,113 +557,40 @@ function ModalNovoEpi({ onClose, onSalvar, epiParaEditar }) {
                     </div>
                   )}
                 </div>
-
-                {erros.id_tamanho && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {erros.id_tamanho}
-                  </p>
-                )}
+                {erros.id_tamanho && <p className="text-xs font-medium text-red-500 mt-2">{erros.id_tamanho}</p>}
               </section>
 
-              <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-bold mb-2">
-                    Número do CA <span className="text-red-500">*</span>
-                  </label>
-
-                  <input
-                    type="text"
-                    value={form.ca}
-                    onChange={(e) =>
-                      atualizarCampo("ca", e.target.value.replace(/\D/g, ""))
-                    }
-                    className={`w-full h-12 px-4 border rounded-xl outline-none focus:ring-2 ${campoComErro(
-                      "ca"
-                    )}`}
-                    placeholder="Apenas números"
-                  />
-
-                  {erros.ca && (
-                    <p className="text-xs text-red-500 mt-1">{erros.ca}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-2">
-                    Validade do CA <span className="text-red-500">*</span>
-                  </label>
-
-                  <input
-                    type="date"
-                    value={form.data_validade_ca}
-                    onChange={(e) =>
-                      atualizarCampo("data_validade_ca", e.target.value)
-                    }
-                    className={`w-full h-12 px-4 border rounded-xl outline-none focus:ring-2 ${campoComErro(
-                      "data_validade_ca"
-                    )}`}
-                  />
-
-                  {erros.data_validade_ca && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {erros.data_validade_ca}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-2">
-                    Alerta Estoque Mín.
-                  </label>
-
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.alerta_minimo}
-                    onChange={(e) =>
-                      atualizarCampo("alerta_minimo", e.target.value)
-                    }
-                    className={`w-full h-12 px-4 border rounded-xl outline-none focus:ring-2 ${campoComErro(
-                      "alerta_minimo"
-                    )}`}
-                    placeholder="Ex: 10"
-                  />
-
-                  {erros.alerta_minimo && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {erros.alerta_minimo}
-                    </p>
-                  )}
-                </div>
-              </section>
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t bg-slate-50 flex flex-col-reverse sm:flex-row justify-end gap-3">
+        <div className="px-6 sm:px-8 py-5 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:justify-end gap-3 bg-white dark:bg-slate-900 shrink-0 rounded-b-3xl transition-colors duration-300">
           <button
+            type="button"
             onClick={onClose}
-            className="px-6 h-12 font-bold text-slate-500 hover:text-slate-700"
+            className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors w-full sm:w-auto order-2 sm:order-1"
           >
             Cancelar
           </button>
-
           <button
+            type="button"
             onClick={salvarEpi}
             disabled={salvando || carregandoDados}
-            className={`h-12 px-12 rounded-xl text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-              epiParaEditar
-                ? "bg-amber-500 hover:bg-amber-600"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
+            className={`px-8 py-2.5 flex items-center justify-center gap-2 text-white font-bold rounded-xl text-sm transition-all shadow-sm w-full sm:w-auto order-1 sm:order-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] ${epiParaEditar
+                ? "bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 shadow-amber-500/20"
+                : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-blue-600/20"
+              }`}
           >
-            {salvando
-              ? "Salvando..."
-              : epiParaEditar
-              ? "Atualizar EPI"
-              : "Salvar Equipamento"}
+            {salvando ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+            ) : epiParaEditar ? (
+              <><CheckCircle2 className="w-4 h-4" /> Atualizar EPI</>
+            ) : (
+              <><CheckCircle2 className="w-4 h-4" /> Salvar Equipamento</>
+            )}
           </button>
         </div>
+
       </div>
     </div>
   );

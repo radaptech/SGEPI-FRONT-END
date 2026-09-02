@@ -17,7 +17,7 @@ const converterDataParaInput = (dataString) => {
   return dataString;
 };
 
-function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }) {
+function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar, onExcluir }) {
   const [form, setForm] = useState({
     nome: "",
     cnpj: "",
@@ -54,7 +54,7 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
       setErro("");
     }
 
-  }, [empresa?.id, aberto]);
+  }, [empresa?.id, aberto, planos]);
 
   if (!aberto || !empresa) return null;
 
@@ -110,6 +110,12 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
     };
 
     onSalvar?.(empresa.id, payloadApi, empresaAtualizadaParaTela);
+  };
+
+  const excluir = () => {
+    if (window.confirm(`Tem certeza que deseja excluir a empresa ${form.nome}? Esta ação não poderá ser desfeita.`)) {
+      onExcluir?.(empresa.id);
+    }
   };
 
   return (
@@ -222,25 +228,38 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar }
           </form>
         </div>
 
-        <div className="shrink-0 bg-slate-50/50 border-t border-slate-100 px-6 md:px-8 py-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-3xl">
+        <div className="shrink-0 bg-slate-50/50 border-t border-slate-100 px-6 md:px-8 py-5 flex flex-col-reverse sm:flex-row sm:justify-between gap-3 rounded-b-3xl">
           <button
             type="button"
-            onClick={onFechar}
-            className="px-6 py-2.5 rounded-xl bg-white text-slate-600 border border-slate-200 text-sm font-semibold hover:bg-slate-50 hover:text-slate-800 transition-colors"
+            onClick={excluir}
+            className="px-6 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
           >
-            Cancelar
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Excluir Empresa
           </button>
 
-          <button
-            type="submit"
-            form="form-editar-empresa"
-            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 hover:shadow-md hover:shadow-blue-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            Salvar Alterações
-          </button>
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={onFechar}
+              className="px-6 py-2.5 rounded-xl bg-white text-slate-600 border border-slate-200 text-sm font-semibold hover:bg-slate-50 hover:text-slate-800 transition-colors"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              form="form-editar-empresa"
+              className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 hover:shadow-md hover:shadow-blue-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Salvar Alterações
+            </button>
+          </div>
         </div>
       </div>
     </div>

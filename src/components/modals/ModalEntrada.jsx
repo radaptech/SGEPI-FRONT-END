@@ -15,6 +15,11 @@ import {
 
 import { formatarDataParaGo } from "../../utils/entradaHelpers";
 
+import {
+  X, PackagePlus, FileText, Layers,
+  Plus, Trash2, AlertCircle, CheckCircle2
+} from "lucide-react";
+
 function ModalEntrada({ onClose, onSalvar }) {
   const [fornecedores, setFornecedores] = useState([]);
   const [epis, setEpis] = useState([]);
@@ -33,7 +38,6 @@ function ModalEntrada({ onClose, onSalvar }) {
     const ano = hoje.getFullYear();
     const mes = String(hoje.getMonth() + 1).padStart(2, "0");
     const dia = String(hoje.getDate()).padStart(2, "0");
-
     return `${ano}-${mes}-${dia}`;
   });
 
@@ -75,7 +79,7 @@ function ModalEntrada({ onClose, onSalvar }) {
         setTamanhos(resTamanhos.map(normalizarTamanhoEntrada));
       } catch (erro) {
         console.error("❌ Erro ao carregar dados do Modal:", erro);
-        alert("Erro ao carregar dados necessários do servidor.");
+        toast.error("Erro ao carregar dados necessários do servidor.");
       } finally {
         if (ativo) setCarregandoDados(false);
       }
@@ -103,22 +107,20 @@ function ModalEntrada({ onClose, onSalvar }) {
     [itensEntrada]
   );
 
-  // AJUSTADOS PARA INCLUIR O MODO ESCURO
   const campoNotaComErro = (campo) => {
     return errosNota[campo]
-      ? "border-red-400 focus:ring-red-400 dark:border-red-500 dark:focus:ring-red-500"
-      : "border-slate-300 focus:ring-emerald-500 dark:border-slate-600 dark:focus:ring-emerald-500";
+      ? "border-red-300 bg-red-50/50 focus:ring-red-500/20 dark:border-red-500/50 dark:bg-red-900/10 dark:focus:ring-red-500/20"
+      : "border-slate-200/60 bg-white focus:ring-emerald-500/20 focus:border-emerald-500 dark:border-slate-700/60 dark:bg-slate-900 dark:focus:border-emerald-500";
   };
 
   const campoItemComErro = (campo) => {
     return errosItem[campo]
-      ? "border-red-400 focus:ring-red-400 dark:border-red-500 dark:focus:ring-red-500"
-      : "border-slate-300 focus:ring-emerald-500 dark:border-slate-600 dark:focus:ring-emerald-500";
+      ? "border-red-300 bg-red-50/50 focus:ring-red-500/20 dark:border-red-500/50 dark:bg-red-900/10 dark:focus:ring-red-500/20"
+      : "border-slate-200/60 bg-white focus:ring-emerald-500/20 focus:border-emerald-500 dark:border-slate-700/60 dark:bg-slate-900 dark:focus:border-emerald-500";
   };
 
   const limparErroNota = (campo) => {
     if (!errosNota[campo]) return;
-
     setErrosNota((errosAtuais) => {
       const novosErros = { ...errosAtuais };
       delete novosErros[campo];
@@ -128,7 +130,6 @@ function ModalEntrada({ onClose, onSalvar }) {
 
   const limparErroItem = (campo) => {
     if (!errosItem[campo]) return;
-
     setErrosItem((errosAtuais) => {
       const novosErros = { ...errosAtuais };
       delete novosErros[campo];
@@ -139,75 +140,39 @@ function ModalEntrada({ onClose, onSalvar }) {
   const validarItem = () => {
     const novosErros = {};
 
-    if (!epiId) {
-      novosErros.epiId = "Selecione o EPI.";
-    }
-
-    if (!tamanhoTemp) {
-      novosErros.tamanhoTemp = "Selecione o tamanho.";
-    }
-
-    if (!qtdTemp || Number(qtdTemp) <= 0) {
-      novosErros.qtdTemp = "Informe uma quantidade maior que zero.";
-    }
-
-    if (!precoTemp || Number(precoTemp) <= 0) {
-      novosErros.precoTemp = "Informe o valor unitário.";
-    }
-
-    if (!loteTemp.trim()) {
-      novosErros.loteTemp = "Informe o lote.";
-    }
-
-    if (!dataFabricacaoTemp) {
-      novosErros.dataFabricacaoTemp = "Informe a data de fabricação.";
-    }
-
-    if (!validadeTemp) {
-      novosErros.validadeTemp = "Informe a data de validade.";
-    }
+    if (!epiId) novosErros.epiId = "Selecione o EPI.";
+    if (!tamanhoTemp) novosErros.tamanhoTemp = "Selecione o tamanho.";
+    if (!qtdTemp || Number(qtdTemp) <= 0) novosErros.qtdTemp = "Qtd inválida.";
+    if (!precoTemp || Number(precoTemp) <= 0) novosErros.precoTemp = "Valor inválido.";
+    if (!loteTemp.trim()) novosErros.loteTemp = "Informe o lote.";
+    if (!dataFabricacaoTemp) novosErros.dataFabricacaoTemp = "Obrigatório.";
+    if (!validadeTemp) novosErros.validadeTemp = "Obrigatório.";
 
     if (
       dataFabricacaoTemp &&
       validadeTemp &&
       new Date(dataFabricacaoTemp) > new Date(validadeTemp)
     ) {
-      novosErros.validadeTemp =
-        "A validade não pode ser menor que a data de fabricação.";
+      novosErros.validadeTemp = "Validade menor que fabricação.";
     }
 
     setErrosItem(novosErros);
-
     return Object.keys(novosErros).length === 0;
   };
 
   const validarNota = () => {
     const novosErros = {};
-
-    if (!fornecedorId) {
-      novosErros.fornecedorId = "Selecione o fornecedor.";
-    }
-
-    if (!dataEntrada) {
-      novosErros.dataEntrada = "Informe a data da entrada.";
-    }
-
-    if (!notaFiscalNumero.trim()) {
-      novosErros.notaFiscalNumero = "Informe o número da nota fiscal.";
-    }
-
-    if (itensEntrada.length === 0) {
-      novosErros.itensEntrada = "Adicione pelo menos um item antes de finalizar.";
-    }
+    if (!fornecedorId) novosErros.fornecedorId = "Selecione o fornecedor.";
+    if (!dataEntrada) novosErros.dataEntrada = "Informe a data.";
+    if (!notaFiscalNumero.trim()) novosErros.notaFiscalNumero = "Informe o número.";
+    if (itensEntrada.length === 0) novosErros.itensEntrada = "Adicione pelo menos um item antes de finalizar.";
 
     setErrosNota(novosErros);
-
     return Object.keys(novosErros).length === 0;
   };
 
   function adicionarItem() {
     const itemValido = validarItem();
-
     if (!itemValido) return;
 
     const novoItem = {
@@ -235,13 +200,11 @@ function ModalEntrada({ onClose, onSalvar }) {
     setDataFabricacaoTemp("");
     setValidadeTemp("");
     setErrosItem({});
-
     limparErroNota("itensEntrada");
   }
 
   async function salvarEntradaFinal() {
     const notaValida = validarNota();
-
     if (!notaValida) return;
 
     setCarregando(true);
@@ -252,7 +215,6 @@ function ModalEntrada({ onClose, onSalvar }) {
         nota_fiscal_numero: String(notaFiscalNumero).trim(),
         nota_fiscal_serie: String(notaFiscalSerie || "1").trim(),
         data_emissao: formatarDataParaGo(dataEntrada),
-
         itens: itensEntrada.map((item) => ({
           id_epi: Number(item.idEpi),
           id_tamanho: Number(item.idTamanho),
@@ -264,8 +226,6 @@ function ModalEntrada({ onClose, onSalvar }) {
         })),
       };
 
-      console.log("🚀 Enviando Payload para o Go:", payload);
-
       await criarEntrada(payload);
 
       if (onSalvar) {
@@ -274,17 +234,13 @@ function ModalEntrada({ onClose, onSalvar }) {
           mensagem: "Entrada de estoque cadastrada com sucesso!",
         });
       }
-
       onClose();
     } catch (erro) {
       console.error("❌ Erro ao salvar entrada:", erro);
-
-      const detalhesErro =
-        erro.response?.data?.detalhes || erro.response?.data?.error;
-
-      alert(
+      const detalhesErro = erro.response?.data?.detalhes || erro.response?.data?.error;
+      toast.error(
         detalhesErro
-          ? `Erro de validação: ${detalhesErro}`
+          ? `Erro: ${detalhesErro}`
           : "Erro interno no servidor ao processar entrada."
       );
     } finally {
@@ -293,46 +249,49 @@ function ModalEntrada({ onClose, onSalvar }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#0B1120] rounded-xl shadow-2xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-200 dark:border-slate-800 transition-colors duration-300">
-        <div className="bg-emerald-600 dark:bg-emerald-700 px-6 py-4 flex justify-between items-center shadow-md shrink-0 transition-colors duration-300">
-          <div>
-            <h2 className="text-xl font-bold text-white">
-              Nova Entrada de Estoque
-            </h2>
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-200/60 dark:border-slate-800 transition-colors duration-300">
 
-            <p className="text-xs text-emerald-50 mt-1">
-              Campos marcados com <span className="font-bold">*</span> são
-              obrigatórios.
-            </p>
+        <div className="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-start shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+              <PackagePlus className="w-6 h-6" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Nova Entrada
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Registre uma nova nota fiscal e seus itens no estoque.
+              </p>
+            </div>
           </div>
-
           <button
             onClick={onClose}
-            className="text-white hover:bg-emerald-700 dark:hover:bg-emerald-600 p-2 rounded-full transition-colors flex items-center justify-center"
-            title="Fechar"
+            className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 p-6 space-y-6 transition-colors duration-300">
-          
-          <div className="bg-white dark:bg-slate-800/80 p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-colors duration-300">
-            <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase mb-4 border-b dark:border-slate-700 pb-2 transition-colors">
-              1. Dados da Nota / Fornecedor
-            </h3>
+        <div className="flex-1 overflow-y-auto p-6 sm:px-8 bg-slate-50/50 dark:bg-slate-900/50 space-y-6 custom-scrollbar transition-colors duration-300">
+          <div className="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <FileText className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                Dados da Nota
+              </h3>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
               <div className="md:col-span-6">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
-                  FORNECEDOR <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Fornecedor <span className="text-red-500">*</span>
                 </label>
-
                 <select
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 disabled:bg-slate-100 dark:disabled:bg-slate-800 transition-colors ${campoNotaComErro(
-                    "fornecedorId"
-                  )}`}
+                  className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium outline-none transition-all ${campoNotaComErro("fornecedorId")} disabled:opacity-50`}
                   value={fornecedorId}
                   onChange={(e) => {
                     setFornecedorId(e.target.value);
@@ -340,83 +299,58 @@ function ModalEntrada({ onClose, onSalvar }) {
                   }}
                   disabled={carregandoDados}
                 >
-                  <option value="">
-                    {carregandoDados ? "Carregando..." : "Selecione..."}
-                  </option>
-
+                  <option value="">{carregandoDados ? "Carregando..." : "Selecione o fornecedor..."}</option>
                   {fornecedores.map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.nome_fantasia || f.razao_social}
                     </option>
                   ))}
                 </select>
-
-                {errosNota.fornecedorId && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosNota.fornecedorId}
-                  </p>
-                )}
+                {errosNota.fornecedorId && <p className="text-[11px] text-red-500 font-bold mt-1">{errosNota.fornecedorId}</p>}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
-                  DATA <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Data <span className="text-red-500">*</span>
                 </label>
-
                 <input
                   type="date"
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 transition-colors ${campoNotaComErro(
-                    "dataEntrada"
-                  )}`}
+                  className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium outline-none transition-all ${campoNotaComErro("dataEntrada")}`}
                   value={dataEntrada}
                   onChange={(e) => {
                     setDataEntrada(e.target.value);
                     limparErroNota("dataEntrada");
                   }}
                 />
-
-                {errosNota.dataEntrada && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosNota.dataEntrada}
-                  </p>
-                )}
+                {errosNota.dataEntrada && <p className="text-[11px] text-red-500 font-bold mt-1">{errosNota.dataEntrada}</p>}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
                   NF Nº <span className="text-red-500">*</span>
                 </label>
-
                 <input
                   type="text"
                   inputMode="numeric"
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 placeholder-slate-400 dark:placeholder-slate-500 transition-colors ${campoNotaComErro(
-                    "notaFiscalNumero"
-                  )}`}
+                  className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium outline-none placeholder-slate-400 transition-all ${campoNotaComErro("notaFiscalNumero")}`}
                   value={notaFiscalNumero}
                   onChange={(e) => {
                     setNotaFiscalNumero(e.target.value);
                     limparErroNota("notaFiscalNumero");
                   }}
-                  placeholder="Apenas números"
+                  placeholder="Ex: 12345"
                 />
-
-                {errosNota.notaFiscalNumero && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosNota.notaFiscalNumero}
-                  </p>
-                )}
+                {errosNota.notaFiscalNumero && <p className="text-[11px] text-red-500 font-bold mt-1">{errosNota.notaFiscalNumero}</p>}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
-                  SÉRIE
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Série
                 </label>
-
                 <input
                   type="text"
                   inputMode="numeric"
-                  className="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 placeholder-slate-400 dark:placeholder-slate-500 transition-colors"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/60 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder-slate-400 dark:text-white transition-all"
                   value={notaFiscalSerie}
                   onChange={(e) => setNotaFiscalSerie(e.target.value)}
                   placeholder="Padrão: 1"
@@ -425,21 +359,23 @@ function ModalEntrada({ onClose, onSalvar }) {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800/80 p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-colors duration-300">
-            <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase mb-4 border-b dark:border-slate-700 pb-2 transition-colors">
-              2. Itens do Lote
-            </h3>
+          <div className="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                <Layers className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                Itens do Lote
+              </h3>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors">
-              <div className="md:col-span-3">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-slate-50 dark:bg-slate-900/50 p-5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 mb-6">
+              <div className="md:col-span-4">
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
                   EPI <span className="text-red-500">*</span>
                 </label>
-
                 <select
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 disabled:bg-slate-100 dark:disabled:bg-slate-800 transition-colors ${campoItemComErro(
-                    "epiId"
-                  )}`}
+                  className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all disabled:opacity-50 ${campoItemComErro("epiId")}`}
                   value={epiId}
                   onChange={(e) => {
                     setEpiId(e.target.value);
@@ -449,31 +385,20 @@ function ModalEntrada({ onClose, onSalvar }) {
                   }}
                   disabled={carregandoDados}
                 >
-                  <option value="">
-                    {carregandoDados ? "Carregando..." : "Selecione..."}
-                  </option>
-
+                  <option value="">{carregandoDados ? "Carregando..." : "Selecione o EPI..."}</option>
                   {epis.map((epi) => (
-                    <option key={epi.id} value={epi.id}>
-                      {epi.nome}
-                    </option>
+                    <option key={epi.id} value={epi.id}>{epi.nome}</option>
                   ))}
                 </select>
-
-                {errosItem.epiId && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errosItem.epiId}</p>
-                )}
+                {errosItem.epiId && <p className="text-[11px] text-red-500 font-bold mt-1">{errosItem.epiId}</p>}
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
-                  TAMANHO <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Tamanho <span className="text-red-500">*</span>
                 </label>
-
                 <select
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:cursor-not-allowed transition-colors ${campoItemComErro(
-                    "tamanhoTemp"
-                  )}`}
+                  className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all disabled:opacity-50 ${campoItemComErro("tamanhoTemp")}`}
                   value={tamanhoTemp}
                   onChange={(e) => {
                     setTamanhoTemp(e.target.value);
@@ -481,86 +406,57 @@ function ModalEntrada({ onClose, onSalvar }) {
                   }}
                   disabled={!epiId}
                 >
-                  <option value="">
-                    {epiId ? "Selecione..." : "Escolha o EPI"}
-                  </option>
-
+                  <option value="">{epiId ? "Selecione..." : "Aguardando EPI"}</option>
                   {epiSelecionadoObj?.tamanhos?.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.tamanho}
-                    </option>
+                    <option key={t.id} value={t.id}>{t.tamanho}</option>
                   ))}
                 </select>
-
-                {errosItem.tamanhoTemp && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosItem.tamanhoTemp}
-                  </p>
-                )}
+                {errosItem.tamanhoTemp && <p className="text-[11px] text-red-500 font-bold mt-1">{errosItem.tamanhoTemp}</p>}
               </div>
 
               <div className="md:col-span-1">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
-                  QTD <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Qtd <span className="text-red-500">*</span>
                 </label>
-
                 <input
                   type="number"
                   min="1"
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 transition-colors ${campoItemComErro(
-                    "qtdTemp"
-                  )}`}
+                  className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all ${campoItemComErro("qtdTemp")}`}
                   value={qtdTemp}
                   onChange={(e) => {
                     setQtdTemp(e.target.value);
                     limparErroItem("qtdTemp");
                   }}
                 />
-
-                {errosItem.qtdTemp && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosItem.qtdTemp}
-                  </p>
-                )}
+                {errosItem.qtdTemp && <p className="text-[11px] text-red-500 font-bold mt-1">{errosItem.qtdTemp}</p>}
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
-                  VLR UNIT. <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Vlr Unit. <span className="text-red-500">*</span>
                 </label>
-
                 <input
                   type="number"
                   min="0"
                   step="0.01"
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 placeholder-slate-400 dark:placeholder-slate-500 transition-colors ${campoItemComErro(
-                    "precoTemp"
-                  )}`}
+                  className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none placeholder-slate-400 transition-all ${campoItemComErro("precoTemp")}`}
                   value={precoTemp}
                   onChange={(e) => {
                     setPrecoTemp(e.target.value);
                     limparErroItem("precoTemp");
                   }}
-                  placeholder="0,00"
+                  placeholder="0.00"
                 />
-
-                {errosItem.precoTemp && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosItem.precoTemp}
-                  </p>
-                )}
+                {errosItem.precoTemp && <p className="text-[11px] text-red-500 font-bold mt-1">{errosItem.precoTemp}</p>}
               </div>
 
-              <div className="md:col-span-2">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
-                  LOTE <span className="text-red-500">*</span>
+              <div className="md:col-span-3">
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Lote <span className="text-red-500">*</span>
                 </label>
-
                 <input
                   type="text"
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 placeholder-slate-400 dark:placeholder-slate-500 transition-colors ${campoItemComErro(
-                    "loteTemp"
-                  )}`}
+                  className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none placeholder-slate-400 transition-all ${campoItemComErro("loteTemp")}`}
                   value={loteTemp}
                   onChange={(e) => {
                     setLoteTemp(e.target.value);
@@ -568,142 +464,110 @@ function ModalEntrada({ onClose, onSalvar }) {
                   }}
                   placeholder="Ex: L001"
                 />
-
-                {errosItem.loteTemp && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosItem.loteTemp}
-                  </p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <button
-                  type="button"
-                  onClick={adicionarItem}
-                  className="w-full py-2 bg-slate-800 dark:bg-slate-700 text-white font-bold rounded text-sm hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors mt-5"
-                >
-                  INCLUIR
-                </button>
+                {errosItem.loteTemp && <p className="text-[11px] text-red-500 font-bold mt-1">{errosItem.loteTemp}</p>}
               </div>
 
               <div className="md:col-span-3">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
-                  FABRICAÇÃO <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Fabricação <span className="text-red-500">*</span>
                 </label>
-
                 <input
                   type="date"
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 transition-colors ${campoItemComErro(
-                    "dataFabricacaoTemp"
-                  )}`}
+                  className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all ${campoItemComErro("dataFabricacaoTemp")}`}
                   value={dataFabricacaoTemp}
                   onChange={(e) => {
                     setDataFabricacaoTemp(e.target.value);
                     limparErroItem("dataFabricacaoTemp");
                   }}
                 />
-
-                {errosItem.dataFabricacaoTemp && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosItem.dataFabricacaoTemp}
-                  </p>
-                )}
+                {errosItem.dataFabricacaoTemp && <p className="text-[11px] text-red-500 font-bold mt-1">{errosItem.dataFabricacaoTemp}</p>}
               </div>
 
               <div className="md:col-span-3">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block transition-colors">
-                  VALIDADE <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                  Validade <span className="text-red-500">*</span>
                 </label>
-
                 <input
                   type="date"
-                  className={`w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 transition-colors ${campoItemComErro(
-                    "validadeTemp"
-                  )}`}
+                  className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all ${campoItemComErro("validadeTemp")}`}
                   value={validadeTemp}
                   onChange={(e) => {
                     setValidadeTemp(e.target.value);
                     limparErroItem("validadeTemp");
                   }}
                 />
+                {errosItem.validadeTemp && <p className="text-[11px] text-red-500 font-bold mt-1">{errosItem.validadeTemp}</p>}
+              </div>
 
-                {errosItem.validadeTemp && (
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                    {errosItem.validadeTemp}
-                  </p>
-                )}
+              <div className="md:col-span-6 flex items-end">
+                <button
+                  type="button"
+                  onClick={adicionarItem}
+                  className="w-full h-[42px] flex items-center justify-center gap-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-bold rounded-xl text-sm transition-all active:scale-[0.98]"
+                >
+                  <Plus className="w-4 h-4" /> Incluir Item
+                </button>
               </div>
             </div>
 
             {errosNota.itensEntrada && (
-              <div className="mt-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600 dark:text-red-400 font-medium transition-colors">
+              <div className="mb-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 {errosNota.itensEntrada}
               </div>
             )}
 
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full text-xs text-left border dark:border-slate-700 rounded-lg overflow-hidden transition-colors">
-                <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b dark:border-slate-700 transition-colors">
-                  <tr className="divide-x dark:divide-slate-700">
-                    <th className="p-3">EPI / CA</th>
-                    <th className="p-3 text-center">TAM.</th>
-                    <th className="p-3 text-center">QTD</th>
-                    <th className="p-3 text-center">LOTE</th>
-                    <th className="p-3 text-center">VALIDADE</th>
-                    <th className="p-3 text-right">TOTAL</th>
-                    <th className="p-3 text-center">AÇÃO</th>
+            <div className="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200/60 dark:border-slate-700/60 transition-colors">
+                  <tr>
+                    <th className="p-3.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">EPI / CA</th>
+                    <th className="p-3.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Tamanho</th>
+                    <th className="p-3.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Qtd</th>
+                    <th className="p-3.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Lote</th>
+                    <th className="p-3.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Validade</th>
+                    <th className="p-3.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Total</th>
+                    <th className="p-3.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Ações</th>
                   </tr>
                 </thead>
-
-                <tbody className="divide-y dark:divide-slate-700 transition-colors">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                   {itensEntrada.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan="7"
-                        className="p-4 text-center text-slate-400 dark:text-slate-500 italic bg-white dark:bg-slate-800"
-                      >
-                        Nenhum item adicionado ainda.
+                      <td colSpan="7" className="p-8 text-center text-slate-400 dark:text-slate-500 font-medium bg-white dark:bg-slate-800/50">
+                        Nenhum item adicionado à nota ainda.
                       </td>
                     </tr>
                   ) : (
                     itensEntrada.map((item) => (
-                      <tr key={item.id} className="divide-x dark:divide-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="p-3 font-bold text-slate-800 dark:text-white">
-                          {item.epiNome}
-                          <span className="block font-normal text-slate-400 dark:text-slate-500 mt-0.5">
-                            CA: {item.ca}
+                      <tr key={item.id} className="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                        <td className="p-3.5">
+                          <div className="font-bold text-sm text-slate-800 dark:text-slate-200">{item.epiNome}</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">CA: {item.ca}</div>
+                        </td>
+                        <td className="p-3.5 text-center text-sm font-semibold text-slate-600 dark:text-slate-300">
+                          {item.tamanhoNome}
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <span className="inline-block px-2 py-1 bg-slate-100 dark:bg-slate-700/50 rounded-md text-xs font-bold text-slate-700 dark:text-slate-300">
+                            {item.quantidade}
                           </span>
                         </td>
-
-                        <td className="p-3 text-center text-slate-700 dark:text-slate-300">{item.tamanhoNome}</td>
-
-                        <td className="p-3 text-center font-bold text-blue-600 dark:text-blue-400">
-                          {item.quantidade}
+                        <td className="p-3.5 text-center text-sm font-medium text-slate-600 dark:text-slate-400">
+                          {item.lote}
                         </td>
-
-                        <td className="p-3 text-center text-slate-700 dark:text-slate-300">{item.lote}</td>
-
-                        <td className="p-3 text-center text-slate-700 dark:text-slate-300">
+                        <td className="p-3.5 text-center text-sm font-medium text-slate-600 dark:text-slate-400">
                           {formatarDataParaGo(item.data_validade) || "-"}
                         </td>
-
-                        <td className="p-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                          {item.totalItem.toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
+                        <td className="p-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                          {item.totalItem.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </td>
-
-                        <td className="p-3 text-center">
+                        <td className="p-3.5 text-center">
                           <button
-                            onClick={() =>
-                              setItensEntrada((prev) =>
-                                prev.filter((i) => i.id !== item.id)
-                              )
-                            }
-                            className="text-red-500 dark:text-red-400 hover:underline transition-colors"
+                            onClick={() => setItensEntrada((prev) => prev.filter((i) => i.id !== item.id))}
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors inline-flex items-center justify-center"
+                            title="Remover Item"
                           >
-                            Remover
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>
@@ -715,19 +579,18 @@ function ModalEntrada({ onClose, onSalvar }) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#0B1120] px-6 py-4 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center border-t dark:border-slate-800 shrink-0 transition-colors duration-300">
-          <div className="font-bold text-slate-600 dark:text-slate-300 uppercase text-xs transition-colors">
-            Total:{" "}
-            {valorTotalEntrada.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            })}
+        <div className="px-6 sm:px-8 py-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center bg-white dark:bg-slate-900 shrink-0 rounded-b-3xl">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valor Total da Nota</span>
+            <span className="text-xl font-black text-slate-800 dark:text-white">
+              {valorTotalEntrada.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </span>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={onClose}
-              className="px-5 py-2 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="px-6 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors w-full sm:w-auto"
             >
               Cancelar
             </button>
@@ -735,9 +598,13 @@ function ModalEntrada({ onClose, onSalvar }) {
             <button
               onClick={salvarEntradaFinal}
               disabled={carregando}
-              className="px-6 py-2 bg-emerald-600 dark:bg-emerald-700 text-white font-bold rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              className="px-6 py-2.5 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold rounded-xl text-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-emerald-600/20 w-full sm:w-auto"
             >
-              {carregando ? "Salvando..." : "Finalizar Entrada"}
+              {carregando ? (
+                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> Processando...</>
+              ) : (
+                <><CheckCircle2 className="w-4 h-4" /> Finalizar Entrada</>
+              )}
             </button>
           </div>
         </div>

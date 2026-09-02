@@ -63,12 +63,12 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
           shrink-0 flex items-center gap-2.5 font-medium transition-all duration-200
           ${isMobile ? "w-full justify-start px-4 py-3 text-sm rounded-xl" : "px-5 py-2.5 text-sm rounded-full"}
           ${ativo
-            ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50"
-            : "text-slate-500 hover:text-blue-600 hover:bg-blue-50/50"
+            ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700"
+            : "text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30"
           }
         `}
       >
-        <span className={`shrink-0 ${ativo ? "text-blue-600" : "text-slate-400"}`}>{icone}</span>
+        <span className={`shrink-0 transition-colors ${ativo ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500"}`}>{icone}</span>
         <span>{label}</span>
       </button>
     );
@@ -192,27 +192,27 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
   const paginaNoMenuSecundario = menuSecundario.some((item) => item.nome === paginaAtual);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-300">
       <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-3">
         <div className="hidden lg:grid grid-cols-[auto_1fr_auto] items-center gap-8">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/20">
+            <div className="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/20 dark:shadow-blue-900/40 transition-colors">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-extrabold tracking-tight text-slate-900 leading-none">
+              <h1 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white leading-none transition-colors">
                 SGEPI
               </h1>
-              <p className="text-[10px] text-blue-600 uppercase tracking-widest font-bold mt-1">
+              <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-widest font-bold mt-1 transition-colors">
                 {isSuperAdmin ? "Painel Master" : "Gestão de Estoque"}
               </p>
             </div>
           </div>
 
           <div className="flex justify-center min-w-0">
-            <nav className="flex items-center gap-1.5 p-1 bg-slate-50 border border-slate-200/60 rounded-full">
+            <nav className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 rounded-full transition-colors">
               {menuPrincipal.map((item) => (
                 <Botao key={item.nome} label={item.label} nomePagina={item.nome} icone={item.icon} />
               ))}
@@ -225,8 +225,8 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
                     className={`
                       shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200
                       ${paginaNoMenuSecundario || menuMaisAberto
-                        ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50"
-                        : "text-slate-500 hover:bg-blue-50/50 hover:text-blue-600"
+                        ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700"
+                        : "text-slate-500 dark:text-slate-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400"
                       }
                     `}
                   >
@@ -237,7 +237,7 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
                   </button>
 
                   {menuMaisAberto && (
-                    <div className="absolute top-[calc(100%+12px)] left-1/2 -translate-x-1/2 min-w-[220px] rounded-2xl border border-slate-100 bg-white shadow-xl p-1.5 animate-fade-in">
+                    <div className="absolute top-[calc(100%+12px)] left-1/2 -translate-x-1/2 min-w-[220px] rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl p-1.5 animate-fade-in transition-colors">
                       <div className="flex flex-col gap-0.5">
                         {menuSecundario.map((item) => {
                           const ativo = paginaAtual === item.nome;
@@ -252,12 +252,12 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
                               className={`
                                 w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-left transition-colors
                                 ${ativo
-                                  ? "bg-blue-50/80 text-blue-700 font-semibold"
-                                  : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"
+                                  ? "bg-blue-50/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-semibold"
+                                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-blue-600 dark:hover:text-blue-400"
                                 }
                               `}
                             >
-                              <span className={ativo ? "text-blue-600" : "text-slate-400"}>{item.icon}</span>
+                              <span className={ativo ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500"}>{item.icon}</span>
                               <span>{item.label}</span>
                             </button>
                           );
@@ -272,22 +272,22 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
 
           <div className="flex items-center justify-end gap-5 shrink-0">
             <div className="hidden 2xl:flex flex-col items-end justify-center">
-              <span className="text-sm text-slate-700">
-                Olá, <b className="font-semibold text-slate-900">{nomeUsuario}</b>
+              <span className="text-sm text-slate-700 dark:text-slate-300 transition-colors">
+                Olá, <b className="font-semibold text-slate-900 dark:text-white transition-colors">{nomeUsuario}</b>
               </span>
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 mt-0.5 font-bold">
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-0.5 font-bold transition-colors">
                 {perfilNormalizado}
               </span>
             </div>
             
-            <div className="w-px h-8 bg-slate-200 hidden 2xl:block"></div>
+            <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden 2xl:block transition-colors"></div>
 
             <button
               type="button"
               onClick={onLogout}
-              className="flex items-center gap-2 text-slate-400 hover:text-red-600 bg-slate-50 border border-slate-100 hover:bg-red-50 hover:border-red-100 p-2.5 pr-4 rounded-full font-medium transition-all text-sm whitespace-nowrap group"
+              className="flex items-center gap-2 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-100 dark:hover:border-red-800/50 p-2.5 pr-4 rounded-full font-medium transition-all text-sm whitespace-nowrap group"
             >
-              <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm text-current group-hover:text-red-600">
+              <div className="w-6 h-6 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm text-current group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
@@ -299,14 +299,14 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
 
         <div className="flex lg:hidden items-center justify-between">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/20">
+            <div className="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/20 dark:shadow-blue-900/40 transition-colors">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-extrabold tracking-tight text-slate-900 leading-none">SGEPI</h1>
-              <p className="text-[10px] text-blue-600 uppercase tracking-widest font-bold mt-1">
+              <h1 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white leading-none transition-colors">SGEPI</h1>
+              <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-widest font-bold mt-1 transition-colors">
                 {isSuperAdmin ? "Painel Master" : "Gestão de Estoque"}
               </p>
             </div>
@@ -315,7 +315,7 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
           <button
             type="button"
             onClick={() => setMenuAberto((prev) => !prev)}
-            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors shrink-0"
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors shrink-0"
           >
             {menuAberto ? (
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -330,12 +330,12 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
         </div>
 
         {menuAberto && (
-          <div className="lg:hidden mt-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-xl animate-fade-in">
-            <div className="px-2 pb-4 mb-4 border-b border-slate-100">
-              <p className="text-sm text-slate-700">
-                Olá, <b className="font-semibold text-slate-900">{nomeUsuario}</b>
+          <div className="lg:hidden mt-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xl animate-fade-in transition-colors">
+            <div className="px-2 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800 transition-colors">
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                Olá, <b className="font-semibold text-slate-900 dark:text-white">{nomeUsuario}</b>
               </p>
-              <p className="text-[11px] uppercase tracking-widest text-slate-400 mt-1 font-bold">
+              <p className="text-[11px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1 font-bold">
                 Perfil: {perfilNormalizado}
               </p>
             </div>
@@ -346,11 +346,11 @@ function Header({ paginaAtual, setPagina, onLogout, usuario }) {
               ))}
             </nav>
 
-            <div className="mt-4 pt-4 border-t border-slate-100">
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 transition-colors">
               <button
                 type="button"
                 onClick={onLogout}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-red-600 bg-red-50 hover:bg-red-600 hover:text-white transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-600 hover:text-white dark:hover:bg-red-700 dark:hover:text-white transition-colors"
               >
                 <span>Sair do Sistema</span>
               </button>

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { formatarPreco, formatarValidade } from "../../utils/estoqueHelpers";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { X, Download, PackageSearch } from "lucide-react";
 
 function ModalDetalhesEstoque({ aberto, item, onClose }) {
   useEffect(() => {
@@ -48,7 +49,7 @@ function ModalDetalhesEstoque({ aberto, item, onClose }) {
       startY: 45,
       head: [["Campo", "Informação"]],
       body: tableBody,
-      theme: 'striped',
+      theme: "striped",
       headStyles: { fillColor: [59, 130, 246] },
       styles: { fontSize: 10 },
     });
@@ -59,140 +60,102 @@ function ModalDetalhesEstoque({ aberto, item, onClose }) {
     doc.text("Descrição / Observações:", 14, finalY);
     doc.setFontSize(10);
     doc.setTextColor(80);
-    const splitDesc = doc.splitTextToSize(item.descricao || "Sem descrição adicional.", 180);
+    const splitDesc = doc.splitTextToSize(
+      item.descricao || "Sem descrição adicional.",
+      180
+    );
     doc.text(splitDesc, 14, finalY + 7);
 
-    doc.save(`EPI_${item.nome.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`EPI_${item.nome.replace(/\s+/g, "_")}.pdf`);
   };
 
+  const InfoCard = ({ label, value }) => (
+    <div className="bg-white dark:bg-slate-800/80 p-4 sm:p-5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm transition-colors">
+      <span className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 transition-colors">
+        {label}
+      </span>
+      <strong className="text-sm font-bold text-slate-800 dark:text-slate-200 block truncate transition-colors">
+        {value}
+      </strong>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-[120] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-3xl bg-white dark:bg-[#0B1120] rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden animate-fade-in flex flex-col max-h-[95vh] transition-colors duration-300">
-        <div className="bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 text-white px-6 py-5 shrink-0 shadow-sm z-10 transition-colors duration-300">
-          <div className="flex items-start justify-between gap-4">
+    <div className="fixed inset-0 z-[120] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in text-slate-700 dark:text-slate-300">
+      <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col max-h-[95vh] transition-colors duration-300">
+        <div className="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-start shrink-0 transition-colors duration-300">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 transition-colors">
+              <PackageSearch className="w-6 h-6" strokeWidth={2.5} />
+            </div>
             <div>
-              <h3 className="text-xl font-bold">Detalhes do item em estoque</h3>
-              <p className="text-sm text-blue-100 mt-1">
-                Informações completas do lote selecionado.
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
+                Detalhes do Item
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+                Informações completas do lote em estoque.
               </p>
             </div>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={gerarPDF}
-                className="bg-white/10 hover:bg-emerald-500 transition-colors rounded-lg px-3 py-2 text-sm font-bold flex items-center gap-2 border border-white/20"
-                title="Download PDF"
-              >
-                📥 Baixar PDF
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="bg-white/10 hover:bg-white/20 transition-colors rounded-lg px-3 py-2 text-sm font-bold flex items-center justify-center"
-                title="Fechar"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-            <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-              EPI
-            </span>
-            <strong className="text-gray-800 dark:text-white text-lg">{item.nome}</strong>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-              {item.descricao || "Sem descrição."}
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Fabricante
-              </span>
-              <strong className="text-gray-800 dark:text-white">{item.fabricante || "-"}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Tipo de proteção
-              </span>
-              <strong className="text-gray-800 dark:text-white">{item.tipoProtecao || "-"}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                CA
-              </span>
-              <strong className="text-gray-800 dark:text-white">{item.ca || "-"}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Lote
-              </span>
-              <strong className="text-gray-800 dark:text-white">{item.lote || "-"}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Tamanho
-              </span>
-              <strong className="text-gray-800 dark:text-white">{item.tamanho || "-"}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Preço unitário
-              </span>
-              <strong className="text-gray-800 dark:text-white">{formatarPreco(item.preco)}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Quantidade inicial
-              </span>
-              <strong className="text-gray-800 dark:text-white">{item.quantidadeInicial}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Quantidade atual
-              </span>
-              <strong className="text-gray-800 dark:text-white">{item.quantidadeAtual}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Alerta mínimo
-              </span>
-              <strong className="text-gray-800 dark:text-white">{item.alertaMinimo}</strong>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-slate-700/80 bg-gray-50 dark:bg-slate-800/40 p-4 transition-colors">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-500 dark:text-slate-400 font-bold block mb-1">
-                Validade
-              </span>
-              <strong className="text-gray-800 dark:text-white">
-                {formatarValidade(item.validade)}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] flex justify-end shrink-0 transition-colors duration-300">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm"
+            className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            title="Fechar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 sm:px-8 bg-slate-50/50 dark:bg-slate-900/50 space-y-5 custom-scrollbar transition-colors duration-300">
+          <div className="bg-white dark:bg-slate-800/80 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm transition-colors">
+            <span className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 transition-colors">
+              EPI
+            </span>
+            <strong className="text-lg font-extrabold text-slate-800 dark:text-white block transition-colors">
+              {item.nome}
+            </strong>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed transition-colors">
+              {item.descricao || "Nenhuma descrição adicional cadastrada para este item."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+            <InfoCard label="Fabricante" value={item.fabricante || "-"} />
+            <InfoCard label="Tipo de proteção" value={item.tipoProtecao || "-"} />
+            <InfoCard label="CA" value={item.ca || "-"} />
+            <InfoCard label="Lote" value={item.lote || "-"} />
+            <InfoCard label="Tamanho" value={item.tamanho || "-"} />
+            <InfoCard label="Preço unitário" value={formatarPreco(item.preco)} />
+            <InfoCard label="Qtd. inicial" value={item.quantidadeInicial} />
+            <InfoCard label="Qtd. atual" value={item.quantidadeAtual} />
+            <InfoCard label="Alerta mínimo" value={item.alertaMinimo} />
+
+            <div className="col-span-2 md:col-span-3">
+              <InfoCard label="Validade" value={formatarValidade(item.validade)} />
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 sm:px-8 py-5 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row gap-3 sm:justify-end sm:items-center bg-white dark:bg-slate-900 shrink-0 rounded-b-3xl transition-colors duration-300">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors w-full sm:w-auto order-2 sm:order-1"
           >
             Fechar
           </button>
+
+          <button
+            type="button"
+            onClick={gerarPDF}
+            className="px-6 py-2.5 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-bold rounded-xl text-sm transition-all active:scale-[0.98] shadow-sm shadow-blue-600/20 w-full sm:w-auto order-1 sm:order-2"
+          >
+            <Download className="w-4 h-4" /> Baixar PDF
+          </button>
         </div>
+
       </div>
     </div>
   );

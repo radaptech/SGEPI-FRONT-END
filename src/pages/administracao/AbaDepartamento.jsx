@@ -1,5 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../../services/api";
+import {
+  Building2,
+  PenLine,
+  Plus,
+  Save,
+  Trash2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  CheckCircle2,
+  AlertCircle
+} from "lucide-react";
 
 export default function AbaDepartamentos() {
   const [departamentos, setDepartamentos] = useState([]);
@@ -8,7 +21,7 @@ export default function AbaDepartamentos() {
   const [editandoId, setEditandoId] = useState(null);
 
   const [paginaAtual, setPaginaAtual] = useState(1);
-  const itensPorPagina = 7;
+  const itensPorPagina = 9;
 
   const [erros, setErros] = useState({});
   const [toast, setToast] = useState(null);
@@ -19,7 +32,6 @@ export default function AbaDepartamentos() {
 
   const mostrarToast = (mensagem, tipo = "sucesso") => {
     setToast({ mensagem, tipo });
-
     setTimeout(() => {
       setToast(null);
     }, 3500);
@@ -27,47 +39,40 @@ export default function AbaDepartamentos() {
 
   const campoComErro = () => {
     return erros.departamento
-      ? "border-red-400 focus:ring-red-400 dark:border-red-500 dark:focus:ring-red-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-      : "border-slate-200 focus:ring-slate-500 dark:border-slate-600 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white";
+      ? "border-red-400 dark:border-red-500/50 focus:ring-red-500/20 focus:border-red-500 bg-red-50/30 dark:bg-red-900/10"
+      : "border-slate-200/60 dark:border-slate-700/60 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200";
   };
 
   const limparErroCampo = () => {
     if (!erros.departamento) return;
-
     setErros({});
   };
 
   const carregarDepartamentos = async () => {
     try {
       const resposta = await api.get("/departamentos");
-
       setDepartamentos(resposta?.departamentos || []);
     } catch (erro) {
       console.error("Erro ao carregar departamentos:", erro);
-
       setDepartamentos([]);
       mostrarToast("Erro ao carregar departamentos.", "erro");
     }
   };
 
-  const totalPaginas = Math.ceil(departamentos.length / itensPorPagina);
+  const totalPaginas = Math.max(1, Math.ceil(departamentos.length / itensPorPagina));
 
   const departamentosPaginados = useMemo(() => {
     const inicio = (paginaAtual - 1) * itensPorPagina;
     const fim = inicio + itensPorPagina;
-
     return departamentos.slice(inicio, fim);
   }, [departamentos, paginaAtual]);
 
   const validarFormulario = () => {
     const novosErros = {};
-
     if (!novoDepto.trim()) {
       novosErros.departamento = "Informe o nome do departamento.";
     }
-
     setErros(novosErros);
-
     return Object.keys(novosErros).length === 0;
   };
 
@@ -79,16 +84,13 @@ export default function AbaDepartamentos() {
 
   const salvarDepartamento = async () => {
     const formularioValido = validarFormulario();
-
     if (!formularioValido) return;
 
     try {
       setCarregando(true);
-
       const payload = {
         departamento: novoDepto.trim(),
       };
-
       const estavaEditando = Boolean(editandoId);
 
       if (editandoId) {
@@ -98,7 +100,6 @@ export default function AbaDepartamentos() {
       }
 
       limparFormulario();
-
       await carregarDepartamentos();
 
       mostrarToast(
@@ -109,9 +110,8 @@ export default function AbaDepartamentos() {
       );
     } catch (erro) {
       console.error("Erro ao salvar departamento:", erro);
-
       mostrarToast(
-        "Não foi possível salvar o departamento. Verifique os dados informados.",
+        "Não foi possível salvar. Verifique os dados informados.",
         "erro"
       );
     } finally {
@@ -134,89 +134,75 @@ export default function AbaDepartamentos() {
 
     try {
       await api.delete(`/gerencial/departamento/${id}`);
-
       await carregarDepartamentos();
+      if (departamentosPaginados.length === 1 && paginaAtual > 1) {
+        setPaginaAtual(paginaAtual - 1);
+      }
 
       mostrarToast("Departamento excluído com sucesso!", "sucesso");
     } catch (erro) {
       console.error("Erro ao remover departamento:", erro);
-
       mostrarToast("Erro ao remover departamento.", "erro");
     }
   };
 
+  const baseInputClass = "w-full px-4 h-[46px] rounded-xl text-sm font-medium outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder-slate-400 border";
+  const labelClass = "block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 transition-colors";
+
   return (
     <div className="animate-fade-in transition-colors duration-300">
       {toast && (
-        <div
-          className={`fixed top-5 left-1/2 z-[9999] w-[90%] max-w-sm -translate-x-1/2 rounded-xl border px-5 py-4 shadow-2xl animate-fade-in sm:left-auto sm:right-5 sm:translate-x-0 ${
-            toast.tipo === "sucesso"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400"
-              : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400"
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <div className="text-xl">
-              {toast.tipo === "sucesso" ? "✅" : "⚠️"}
-            </div>
-
-            <div>
-              <p className="text-sm font-bold">
-                {toast.tipo === "sucesso" ? "Sucesso!" : "Atenção!"}
-              </p>
-
-              <p className="text-sm mt-0.5 opacity-90">{toast.mensagem}</p>
-            </div>
-
-            <button
-              onClick={() => setToast(null)}
-              className="ml-auto text-lg leading-none opacity-60 hover:opacity-100 transition-opacity"
-            >
-              ×
-            </button>
+        <div className={`fixed top-5 left-1/2 z-[9999] w-[90%] max-w-sm -translate-x-1/2 rounded-2xl border px-5 py-4 shadow-xl flex items-start gap-3 transition-colors sm:left-auto sm:right-5 sm:translate-x-0 animate-fade-in ${toast.tipo === "sucesso"
+            ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300"
+            : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300"
+          }`}>
+          {toast.tipo === "sucesso" ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+          <div className="flex-1">
+            <p className="text-sm font-bold">{toast.tipo === "sucesso" ? "Sucesso!" : "Atenção!"}</p>
+            <p className="text-sm mt-0.5 leading-relaxed">{toast.mensagem}</p>
           </div>
+          <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100 transition-opacity">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700 mb-6 transition-colors">
-        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">
-          {editandoId ? "✏️ Editando Departamento" : "Novo Departamento"}
-        </h3>
+      <div className="bg-slate-50/50 dark:bg-slate-800/50 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 mb-6 transition-colors">
+        <div className="flex items-center gap-2.5 mb-5">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${editandoId ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+            }`}>
+            {editandoId ? <PenLine className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
+          </div>
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 transition-colors">
+            {editandoId ? "Editar Departamento" : "Novo Departamento"}
+          </h3>
+        </div>
 
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          Campos marcados com <span className="text-red-500 dark:text-red-400">*</span> são
-          obrigatórios.
-        </p>
-
-        <div className="flex flex-col md:flex-row gap-3 md:items-start">
+        <div className="flex flex-col md:flex-row gap-4 md:items-end">
           <div className="flex-1 w-full">
-            <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-              Nome do Departamento <span className="text-red-500 dark:text-red-400">*</span>
+            <label className={labelClass}>
+              Nome do Departamento <span className="text-red-500">*</span>
             </label>
-
             <input
-              className={`w-full p-2 border rounded focus:ring-2 outline-none text-sm transition-colors ${campoComErro()}`}
+              className={`${baseInputClass} ${campoComErro()}`}
               value={novoDepto}
               onChange={(e) => {
                 setNovoDepto(e.target.value);
                 limparErroCampo();
               }}
-              placeholder="Ex: Produção"
+              placeholder="Ex: Produção, Administrativo..."
             />
-
             {erros.departamento && (
-              <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                {erros.departamento}
-              </p>
+              <p className="text-xs font-medium text-red-500 mt-1.5">{erros.departamento}</p>
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto md:pt-6">
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto shrink-0">
             {editandoId && (
               <button
                 onClick={cancelarEdicao}
                 disabled={carregando}
-                className="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold rounded transition-colors text-sm disabled:opacity-50"
+                className="w-full sm:w-auto h-[46px] px-6 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700 font-bold rounded-xl transition-colors text-sm disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -225,52 +211,54 @@ export default function AbaDepartamentos() {
             <button
               onClick={salvarDepartamento}
               disabled={carregando}
-              className={`w-full md:w-auto px-6 text-white font-bold py-2 rounded transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
-                editandoId
-                  ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-                  : "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
-              }`}
+              className={`w-full sm:w-auto h-[46px] px-6 text-white font-bold rounded-xl transition-all shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed ${editandoId
+                  ? "bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 shadow-amber-500/20"
+                  : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-blue-600/20"
+                }`}
             >
-              {carregando
-                ? "Salvando..."
-                : editandoId
-                ? "Salvar Alteração"
-                : "+ Adicionar"}
+              {carregando ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : editandoId ? (
+                <><Save className="w-4 h-4" /> Salvar Alteração</>
+              ) : (
+                <><Plus className="w-5 h-5" strokeWidth={2.5} /> Adicionar</>
+              )}
             </button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {!Array.isArray(departamentos) || departamentos.length === 0 ? (
-          <div className="col-span-full p-4 text-center text-slate-400 dark:text-slate-500 italic text-sm">
-            Nenhum departamento cadastrado.
+          <div className="col-span-full p-8 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-800/50 border-2 border-dashed border-slate-200/60 dark:border-slate-700/60 rounded-2xl transition-colors">
+            <Building2 className="w-10 h-10 mb-3 opacity-50" strokeWidth={1.5} />
+            <span className="text-sm font-medium">Nenhum departamento cadastrado.</span>
           </div>
         ) : (
           departamentosPaginados.map((d) => (
             <div
               key={d.id}
-              className="flex justify-between items-center p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:shadow-md dark:shadow-none transition-all"
+              className="flex justify-between items-center p-4 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl bg-white dark:bg-slate-800/80 shadow-sm hover:shadow-md dark:shadow-none transition-all group"
             >
-              <span className="px-2 py-1 rounded text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
+              <span className="font-extrabold text-slate-700 dark:text-slate-200 truncate pr-3">
                 {d.departamento}
               </span>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => iniciarEdicao(d)}
-                  className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold text-xs transition-colors"
-                  title="Editar departamento"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20 transition-colors"
+                  title="Editar"
                 >
-                  Editar
+                  <PenLine className="w-4 h-4" />
                 </button>
 
                 <button
                   onClick={() => removerDepartamento(d.id)}
-                  className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 font-bold transition-colors"
-                  title="Excluir departamento"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                  title="Excluir"
                 >
-                  ✕
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -279,27 +267,27 @@ export default function AbaDepartamentos() {
       </div>
 
       {totalPaginas > 1 && (
-        <div className="flex items-center justify-between mt-6 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors">
+        <div className="flex items-center justify-between mt-6 bg-white dark:bg-slate-800/80 p-3 sm:px-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm transition-colors">
           <button
             onClick={() => setPaginaAtual((prev) => Math.max(prev - 1, 1))}
             disabled={paginaAtual === 1}
-            className="px-3 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-50 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 disabled:opacity-50 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            ← Anterior
+            <ChevronLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Anterior</span>
           </button>
 
-          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-            Página {paginaAtual} de {totalPaginas}
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg transition-colors">
+            {paginaAtual} de {totalPaginas}
           </span>
 
           <button
-            onClick={() =>
-              setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))
-            }
+            onClick={() => setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))}
             disabled={paginaAtual === totalPaginas}
-            className="px-3 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-50 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 disabled:opacity-50 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            Próxima →
+            <span className="hidden sm:inline">Próxima</span>
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       )}
