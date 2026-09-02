@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { criarFornecedor } from "../../services/fornecedorService";
+import { X, Building2, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 function ModalCriarFornecedor({ aberto, onClose, onSucesso }) {
   const [razaoSocial, setRazaoSocial] = useState("");
@@ -57,93 +58,106 @@ function ModalCriarFornecedor({ aberto, onClose, onSucesso }) {
     }
   };
 
+  const baseInputClass = "w-full px-4 py-2.5 rounded-xl text-sm font-medium outline-none transition-all disabled:opacity-50 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/60 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white placeholder-slate-400";
+  const labelClass = "block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 transition-colors";
+
   return (
-    <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-fade-in">
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white px-6 py-5 flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-bold">Novo Fornecedor</h3>
-            <p className="text-sm text-indigo-100 mt-1">
-              Cadastre um novo fornecedor no sistema.
-            </p>
+    <div className="fixed inset-0 z-[120] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in text-slate-700 dark:text-slate-300">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col max-h-[95vh] transition-colors duration-300">
+        <div className="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-start shrink-0 transition-colors duration-300">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 transition-colors">
+              <Building2 className="w-6 h-6" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
+                Novo Fornecedor
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+                Cadastre um novo fornecedor no sistema.
+              </p>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={handleClose}
-            className="bg-white/10 hover:bg-white/20 transition rounded-lg px-3 py-2 text-sm font-bold"
+            className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            title="Fechar"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 sm:px-8 space-y-5 overflow-y-auto custom-scrollbar">
           {erro && (
-            <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100 font-medium">
-              ⚠️ {erro}
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-2xl border border-red-100 dark:border-red-900/30 font-medium flex items-center gap-2.5 transition-colors">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{erro}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-              Razão Social *
+            <label className={labelClass}>
+              Razão Social <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               required
               value={razaoSocial}
               onChange={(e) => setRazaoSocial(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className={baseInputClass}
               placeholder="Ex: Empresa Silva LTDA"
+              autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+            <label className={labelClass}>
               Nome Fantasia
             </label>
             <input
               type="text"
               value={nomeFantasia}
               onChange={(e) => setNomeFantasia(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className={baseInputClass}
               placeholder="Ex: Mercadinho Silva"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+              <label className={labelClass}>
                 CNPJ
               </label>
               <input
                 type="text"
                 value={cnpj}
                 onChange={(e) => setCnpj(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono"
+                className={`${baseInputClass} font-mono`}
                 placeholder="00.000.000/0000-00"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                Insc. Estadual
+              <label className={labelClass}>
+                Inscrição Estadual
               </label>
               <input
                 type="text"
                 value={inscricaoEstadual}
                 onChange={(e) => setInscricaoEstadual(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                className={baseInputClass}
                 placeholder="000.000.000.000"
               />
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 gap-2 border-t border-slate-100 mt-6">
+          <div className="flex flex-col sm:flex-row justify-end pt-6 gap-3 border-t border-slate-100 dark:border-slate-800/60 mt-6 transition-colors">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition"
+              className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors w-full sm:w-auto order-2 sm:order-1"
             >
               Cancelar
             </button>
@@ -151,13 +165,17 @@ function ModalCriarFornecedor({ aberto, onClose, onSucesso }) {
             <button
               type="submit"
               disabled={salvando}
-              className={`px-4 py-2 rounded-xl text-white font-bold transition ${
+              className={`px-6 py-2.5 flex items-center justify-center gap-2 text-white font-bold rounded-xl text-sm transition-all active:scale-[0.98] w-full sm:w-auto order-1 sm:order-2 ${
                 salvando
-                  ? "bg-indigo-400 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-700"
+                  ? "bg-indigo-400 dark:bg-indigo-600/50 cursor-not-allowed opacity-80"
+                  : "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-sm shadow-indigo-600/20"
               }`}
             >
-              {salvando ? "Salvando..." : "Salvar Fornecedor"}
+              {salvando ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+              ) : (
+                <><CheckCircle2 className="w-4 h-4" /> Salvar Fornecedor</>
+              )}
             </button>
           </div>
         </form>

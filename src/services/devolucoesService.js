@@ -38,7 +38,7 @@ export async function buscarDadosDevolucoes() {
     buscarPrimeiraLista(["/funcionarios"]), 
     buscarPrimeiraLista(["/epis"]),
     buscarPrimeiraLista(["/tamanhos"]),
-    buscarPrimeiraLista(["/motivos"]), // 🌟 AGORA SIM! Adicionada a requisição de motivos
+    buscarPrimeiraLista(["/motivos"]), 
     buscarPrimeiraLista(["/devolucoes", "/devolucao", "/baixas"]),
   ]);
 

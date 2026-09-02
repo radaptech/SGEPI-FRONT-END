@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { toast } from "react-toastify"; // Atualizado para o react-toastify
+import { toast } from "react-toastify";
 
 import ModalNovoUsuario from "../../components/modals/master/ModalNovoUsuario";
 import ModalEditarUsuario from "../../components/modals/master/ModalEditarUsuario";
@@ -19,9 +19,6 @@ function UsuariosMaster() {
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [modalBloqueioAberto, setModalBloqueioAberto] = useState(false);
 
-  // ==========================================
-  // INTEGRAÇÃO COM O SERVIÇO DE API
-  // ==========================================
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -34,7 +31,6 @@ function UsuariosMaster() {
         setEmpresasDisponiveis(Array.isArray(dadosEmpresas) ? dadosEmpresas : []); 
         
       } catch (error) {
-        console.error("Falha ao buscar dados do servidor:", error);
         toast.error("Falha ao carregar os dados. Verifique sua conexão.");
         setEmpresasDisponiveis([]); 
       }
@@ -42,7 +38,6 @@ function UsuariosMaster() {
 
     carregarDados();
   }, []);
-  // ==========================================
 
   const usuariosFiltrados = useMemo(() => {
     if (!Array.isArray(usuarios)) return [];
@@ -83,13 +78,9 @@ function UsuariosMaster() {
     setModalBloqueioAberto(false);
   };
 
-  // ==========================================
-  // INTEGRAÇÕES DE SALVAR, EDITAR E BLOQUEAR
-  // ==========================================
   const salvarNovoUsuario = async (payloadApi, usuarioParaTela) => {
     const promessa = masterDashboardService.salvarUsuarios(payloadApi);
 
-    // react-toastify usa "pending" em vez de "loading"
     toast.promise(promessa, {
       pending: "Salvando novo usuário...",
       success: "Usuário criado com sucesso!",
@@ -100,9 +91,7 @@ function UsuariosMaster() {
       await promessa;
       setUsuarios((prev) => [usuarioParaTela, ...prev]);
       fecharModais();
-    } catch (error) {
-      console.error("Erro ao salvar usuário:", error);
-    }
+    } catch (error) {}
   };
 
   const salvarEdicaoUsuario = async (id, payloadApi, usuarioAtualizadoParaTela) => {
@@ -122,9 +111,7 @@ function UsuariosMaster() {
         )
       );
       fecharModais();
-    } catch (error) {
-      console.error("Erro ao editar usuário:", error);
-    }
+    } catch (error) {}
   };
 
   const confirmarBloqueioUsuario = async (usuarioSelecionado) => {
@@ -146,22 +133,14 @@ function UsuariosMaster() {
       setUsuarios((prev) =>
         prev.map((usuario) =>
           usuario.id === usuarioSelecionado.id
-            ? {
-                ...usuario,
-                status: novoStatus, 
-              }
+            ? { ...usuario, status: novoStatus }
             : usuario
         )
       );
       fecharModais();
-    } catch (error) {
-      console.error("Erro ao alterar status do usuário:", error);
-    }
+    } catch (error) {}
   };
 
-  // ==========================================
-  // ESTILOS E LABELS
-  // ==========================================
   const getTipoLabel = (tipo) => {
     switch (tipo) {
       case "super_admin":
@@ -178,169 +157,172 @@ function UsuariosMaster() {
   const getTipoClass = (tipo) => {
     switch (tipo) {
       case "super_admin":
-        return "bg-violet-50 text-violet-700 border-violet-100";
+        return "text-violet-700 bg-violet-50 border-violet-200/60";
       case "admin":
-        return "bg-sky-50 text-sky-700 border-sky-100";
+        return "text-sky-700 bg-sky-50 border-sky-200/60";
       case "colaborador":
-        return "bg-slate-50 text-slate-600 border-slate-100";
+        return "text-slate-600 bg-slate-50 border-slate-200";
       default:
-        return "bg-slate-50 text-slate-600 border-slate-100";
+        return "text-slate-600 bg-slate-50 border-slate-200";
     }
   };
 
   const getStatusClass = (status) => {
-    if (status === true) {
-      return "bg-emerald-50 text-emerald-700 border-emerald-100";
-    }
-    if (status === false) {
-      return "bg-red-50 text-red-700 border-red-100";
-    }
-    return "bg-slate-50 text-slate-600 border-slate-100";
+    if (status === true) return "text-emerald-700 bg-emerald-50 border-emerald-200/60";
+    if (status === false) return "text-red-700 bg-red-50 border-red-200/60";
+    return "text-slate-600 bg-slate-50 border-slate-200";
   };
 
   return (
-    <div className="animate-fade-in p-6 bg-slate-50 min-h-screen">
-      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-8">
-        <div>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.25em]">
-            Painel Master
-          </p>
+    <div className="animate-fade-in min-h-screen bg-slate-50 font-sans pb-12">
+      <div className="w-full max-w-[1600px] mx-auto p-6 lg:p-10">
+        
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              Usuários
+            </h1>
+            <p className="text-sm text-slate-500 mt-2 font-medium max-w-xl leading-relaxed">
+              Controle usuários master, administradores de empresas e usuários internos.
+            </p>
+          </div>
 
-          <h1 className="text-3xl font-black text-slate-800 mt-2">
-            Usuários
-          </h1>
-
-          <p className="text-slate-500 mt-2">
-            Controle usuários master, administradores de empresas e usuários internos.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setModalNovoAberto(true)}
-          className="px-5 py-3 rounded-xl bg-slate-800 text-white text-sm font-bold hover:bg-slate-700 transition shadow-sm"
-        >
-          + Novo usuário
-        </button>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input
-            type="text"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por nome, e-mail ou empresa..."
-            className="md:col-span-2 w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-400"
-          />
-
-          <select
-            value={tipoFiltro}
-            onChange={(e) => setTipoFiltro(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-400 bg-white"
+          <button
+            type="button"
+            onClick={() => setModalNovoAberto(true)}
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 hover:shadow-md hover:shadow-blue-600/20 active:scale-[0.98] transition-all shrink-0"
           >
-            <option value="Todos">Todos os tipos</option>
-            <option value="super_admin">Master</option>
-            <option value="admin">Administrador</option>
-            <option value="colaborador">Colaborador</option>
-          </select>
-        </div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Novo usuário
+          </button>
+        </header>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-400 uppercase text-xs">
-              <tr>
-                <th className="px-6 py-4 text-left">Usuário</th>
-                <th className="px-6 py-4 text-left">Empresa</th>
-                <th className="px-6 py-4 text-center">Tipo</th>
-                <th className="px-6 py-4 text-center">Status</th>
-                <th className="px-6 py-4 text-center">Último acesso</th>
-                <th className="px-6 py-4 text-center">Ações</th>
-              </tr>
-            </thead>
+        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-4 md:p-5 border-b border-slate-100 bg-white flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar por nome, e-mail ou empresa..."
+                className="w-full pl-11 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all text-sm text-slate-900 placeholder:text-slate-400"
+              />
+            </div>
 
-            <tbody className="divide-y divide-slate-100">
-              {usuariosFiltrados.map((usuario) => {
-                const bloqueado = usuario.status === false;
+            <div className="md:w-64 shrink-0">
+              <select
+                value={tipoFiltro}
+                onChange={(e) => setTipoFiltro(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all text-sm text-slate-900 font-medium appearance-none cursor-pointer"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.2em 1.2em` }}
+              >
+                <option value="Todos">Todos os tipos</option>
+                <option value="super_admin">Master</option>
+                <option value="admin">Administrador</option>
+                <option value="colaborador">Colaborador</option>
+              </select>
+            </div>
+          </div>
 
-                return (
-                  <tr key={usuario.id} className="hover:bg-slate-50 transition">
-                    <td className="px-6 py-4">
-                      <p className="font-black text-slate-700">
-                        {usuario.nome}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {usuario.email}
-                      </p>
-                    </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left whitespace-nowrap">
+              <thead className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                <tr>
+                  <th className="px-6 py-4">Usuário</th>
+                  <th className="px-6 py-4">Empresa</th>
+                  <th className="px-6 py-4 text-center">Tipo</th>
+                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4 text-center">Último Acesso</th>
+                  <th className="px-6 py-4 text-center">Ações</th>
+                </tr>
+              </thead>
 
-                    <td className="px-6 py-4 font-bold text-slate-600">
-                      {usuario.empresa}
-                    </td>
+              <tbody className="divide-y divide-slate-100/80">
+                {usuariosFiltrados.map((usuario) => {
+                  const bloqueado = usuario.status === false;
 
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-flex px-3 py-1 rounded-full border text-xs font-black ${getTipoClass(
-                          usuario.tipo
-                        )}`}
-                      >
-                        {getTipoLabel(usuario.tipo)}
-                      </span>
-                    </td>
+                  return (
+                    <tr key={usuario.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-bold text-slate-900">{usuario.nome}</p>
+                        <p className="text-[12px] text-slate-500 mt-0.5 font-medium">
+                          {usuario.email}
+                        </p>
+                      </td>
 
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-flex px-3 py-1 rounded-full border text-xs font-black ${getStatusClass(
-                          usuario.status
-                        )}`}
-                      >
-                        {usuario.status ? "Ativo" : "Bloqueado"}
-                      </span>
-                    </td>
+                      <td className="px-6 py-4">
+                        <p className="text-[13px] font-semibold text-slate-700">
+                          {usuario.empresa || "-"}
+                        </p>
+                      </td>
 
-                    <td className="px-6 py-4 text-center font-bold text-slate-500">
-                      {usuario.ultimoAcesso}
-                    </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex px-2.5 py-1 rounded-md border text-[11px] font-bold tracking-wide ${getTipoClass(usuario.tipo)}`}>
+                          {getTipoLabel(usuario.tipo)}
+                        </span>
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <div className="flex justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => abrirEditar(usuario)}
-                          className="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition"
-                        >
-                          Editar
-                        </button>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex px-2.5 py-1 rounded-md border text-[11px] font-bold tracking-wide ${getStatusClass(usuario.status)}`}>
+                          {usuario.status ? "Ativo" : "Bloqueado"}
+                        </span>
+                      </td>
 
-                        <button
-                          type="button"
-                          onClick={() => abrirBloqueio(usuario)}
-                          className={`px-3 py-2 rounded-lg border text-xs font-bold transition ${
-                            bloqueado
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
-                              : "bg-red-50 text-red-700 border-red-100 hover:bg-red-100"
-                          }`}
-                        >
-                          {bloqueado ? "Desbloquear" : "Bloquear"}
-                        </button>
+                      <td className="px-6 py-4 text-center">
+                        <p className="text-[12px] font-semibold text-slate-500">
+                          {usuario.ultimoAcesso || "-"}
+                        </p>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => abrirEditar(usuario)}
+                            className="px-3 py-1.5 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs font-semibold transition-colors"
+                          >
+                            Editar
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => abrirBloqueio(usuario)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                              bloqueado
+                                ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                            }`}
+                          >
+                            {bloqueado ? "Desbloquear" : "Bloquear"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {usuariosFiltrados.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <p className="text-sm text-slate-500 font-medium">Nenhum usuário encontrado.</p>
                       </div>
                     </td>
                   </tr>
-                );
-              })}
-
-              {usuariosFiltrados.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-10 text-center text-slate-400 font-bold"
-                  >
-                    Nenhum usuário encontrado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

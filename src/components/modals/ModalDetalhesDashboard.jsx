@@ -1,4 +1,8 @@
 import React, { useState, useMemo, useEffect, Fragment } from "react";
+import {
+  X, Search, FilterX, ChevronDown, ChevronUp,
+  ChevronLeft, ChevronRight, CalendarDays, Inbox
+} from "lucide-react";
 
 function ModalDetalhesDashboard({
   aberto,
@@ -6,8 +10,8 @@ function ModalDetalhesDashboard({
   subtitulo,
   icon,
   colunas = [],
-  subColunas = null, // 🌟 NOVO: Colunas para os itens internos da entrega
-  chaveSubItens = "itens", // 🌟 NOVO: Nome da propriedade no objeto que guarda o array de itens
+  subColunas = null,
+  chaveSubItens = "itens",
   dados = [],
   tipo = "tabela",
   onClose,
@@ -16,8 +20,7 @@ function ModalDetalhesDashboard({
   const [busca, setBusca] = useState("");
   const [dataInicial, setDataInicial] = useState("");
   const [dataFinal, setDataFinal] = useState("");
-  
-  // 🌟 NOVO: Controle de qual linha está expandida (accordion)
+
   const [linhaExpandida, setLinhaExpandida] = useState(null);
 
   const itensPorPagina = 10;
@@ -90,7 +93,7 @@ function ModalDetalhesDashboard({
 
   useEffect(() => {
     setPaginaAtual(1);
-    setLinhaExpandida(null); // Fecha as linhas ao filtrar
+    setLinhaExpandida(null);
   }, [dados, aberto, busca, dataInicial, dataFinal]);
 
   useEffect(() => {
@@ -121,58 +124,61 @@ function ModalDetalhesDashboard({
 
   if (!aberto) return null;
 
+  const baseInputClass = "w-full px-4 py-2.5 rounded-xl text-sm font-medium outline-none transition-all disabled:opacity-50 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/60 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white placeholder-slate-400";
+  const labelClass = "block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 transition-colors";
+
   return (
-    <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 animate-fade-in flex flex-col">
-        {/* HEADER */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white px-5 md:px-6 py-4 md:py-5 shrink-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-xl shrink-0">
-                  {icon}
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-lg md:text-xl font-bold truncate">{titulo}</h3>
-                  <p className="text-sm text-slate-300 mt-1">{subtitulo}</p>
-                </div>
-              </div>
+    <div className="fixed inset-0 z-[120] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in text-slate-700 dark:text-slate-300">
+      <div className="w-full max-w-6xl max-h-[95vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col transition-colors duration-300">
+        <div className="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-start shrink-0 transition-colors duration-300">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 transition-colors">
+              {icon || <Inbox className="w-6 h-6" strokeWidth={2.5} />}
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition font-bold"
-            >
-              ✕
-            </button>
+            <div className="min-w-0">
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight truncate transition-colors">
+                {titulo}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 truncate transition-colors">
+                {subtitulo}
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* CORPO */}
-        <div className="p-4 md:p-6 overflow-y-auto flex-1">
-          {/* FILTROS (Mantidos como estavam) */}
-          <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <div className={`grid grid-cols-1 ${temFiltroDeDatasNoConteudo ? "md:grid-cols-[1.4fr_1fr_1fr_auto]" : "md:grid-cols-[1fr_auto]"} gap-3 items-end`}>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Buscar</label>
-                <input
-                  type="text"
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Buscar por item, tamanho, valor..."
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
+        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-900/50 custom-scrollbar transition-colors">
+          <div className="mb-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-800/80 p-5 shadow-sm transition-colors">
+            <div className={`grid grid-cols-1 ${temFiltroDeDatasNoConteudo ? "md:grid-cols-[1.4fr_1fr_1fr_auto]" : "md:grid-cols-[1fr_auto]"} gap-4 items-end`}>
+              <div className="relative">
+                <label className={labelClass}>Buscar</label>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Buscar por item, tamanho, valor..."
+                    className={`${baseInputClass} pl-10`}
+                  />
+                </div>
               </div>
 
               {temFiltroDeDatasNoConteudo && (
                 <>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Data inicial</label>
-                    <input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+                    <label className={labelClass}>Data inicial</label>
+                    <input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} className={baseInputClass} />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Data final</label>
-                    <input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+                    <label className={labelClass}>Data final</label>
+                    <input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} className={baseInputClass} />
                   </div>
                 </>
               )}
@@ -181,40 +187,43 @@ function ModalDetalhesDashboard({
                 type="button"
                 onClick={limparFiltros}
                 disabled={!temFiltrosAtivos}
-                className="h-[42px] px-4 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="h-[42px] px-6 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               >
+                <FilterX className="w-4 h-4" />
                 Limpar
               </button>
             </div>
+
             {temFiltrosAtivos && (
-              <p className="mt-3 text-xs text-gray-500">
-                Filtros aplicados. Exibindo <b>{dadosFiltrados.length}</b> de <b>{dados.length}</b> registros.
+              <p className="mt-4 text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5 transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Filtros aplicados. Exibindo <b className="text-slate-700 dark:text-slate-200">{dadosFiltrados.length}</b> de <b className="text-slate-700 dark:text-slate-200">{dados.length}</b> registros.
               </p>
             )}
           </div>
 
           {dadosFiltrados.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-gray-500">
-              Nenhum registro encontrado.
+            <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/50 p-12 flex flex-col items-center justify-center text-center transition-colors">
+              <Search className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-4" />
+              <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">Nenhum registro encontrado</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Tente ajustar ou limpar os filtros de busca.</p>
             </div>
           ) : (
             <>
-              {/* VERSÃO DESKTOP */}
-              <div className="hidden md:block overflow-x-auto rounded-2xl border border-gray-200">
+              <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-800/80 shadow-sm transition-colors">
                 <table className="w-full text-left border-collapse">
-                  <thead className="bg-gray-100 text-gray-600 text-sm uppercase">
+                  <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200/60 dark:border-slate-700/60 transition-colors">
                     <tr>
                       {colunas.map((coluna) => (
-                        <th key={coluna.key} className="p-4 font-semibold whitespace-nowrap">
+                        <th key={coluna.key} className="p-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest whitespace-nowrap">
                           {coluna.label}
                         </th>
                       ))}
-                      {/* Coluna extra para o ícone de expandir, se houver subColunas */}
-                      {subColunas && <th className="p-4 font-semibold w-10"></th>}
+                      {subColunas && <th className="p-4 w-12"></th>}
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-gray-200 bg-white">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                     {dadosPaginados.map((item, index) => {
                       const idItem = item.id ?? index;
                       const isExpandido = linhaExpandida === idItem;
@@ -222,52 +231,56 @@ function ModalDetalhesDashboard({
 
                       return (
                         <Fragment key={idItem}>
-                          {/* LINHA PRINCIPAL */}
                           <tr
-                            className={`transition ${temSubItens ? "cursor-pointer hover:bg-blue-50/50" : "hover:bg-gray-50"}`}
+                            className={`transition-colors duration-200 ${temSubItens ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30" : "hover:bg-slate-50 dark:hover:bg-slate-700/30"} ${isExpandido ? "bg-slate-50/80 dark:bg-slate-800" : ""}`}
                             onClick={() => temSubItens && toggleExpandir(idItem)}
                           >
                             {colunas.map((coluna) => (
-                              <td key={`${coluna.key}-${idItem}`} className="p-4 text-sm text-gray-700 align-middle">
+                              <td key={`${coluna.key}-${idItem}`} className="p-4 text-sm font-medium text-slate-700 dark:text-slate-200 align-middle">
                                 {typeof coluna.render === "function" ? coluna.render(item) : item[coluna.key]}
                               </td>
                             ))}
-                            
+
                             {subColunas && (
-                              <td className="p-4 text-center text-gray-400">
+                              <td className="p-4 text-center">
                                 {temSubItens && (
-                                  <span className="text-xs">{isExpandido ? "▲" : "▼"}</span>
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors ml-auto">
+                                    {isExpandido ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                  </div>
                                 )}
                               </td>
                             )}
                           </tr>
 
-                          {/* LINHA EXPANDIDA (SUB-ITENS) */}
                           {isExpandido && temSubItens && (
-                            <tr className="bg-slate-50">
-                              <td colSpan={colunas.length + 1} className="p-0 border-b border-gray-200">
-                                <div className="p-4 pl-8 border-l-4 border-blue-400 animate-fade-in">
-                                  <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">Itens desta entrega</h4>
-                                  <table className="w-full text-sm text-left bg-white border border-gray-200 rounded-lg overflow-hidden">
-                                    <thead className="bg-gray-100 text-gray-600">
-                                      <tr>
-                                        {subColunas.map((sc) => (
-                                          <th key={sc.key} className="py-2 px-4 font-medium">{sc.label}</th>
-                                        ))}
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                      {item[chaveSubItens].map((subItem, subIdx) => (
-                                        <tr key={subIdx} className="hover:bg-gray-50">
+                            <tr className="bg-slate-50/50 dark:bg-slate-900/40">
+                              <td colSpan={colunas.length + 1} className="p-0 border-b border-slate-200/60 dark:border-slate-700/60">
+                                <div className="p-4 pl-8 border-l-4 border-blue-500 animate-fade-in">
+                                  <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    Itens do registro
+                                  </h4>
+                                  <div className="rounded-xl border border-slate-200/60 dark:border-slate-700/60 overflow-hidden bg-white dark:bg-slate-800/80">
+                                    <table className="w-full text-sm text-left">
+                                      <thead className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200/60 dark:border-slate-700/60">
+                                        <tr>
                                           {subColunas.map((sc) => (
-                                            <td key={sc.key} className="py-2 px-4 text-gray-700">
-                                              {typeof sc.render === "function" ? sc.render(subItem) : subItem[sc.key]}
-                                            </td>
+                                            <th key={sc.key} className="py-2.5 px-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{sc.label}</th>
                                           ))}
                                         </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                        {item[chaveSubItens].map((subItem, subIdx) => (
+                                          <tr key={subIdx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                            {subColunas.map((sc) => (
+                                              <td key={sc.key} className="py-3 px-4 font-medium text-slate-700 dark:text-slate-300">
+                                                {typeof sc.render === "function" ? sc.render(subItem) : subItem[sc.key]}
+                                              </td>
+                                            ))}
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
                                 </div>
                               </td>
                             </tr>
@@ -279,52 +292,49 @@ function ModalDetalhesDashboard({
                 </table>
               </div>
 
-              {/* VERSÃO MOBILE */}
-              <div className="md:hidden space-y-3">
+              <div className="md:hidden space-y-4">
                 {dadosPaginados.map((item, index) => {
                   const idItem = item.id ?? index;
                   const isExpandido = linhaExpandida === idItem;
                   const temSubItens = subColunas && item[chaveSubItens] && item[chaveSubItens].length > 0;
 
                   return (
-                    <div key={idItem} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                      {/* CARD PRINCIPAL */}
+                    <div key={idItem} className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden transition-colors">
                       <div
-                        className={`p-4 ${temSubItens ? "cursor-pointer hover:bg-gray-50" : ""}`}
+                        className={`p-5 ${temSubItens ? "cursor-pointer active:bg-slate-50 dark:active:bg-slate-700/50" : ""}`}
                         onClick={() => temSubItens && toggleExpandir(idItem)}
                       >
                         <div className="flex justify-between items-start gap-4">
-                          <div className="space-y-2 flex-1">
+                          <div className="space-y-3 flex-1">
                             {colunas.map((coluna) => (
-                              <div key={`${coluna.key}-${idItem}`} className="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
-                                <span className="text-[11px] uppercase font-bold tracking-wide text-gray-400">
+                              <div key={`${coluna.key}-${idItem}`} className="flex flex-col gap-1 border-b border-slate-100 dark:border-slate-700/50 pb-3 last:border-b-0 last:pb-0">
+                                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 dark:text-slate-500">
                                   {coluna.label}
                                 </span>
-                                <div className="text-sm text-gray-700">
+                                <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
                                   {typeof coluna.render === "function" ? coluna.render(item) : item[coluna.key]}
                                 </div>
                               </div>
                             ))}
                           </div>
                           {subColunas && temSubItens && (
-                            <div className="p-2 text-gray-400 bg-gray-50 rounded-lg">
-                              <span className="text-xs">{isExpandido ? "▲" : "▼"}</span>
+                            <div className="p-2 text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                              {isExpandido ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </div>
                           )}
                         </div>
                       </div>
 
-                      {/* SUB-ITENS MOBILE */}
                       {isExpandido && temSubItens && (
-                        <div className="bg-slate-50 p-4 border-t border-gray-200 border-l-4 border-blue-400">
-                          <span className="block text-xs font-bold text-gray-500 uppercase mb-3">Itens desta entrega:</span>
+                        <div className="bg-slate-50/80 dark:bg-slate-900/40 p-4 border-t border-slate-200/60 dark:border-slate-700/60 border-l-4 border-l-blue-500 animate-fade-in">
+                          <span className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Itens desta entrega</span>
                           <div className="space-y-3">
                             {item[chaveSubItens].map((subItem, subIdx) => (
-                              <div key={subIdx} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                              <div key={subIdx} className="bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm space-y-2.5">
                                 {subColunas.map((sc) => (
-                                  <div key={sc.key} className="flex justify-between text-sm items-center gap-2">
-                                    <span className="text-gray-500 text-xs uppercase font-medium">{sc.label}:</span>
-                                    <span className="font-medium text-gray-700 text-right">
+                                  <div key={sc.key} className="flex justify-between text-sm items-center gap-3">
+                                    <span className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-widest font-bold">{sc.label}:</span>
+                                    <span className="font-bold text-slate-700 dark:text-slate-200 text-right">
                                       {typeof sc.render === "function" ? sc.render(subItem) : subItem[sc.key]}
                                     </span>
                                   </div>
@@ -342,17 +352,33 @@ function ModalDetalhesDashboard({
           )}
         </div>
 
-        {/* RODAPÉ (Mantido como estava) */}
         {dadosFiltrados.length > 0 && (
-          <div className="shrink-0 px-4 md:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-500">
-              Mostrando <b>{dadosPaginados.length}</b> de <b>{dadosFiltrados.length}</b> registros
+          <div className="shrink-0 px-6 py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors duration-300 rounded-b-3xl">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              Mostrando <b className="text-slate-700 dark:text-slate-200">{dadosPaginados.length}</b> de <b className="text-slate-700 dark:text-slate-200">{dadosFiltrados.length}</b> registros
             </div>
+
             {totalPaginas > 1 && (
               <div className="flex items-center gap-2">
-                <button type="button" disabled={paginaAtual === 1} onClick={() => setPaginaAtual((p) => p - 1)} className="px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition shadow-sm">Anterior</button>
-                <span className="text-sm text-gray-600 font-medium px-2">Página {paginaAtual} de {totalPaginas}</span>
-                <button type="button" disabled={paginaAtual === totalPaginas} onClick={() => setPaginaAtual((p) => p + 1)} className="px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition shadow-sm">Próxima</button>
+                <button
+                  type="button"
+                  disabled={paginaAtual === 1}
+                  onClick={() => setPaginaAtual((p) => p - 1)}
+                  className="p-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <span className="text-sm font-bold text-slate-600 dark:text-slate-300 px-3">
+                  {paginaAtual} <span className="text-slate-400 dark:text-slate-500 font-medium">/ {totalPaginas}</span>
+                </span>
+                <button
+                  type="button"
+                  disabled={paginaAtual === totalPaginas}
+                  onClick={() => setPaginaAtual((p) => p + 1)}
+                  className="p-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             )}
           </div>

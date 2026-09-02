@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
-
+import {
+  X, Search, FileSearch, Loader2,
+  SearchX, AlertCircle, CheckCircle2
+} from "lucide-react";
 
 function extrairLista(resp, fallback = []) {
   const dados = resp?.data ?? resp ?? fallback;
@@ -14,7 +17,6 @@ async function buscarPrimeiraLista(rotas, fallback = []) {
       const lista = extrairLista(resp, fallback);
       if (Array.isArray(lista)) return lista;
     } catch (erro) {
-      // tenta próxima rota
     }
   }
   return fallback;
@@ -38,10 +40,10 @@ function normalizarEpi(item) {
       item?.validade_CA ?? item?.validadeCA ?? item?.validade_ca ?? "",
     idTipoProtecao: Number(
       item?.idTipoProtecao ??
-        item?.tipo_protecao_id ??
-        item?.tipoProtecaoId ??
-        item?.idTipo ??
-        0
+      item?.tipo_protecao_id ??
+      item?.tipoProtecaoId ??
+      item?.idTipo ??
+      0
     ),
     alerta_minimo: Number(item?.alerta_minimo ?? item?.alertaMinimo ?? 0),
   };
@@ -59,29 +61,29 @@ function normalizarEntrada(item) {
     id: Number(item?.id ?? 0),
     idEpi: Number(
       item?.idEpi ??
-        item?.epi_id ??
-        item?.epiId ??
-        item?.id_epi ??
-        item?.idProduto ??
-        item?.produto_id ??
-        0
+      item?.epi_id ??
+      item?.epiId ??
+      item?.id_epi ??
+      item?.idProduto ??
+      item?.produto_id ??
+      0
     ),
     idTamanho: Number(
       item?.idTamanho ??
-        item?.tamanho_id ??
-        item?.tamanhoId ??
-        item?.id_tamanho ??
-        0
+      item?.tamanho_id ??
+      item?.tamanhoId ??
+      item?.id_tamanho ??
+      0
     ),
     data_entrada: item?.data_entrada ?? item?.dataEntrada ?? "",
     quantidade: Number(item?.quantidade ?? 0),
     quantidadeAtual: Number(
       item?.quantidadeAtual ??
-        item?.quantidade_atual ??
-        item?.estoqueAtual ??
-        item?.estoque_atual ??
-        item?.quantidade ??
-        0
+      item?.quantidade_atual ??
+      item?.estoqueAtual ??
+      item?.estoque_atual ??
+      item?.quantidade ??
+      0
     ),
     data_fabricacao: item?.data_fabricacao ?? item?.dataFabricacao ?? "",
     data_validade: item?.data_validade ?? item?.dataValidade ?? item?.validade ?? "",
@@ -130,17 +132,17 @@ function isVencido(dataValidade) {
 
 function getClasseEstoque(quantidadeAtual, alertaMinimo) {
   if (Number(quantidadeAtual) <= 0) {
-    return "bg-red-100 text-red-700 border-red-200";
+    return "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30";
   }
 
   if (
     Number(alertaMinimo) > 0 &&
     Number(quantidadeAtual) <= Number(alertaMinimo)
   ) {
-    return "bg-amber-100 text-amber-700 border-amber-200";
+    return "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/30";
   }
 
-  return "bg-emerald-100 text-emerald-700 border-emerald-200";
+  return "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/30";
 }
 
 function getTextoEstoque(quantidadeAtual, alertaMinimo) {
@@ -173,16 +175,10 @@ function ModalBusca({ onClose }) {
       try {
         const [listaTipos, listaEpis, listaTamanhos, listaEntradas] =
           await Promise.all([
-            buscarPrimeiraLista(
-              ["/tipo-protecao", "/tipos-protecao", "/tipos_protecao"],
-            
-            ),
-            buscarPrimeiraLista(["/epis", "/epi", "/produtos"], ),
-            buscarPrimeiraLista(["/tamanhos", "/tamanho"], ),
-            buscarPrimeiraLista(
-              ["/entrada-epi", "/entrada_epi", "/entradas"],
-              
-            ),
+            buscarPrimeiraLista(["/tipo-protecao", "/tipos-protecao", "/tipos_protecao"]),
+            buscarPrimeiraLista(["/epis", "/epi", "/produtos"]),
+            buscarPrimeiraLista(["/tamanhos", "/tamanho"]),
+            buscarPrimeiraLista(["/entrada-epi", "/entrada_epi", "/entradas"]),
           ]);
 
         if (!ativo) return;
@@ -309,32 +305,19 @@ function ModalBusca({ onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
-        <div className="bg-yellow-50 px-6 py-4 border-b border-yellow-100 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="bg-yellow-100 p-2 rounded-lg text-yellow-700">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </span>
-
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in text-slate-700 dark:text-slate-300">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-200/60 dark:border-slate-800 transition-colors duration-300">
+        <div className="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-start shrink-0 transition-colors duration-300">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 transition-colors">
+              <FileSearch className="w-6 h-6" strokeWidth={2.5} />
+            </div>
             <div>
-              <h2 className="text-xl font-bold text-yellow-800">
-                Consultar EPI / CA / Lote
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
+                Consultar Estoque
               </h2>
-              <p className="text-xs text-yellow-700 mt-0.5">
-                Pesquisa por nome, fabricante, CA, lote, tamanho, descrição ou tipo
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+                Pesquise por EPI, CA, Lote ou Fabricante.
               </p>
             </div>
           </div>
@@ -342,25 +325,23 @@ function ModalBusca({ onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="text-yellow-600 hover:text-yellow-800 transition text-xl font-bold"
+            className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            title="Fechar Janela"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto">
-          <form onSubmit={buscar} className="flex gap-2 mb-6">
+        <div className="flex-1 overflow-y-auto p-6 sm:px-8 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col custom-scrollbar transition-colors duration-300">
+          <form onSubmit={buscar} className="flex flex-col sm:flex-row gap-3 mb-6 shrink-0">
             <div className="relative flex-1">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                🔍
-              </span>
-
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Digite nome, fabricante, número do CA, lote, tamanho ou descrição..."
+                placeholder="Digite o termo para buscar..."
                 value={termo}
                 onChange={(e) => setTermo(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 outline-none transition"
+                className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all shadow-sm"
                 autoFocus
               />
             </div>
@@ -368,133 +349,120 @@ function ModalBusca({ onClose }) {
             <button
               type="submit"
               disabled={carregando}
-              className={`text-white px-6 rounded-lg font-bold shadow-sm transition ${
-                carregando
-                  ? "bg-yellow-400 cursor-not-allowed"
-                  : "bg-yellow-500 hover:bg-yellow-600"
-              }`}
+              className={`px-8 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all w-full sm:w-auto ${carregando
+                  ? "bg-amber-400 dark:bg-amber-600/50 text-white cursor-not-allowed opacity-80"
+                  : "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 active:scale-[0.98]"
+                }`}
             >
-              {carregando ? "..." : "Buscar"}
+              {carregando ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Buscando...</>
+              ) : (
+                <><Search className="w-4 h-4" /> Buscar</>
+              )}
             </button>
           </form>
 
-          <div className="space-y-3">
+          <div className="space-y-4 flex-1">
             {resultados.length > 0 ? (
               resultados.map((item) => {
                 const tipoProtecao = tiposMap[item.idTipoProtecao] || "Sem tipo";
-                const dataValidadeBase =
-                  item.data_validade_lote || item.validade_CA || "";
+                const dataValidadeBase = item.data_validade_lote || item.validade_CA || "";
                 const vencido = isVencido(dataValidadeBase);
-                const classeEstoque = getClasseEstoque(
-                  item.quantidade,
-                  item.alerta_minimo
-                );
-                const textoEstoque = getTextoEstoque(
-                  item.quantidade,
-                  item.alerta_minimo
-                );
+                const classeEstoque = getClasseEstoque(item.quantidade, item.alerta_minimo);
+                const textoEstoque = getTextoEstoque(item.quantidade, item.alerta_minimo);
 
                 return (
                   <div
                     key={item.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition bg-gray-50 group"
+                    className="bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-5 sm:p-6 hover:border-amber-300 dark:hover:border-amber-700/50 transition-colors shadow-sm"
                   >
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3 mb-3">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
                       <div className="min-w-0">
-                        <h3 className="font-bold text-gray-800 text-lg leading-tight">
+                        <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg leading-tight transition-colors">
                           {item.nome}
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 transition-colors">
                           {item.fabricante || "Fabricante não informado"}
                         </p>
-                        <p className="text-xs text-slate-500 mt-2">
-                          <span className="font-semibold">Tipo:</span> {tipoProtecao}
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 transition-colors">
+                          <span className="font-bold text-slate-600 dark:text-slate-300">Tipo:</span> {tipoProtecao}
                         </p>
                       </div>
 
-                      <div className="text-left md:text-right shrink-0">
-                        <span className="block text-xs text-gray-500 uppercase font-bold">
-                          CA
+                      <div className="flex flex-col items-start md:items-end shrink-0">
+                        <span className="block text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-widest mb-1 transition-colors">
+                          C.A.
                         </span>
-                        <span className="inline-block text-xl font-mono font-bold text-gray-700 bg-white px-3 py-1 rounded border">
+                        <span className="inline-block text-lg font-mono font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors">
                           {item.CA || "-"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="bg-white border border-slate-200 rounded-lg px-3 py-3 mb-3">
-                      <p className="text-sm text-slate-600">
+                    <div className="bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 rounded-xl px-4 py-4 mb-4 transition-colors">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed transition-colors">
                         {item.descricao || "Sem descrição cadastrada."}
                       </p>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 text-sm">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
                         <div>
-                          <span className="block text-[11px] uppercase font-bold text-slate-400">
+                          <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest transition-colors">
                             Lote
                           </span>
-                          <span className="text-slate-700 font-medium">
+                          <span className="text-sm text-slate-700 dark:text-slate-200 font-bold mt-0.5 block transition-colors">
                             {item.lote || "-"}
                           </span>
                         </div>
-
                         <div>
-                          <span className="block text-[11px] uppercase font-bold text-slate-400">
+                          <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest transition-colors">
                             Tamanho
                           </span>
-                          <span className="text-slate-700 font-medium">
+                          <span className="text-sm text-slate-700 dark:text-slate-200 font-bold mt-0.5 block transition-colors">
                             {item.tamanho || "-"}
                           </span>
                         </div>
-
                         <div>
-                          <span className="block text-[11px] uppercase font-bold text-slate-400">
+                          <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest transition-colors">
                             Estoque
                           </span>
-                          <span className="text-slate-700 font-medium">
+                          <span className="text-sm text-slate-700 dark:text-slate-200 font-bold mt-0.5 block transition-colors">
                             {item.quantidade}
                           </span>
                         </div>
-
                         <div>
-                          <span className="block text-[11px] uppercase font-bold text-slate-400">
-                            Valor unitário
+                          <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest transition-colors">
+                            Vlr Unitário
                           </span>
-                          <span className="text-slate-700 font-medium">
+                          <span className="text-sm text-slate-700 dark:text-slate-200 font-bold mt-0.5 block transition-colors">
                             {formatarMoeda(item.valor_unitario)}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-t pt-3 mt-2">
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <div className="text-sm">
-                          <span className="text-gray-500 mr-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4 transition-colors">
+                      <div className="flex flex-wrap gap-2.5 items-center">
+                        <div className="text-sm flex items-center gap-1.5">
+                          <span className="text-slate-500 dark:text-slate-400 font-medium transition-colors">
                             Validade:
                           </span>
-                          <span
-                            className={`font-semibold ${
-                              vencido ? "text-red-600" : "text-green-600"
-                            }`}
-                          >
+                          <span className={`font-bold transition-colors ${vencido ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                             {formatarData(dataValidadeBase)}
                           </span>
                         </div>
 
-                        <span
-                          className={`text-xs font-bold px-2 py-1 rounded border ${classeEstoque}`}
-                        >
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest transition-colors ${classeEstoque}`}>
                           {textoEstoque}
                         </span>
                       </div>
 
                       {vencido ? (
-                        <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded">
-                          ⛔ VENCIDO
+                        <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-900/30 flex items-center gap-1.5 justify-center transition-colors">
+                          <AlertCircle className="w-3.5 h-3.5" /> VENCIDO
                         </span>
                       ) : (
-                        <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">
-                          ✅ VÁLIDO
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-900/30 flex items-center gap-1.5 justify-center transition-colors">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> VÁLIDO
                         </span>
                       )}
                     </div>
@@ -502,22 +470,31 @@ function ModalBusca({ onClose }) {
                 );
               })
             ) : (
-              <div className="text-center py-8 text-gray-400">
+              <div className="h-full flex flex-col items-center justify-center py-16 text-center animate-fade-in">
                 {carregando ? (
                   <>
-                    <p className="text-4xl mb-2">⏳</p>
-                    <p>Carregando dados para pesquisa...</p>
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 mb-4 transition-colors">
+                      <Loader2 className="w-8 h-8 animate-spin" />
+                    </div>
+                    <p className="text-lg font-bold text-slate-700 dark:text-slate-300 transition-colors">Carregando estoque...</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">Isso pode levar alguns segundos.</p>
                   </>
                 ) : jaBuscou ? (
                   <>
-                    <p className="text-4xl mb-2">😕</p>
-                    <p>Nenhum EPI encontrado com esse termo.</p>
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 mb-4 transition-colors">
+                      <SearchX className="w-8 h-8" />
+                    </div>
+                    <p className="text-lg font-bold text-slate-700 dark:text-slate-300 transition-colors">Nenhum resultado encontrado</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">Tente buscar por outro termo ou verifique a ortografia.</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-4xl mb-2">🔎</p>
-                    <p>
-                      Digite o nome do EPI, fabricante, CA, lote, tamanho ou descrição para pesquisar.
+                    <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center text-amber-500 dark:text-amber-400 mb-4 transition-colors">
+                      <Search className="w-8 h-8" />
+                    </div>
+                    <p className="text-lg font-bold text-slate-700 dark:text-slate-300 transition-colors">O que você está procurando?</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm transition-colors">
+                      Digite o nome, CA, fabricante, lote, tamanho ou tipo para começar a busca.
                     </p>
                   </>
                 )}
@@ -526,11 +503,11 @@ function ModalBusca({ onClose }) {
           </div>
         </div>
 
-        <div className="bg-gray-50 px-6 py-4 flex justify-end border-t">
+        <div className="px-6 sm:px-8 py-5 border-t border-slate-100 dark:border-slate-800 flex justify-end bg-white dark:bg-slate-900 shrink-0 rounded-b-3xl transition-colors duration-300">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition"
+            className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors w-full sm:w-auto"
           >
             Fechar Janela
           </button>
