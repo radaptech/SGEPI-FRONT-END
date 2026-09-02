@@ -20,6 +20,7 @@ export function normalizarEpi(item) {
   };
 }
 
+
 export function normalizarTamanho(item) {
   return {
     id: Number(item?.id ?? item?.Id ?? item?.ID ?? 0),

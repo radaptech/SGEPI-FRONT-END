@@ -19,6 +19,7 @@ import DetalhesEmpresa from "./pages/master/DetalhesEmpresa";
 import Mensalidades from "./pages/master/Mensalidades";
 import Planos from "./pages/master/Planos";
 import UsuariosMaster from "./pages/master/UsuariosMaster";
+import { api } from "./services/api"; // 👈 Garanta que aponta para o seu arquivo de API configurado com credentials: "include"
 
 function App() {
   const [usuario, setUsuario] = useState(null);
@@ -80,26 +81,30 @@ function App() {
     return "Dashboard";
   };
 
+  // 🔑 1. RECUPERAÇÃO DE SESSÃO VIA COOKIE HTTPONLY
   useEffect(() => {
-    try {
-      const usuarioSalvo = localStorage.getItem("usuario");
-      const tokenSalvo = localStorage.getItem("token");
+    async function verificarSessao() {
+      try {
+        // Tenta buscar o perfil do usuário logado na API.
+        // O navegador enviará o cookie HttpOnly automaticamente se ele existir.
+        const dados = await api.get("/me"); // Ajuste o endpoint se no seu backend for /perfil ou /auth/me
+        const usuarioLogado = dados?.usuario ?? dados;
 
-      if (usuarioSalvo && tokenSalvo) {
-        const usuarioParseado = JSON.parse(usuarioSalvo);
-
-        console.log("Usuário recuperado da sessão:", usuarioParseado);
-
-        setUsuario(usuarioParseado);
-        setPaginaAtual(definirPaginaInicialPorPerfil(usuarioParseado));
+        if (usuarioLogado) {
+          console.log("Sessão ativa recuperada:", usuarioLogado);
+          setUsuario(usuarioLogado);
+          setPaginaAtual(definirPaginaInicialPorPerfil(usuarioLogado));
+        }
+      } catch (error) {
+        // Se der 401 ou erro, significa que o cookie expirou ou não existe.
+        console.log("Nenhuma sessão ativa encontrada.");
+        setUsuario(null);
+      } finally {
+        setCarregandoSessao(false);
       }
-    } catch (error) {
-      console.error("Erro ao recuperar sessão:", error);
-      localStorage.removeItem("usuario");
-      localStorage.removeItem("token");
-    } finally {
-      setCarregandoSessao(false);
     }
+
+    verificarSessao();
   }, []);
 
   const handleLogin = (dadosLogin) => {
@@ -109,11 +114,17 @@ function App() {
     setPaginaAtual(definirPaginaInicialPorPerfil(usuarioRecebido));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-    setUsuario(null);
-    setPaginaAtual("Dashboard");
+  // 🔑 2. LOGOUT COM EXPIRAÇÃO DE COOKIE NO BACKEND
+  const handleLogout = async () => {
+    try {
+      // Chama a rota no Go para expirar o cookie HttpOnly no navegador
+      await api.post("/logout");
+    } catch (error) {
+      console.error("Erro ao encerrar sessão na API:", error);
+    } finally {
+      setUsuario(null);
+      setPaginaAtual("Dashboard");
+    }
   };
 
   const paginasMaster = [

@@ -15,7 +15,8 @@
     "react-scripts": "5.0.1",
     "react-toastify": "^11.1.0",
     "serve": "^14.2.6",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz"
   },
   "scripts": {
     "start": "react-scripts start",

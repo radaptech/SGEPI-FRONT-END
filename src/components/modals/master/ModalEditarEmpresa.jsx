@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import formatarData from "../../../utils/DatasFormater";
 
 const converterDataParaInput = (dataString) => {
   if (!dataString) return "";
@@ -27,6 +28,7 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar, 
     planoId: "",
     vencimento: "",
     status: "Ativa",
+    observacoes: "", // 👈 Adicionado ao estado inicial
   });
 
   const [erro, setErro] = useState("");
@@ -47,8 +49,9 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar, 
         email: empresa.email || "",
         telefone: empresa.telefone || "",
         planoId: planoInicial, 
-        vencimento: converterDataParaInput(empresa.vencimento),
+        vencimento: formatarData(empresa.vencimento),
         status: empresa.status || "Ativa",
+        observacoes: empresa.observacoes || "", // 👈 Carrega do banco de dados
       });
 
       setErro("");
@@ -97,8 +100,9 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar, 
       email: form.email.trim(),
       telefone: form.telefone.trim(),
       planoId: Number(form.planoId),
-      vencimento: form.vencimento,
+      vencimento: formatarData(form.vencimento),
       status: form.status,
+      observacoes: form.observacoes.trim(), // 👈 Adicionado ao payload enviado ao Go
     };
 
     const planoSelecionado = planos.find(p => String(p.id) === String(form.planoId));
@@ -266,19 +270,13 @@ function ModalEditarEmpresa({ aberto, empresa, planos = [], onFechar, onSalvar, 
   );
 }
 
-function CampoTexto({
-  label,
-  obrigatorio,
-  type = "text",
-  value,
-  onChange,
-}) {
+// Sub-componentes mantidos inalterados
+function CampoTexto({ label, obrigatorio, type = "text", value, onChange }) {
   return (
     <div>
       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">
         {label} {obrigatorio && <span className="text-blue-600 ml-0.5">*</span>}
       </label>
-
       <input
         type={type}
         value={value}
@@ -289,6 +287,7 @@ function CampoTexto({
   );
 }
 
+ 
 function CampoSelect({ label, value, onChange, options }) {
   const listaOpcoes = Array.isArray(options) ? options : [];
 
@@ -297,7 +296,6 @@ function CampoSelect({ label, value, onChange, options }) {
       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">
         {label}
       </label>
-
       <select
         value={value || ""} 
         onChange={onChange}
@@ -307,7 +305,6 @@ function CampoSelect({ label, value, onChange, options }) {
         <option value="" disabled>
           {listaOpcoes.length === 0 ? "Carregando planos..." : "Selecione uma opção"}
         </option>
-
         {listaOpcoes.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

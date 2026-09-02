@@ -23,7 +23,7 @@ function ModalNovaEmpresa({ aberto, onFechar, onSalvar }) {
     if (aberto) {
       const buscarPlanos = async () => {
         try {
-          const resposta = await api.get("/painel/planos");
+          const resposta = await masterDashboardService.buscarPlanos();
           const dados = resposta.data || resposta;
           
           if (Array.isArray(dados)) {

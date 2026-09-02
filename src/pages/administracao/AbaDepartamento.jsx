@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import * as XLSX from "xlsx"; // 👉 Importa a biblioteca de Excel
 import { api } from "../../services/api";
 import {
   Building2,
@@ -18,7 +19,11 @@ export default function AbaDepartamentos() {
   const [departamentos, setDepartamentos] = useState([]);
   const [novoDepto, setNovoDepto] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
+  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+
+  const fileInputRef = useRef(null);
 
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itensPorPagina = 9;

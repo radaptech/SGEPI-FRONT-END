@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import { api } from "../../services/api";
 import {
   Truck,
@@ -16,7 +17,11 @@ import {
 export default function AbaFornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
   const [carregando, setCarregando] = useState(false);
+  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
+  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+
+  const fileInputRef = useRef(null);
 
   const [erros, setErros] = useState({});
   const [toast, setToast] = useState(null);
@@ -64,6 +69,105 @@ export default function AbaFornecedores() {
 
     limparErroCampo(campo);
   };
+
+  // --- GERADOR E ENVIADOR DE PLANILHA EXCEL (.XLSX) ---
+
+  const baixarModeloExcel = () => {
+    // Organiza com as orientações nas primeiras linhas e o cabeçalho oficial abaixo delas
+    const dadosModelo = [
+      {
+        "Razão Social": "📌 ORIENTAÇÕES DE PREENCHIMENTO:",
+        "Nome Fantasia": "",
+        "CNPJ": "",
+        "Inscrição Estadual": "",
+      },
+      {
+        "Razão Social": "1. Preencha a Razão Social e o Nome Fantasia.",
+        "Nome Fantasia": "",
+        "CNPJ": "",
+        "Inscrição Estadual": "",
+      },
+      {
+        "Razão Social": "2. O CNPJ pode conter apenas números (14 dígitos) ou estar formatado.",
+        "Nome Fantasia": "",
+        "CNPJ": "",
+        "Inscrição Estadual": "",
+      },
+      {}, // Linha em branco para separação visual
+      // Linha de cabeçalho oficial que o leitor Go vai buscar
+      {
+        "Razão Social": "Razão Social",
+        "Nome Fantasia": "Nome Fantasia",
+        "CNPJ": "CNPJ",
+        "Inscrição Estadual": "Inscrição Estadual",
+      },
+    ];
+
+    // skipHeader: true impede que a biblioteca crie uma linha duplicada no topo
+    const worksheet = XLSX.utils.json_to_sheet(dadosModelo, { skipHeader: true });
+
+    // Ajusta a largura das colunas
+    worksheet["!cols"] = [
+      { wch: 45 }, // Coluna A: Razão Social
+      { wch: 30 }, // Coluna B: Nome Fantasia
+      { wch: 22 }, // Coluna C: CNPJ
+      { wch: 22 }, // Coluna D: Inscrição Estadual
+    ];
+
+    // Força colunas de CNPJ e Inscrição como texto puro ('s') para preservar formatação/zeros
+    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      const cellC = worksheet[XLSX.utils.encode_cell({ r: R, c: 2 })];
+      if (cellC && typeof cellC.v === "string") cellC.t = "s";
+
+      const cellD = worksheet[XLSX.utils.encode_cell({ r: R, c: 3 })];
+      if (cellD && typeof cellD.v === "string") cellD.t = "s";
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Fornecedores");
+
+    XLSX.writeFile(workbook, "modelo_importacao_fornecedores.xlsx");
+  };
+
+  const enviarPlanilhaFornecedores = async () => {
+    if (!arquivoPlanilha) {
+      mostrarToast("Selecione um arquivo de planilha antes de enviar.", "erro");
+      return;
+    }
+
+    try {
+      setEnviandoPlanilha(true);
+
+      const formData = new FormData();
+      formData.append("file", arquivoPlanilha);
+
+      // Chamada passando 2 parâmetros (evita o problema de CORS)
+      const resposta = await api.post("/gerencial/importar-fornecedores", formData);
+
+      mostrarToast(
+        resposta?.message || "Planilha de fornecedores importada com sucesso!",
+        "sucesso"
+      );
+
+      setArquivoPlanilha(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      await carregarFornecedores();
+    } catch (erro) {
+      console.error("Erro ao importar planilha de fornecedores:", erro);
+      mostrarToast(
+        erro?.response?.data?.message || "Erro ao importar planilha de fornecedores.",
+        "erro"
+      );
+    } finally {
+      setEnviandoPlanilha(false);
+    }
+  };
+
+  // ----------------------------------------------------
 
   const validarCNPJ = (cnpj) => {
     const cnpjLimpo = String(cnpj).replace(/\D/g, "");

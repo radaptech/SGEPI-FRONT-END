@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import { api } from "../../services/api";
 import { 
   Briefcase, 
@@ -18,7 +19,15 @@ export default function AbaFuncoes() {
   const [funcoes, setFuncoes] = useState([]);
   const [departamentos, setDepartamentos] = useState([]);
   const [carregando, setCarregando] = useState(false);
+  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
+  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+
+  // --- ESTADOS DE PAGINAÇÃO ---
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 10;
+
+  const fileInputRef = useRef(null);
 
   const [erros, setErros] = useState({});
   const [toast, setToast] = useState(null);
@@ -65,6 +74,105 @@ export default function AbaFuncoes() {
     limparErroCampo(campo);
   };
 
+  const carregarDados = async () => {
+    try {
+      const [respFuncoes, respDepartamentos] = await Promise.all([
+        api.get("/funcoes"),
+        api.get("/departamentos"),
+      ]);
+
+      const listaFuncoes = respFuncoes?.funcoes || [];
+
+      setFuncoes(listaFuncoes);
+      setDepartamentos(respDepartamentos?.departamentos || []);
+    } catch (erro) {
+      console.error("Erro ao carregar dados de funções:", erro);
+      mostrarToast("Erro ao carregar dados de funções.", "erro");
+    }
+  };
+
+  // --- GERADOR E ENVIADOR DE PLANILHA EXCEL (.XLSX) ---
+
+  const baixarModeloExcel = () => {
+    if (!Array.isArray(departamentos) || departamentos.length === 0) {
+      mostrarToast("Cadastre ao menos um departamento antes de baixar a planilha.", "erro");
+      return;
+    }
+
+    const dadosModelo = [
+      { "Nome da Função": "📌 Orientações de Preenchimento:" },
+      { "Nome da Função": "1. Escreva a função desejada na Coluna A." },
+      { "Nome da Função": "2. Na Coluna B, mantivemos os departamentos da empresa pré-preenchidos." },
+      { "Nome da Função": "3. Você pode duplicar ou adicionar linhas mantendo o nome do departamento." },
+      {}, // Linha em branco para separação visual
+    ];
+
+    departamentos.forEach((d) => {
+      const nomeDepto = d.departamento || d.nome || d;
+
+      dadosModelo.push({
+        "Nome da Função": "",
+        "Departamento Vinculado": nomeDepto,
+      });
+
+      dadosModelo.push({
+        "Nome da Função": "",
+        "Departamento Vinculado": nomeDepto,
+      });
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dadosModelo, {
+      header: ["Nome da Função", "Departamento Vinculado"],
+      skipHeader: false,
+    });
+
+    worksheet["!cols"] = [
+      { wch: 40 },
+      { wch: 35 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Funções");
+
+    XLSX.writeFile(workbook, "modelo_funcoes.xlsx");
+  };
+
+  const enviarPlanilhaFuncoes = async () => {
+    if (!arquivoPlanilha) {
+      mostrarToast("Selecione um arquivo de planilha antes de enviar.", "erro");
+      return;
+    }
+
+    try {
+      setEnviandoPlanilha(true);
+
+      const formData = new FormData();
+      formData.append("file", arquivoPlanilha);
+
+      const resposta = await api.post("/gerencial/importar-funcoes", formData);
+
+      mostrarToast(resposta?.message || "Planilha de funções importada com sucesso!", "sucesso");
+
+      setArquivoPlanilha(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      setPaginaAtual(1);
+      await carregarDados();
+    } catch (erro) {
+      console.error("Erro ao importar planilha de funções:", erro);
+      mostrarToast(
+        erro?.response?.data?.message || "Erro ao importar planilha de funções.",
+        "erro"
+      );
+    } finally {
+      setEnviandoPlanilha(false);
+    }
+  };
+
+  // ----------------------------------------------------
+
   const validarFormulario = () => {
     const novosErros = {};
 
@@ -91,23 +199,6 @@ export default function AbaFuncoes() {
     setErros({});
   };
 
-  const carregarDados = async () => {
-    try {
-      const [respFuncoes, respDepartamentos] = await Promise.all([
-        api.get("/funcoes"),
-        api.get("/departamentos"),
-      ]);
-
-      const listaFuncoes = respFuncoes?.funcoes || [];
-
-      setFuncoes(listaFuncoes);
-      setDepartamentos(respDepartamentos?.departamentos || []);
-    } catch (erro) {
-      console.error("Erro ao carregar dados de funções:", erro);
-      mostrarToast("Erro ao carregar dados de funções.", "erro");
-    }
-  };
-
   const salvarFuncao = async () => {
     const formularioValido = validarFormulario();
 
@@ -130,6 +221,7 @@ export default function AbaFuncoes() {
       }
 
       limparFormulario();
+      setPaginaAtual(1);
 
       await carregarDados();
 
@@ -173,6 +265,7 @@ export default function AbaFuncoes() {
 
       await carregarDados();
 
+      // O useEffect lá embaixo cuida de voltar a página caso fique vazia
       mostrarToast("Função excluída com sucesso!", "sucesso");
     } catch (erro) {
       console.error("Erro ao remover função:", erro);
@@ -407,6 +500,31 @@ export default function AbaFuncoes() {
           </>
         )}
       </div>
+
+      {/* --- CONTROLES DA PAGINAÇÃO --- */}
+      {totalPaginas > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <button
+            onClick={() => setPaginaAtual((prev) => Math.max(prev - 1, 1))}
+            disabled={paginaAtual === 1}
+            className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Anterior
+          </button>
+          
+          <span className="text-sm font-medium text-slate-500">
+            Página <strong className="text-slate-700">{paginaAtual}</strong> de <strong className="text-slate-700">{totalPaginas}</strong>
+          </span>
+
+          <button
+            onClick={() => setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))}
+            disabled={paginaAtual === totalPaginas}
+            className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Próxima
+          </button>
+        </div>
+      )}
     </div>
   );
 }
