@@ -57,7 +57,7 @@ function Estoque({ usuarioLogado }) {
     setErroTela("");
 
     try {
-      const response = await api.get("/estoque"); 
+      const response = await api.get("/entradas-estoque"); 
       const dados = response?.data?.entradas || response?.data || response || [];
       
       const dadosNormalizados = Array.isArray(dados) 

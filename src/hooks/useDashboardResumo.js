@@ -60,7 +60,7 @@ export function useDashboardResumo() {
         api.get("/entradas-dashbord").catch(() => []),
         api.get("/entregas-dashbord").catch(() => []),
         api.get("/entrega-itens-dashbord").catch(() => []),
-        api.get("/devolucoes").catch(() => {
+        api.get("/devolucao").catch(() => {
           console.warn("Rota /devolucoes ainda não implementada no Back-end");
           return []; // Retorna lista vazia e o código continua rodando
         }),

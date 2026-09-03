@@ -5,108 +5,74 @@ import {
   SearchX, AlertCircle, CheckCircle2
 } from "lucide-react";
 
-function extrairLista(resp, fallback = []) {
-  const dados = resp?.data ?? resp ?? fallback;
-  return Array.isArray(dados) ? dados : fallback;
+// /entradas-estoque devolve array puro; /epis devolve envelope paginado {Epis, Total, ...}
+function extrairLista(resp) {
+  const dados = resp?.data ?? resp;
+  if (Array.isArray(dados)) return dados;
+
+  const lista = dados?.entradas ?? dados?.Epis ?? dados?.epis;
+  return Array.isArray(lista) ? lista : [];
 }
 
-async function buscarPrimeiraLista(rotas, fallback = []) {
-  for (const rota of rotas) {
-    try {
-      const resp = await api.get(rota);
-      const lista = extrairLista(resp, fallback);
-      if (Array.isArray(lista)) return lista;
-    } catch (erro) {
-    }
-  }
-  return fallback;
-}
+function normalizarLote(item) {
+  const epi = item?.epi ?? {};
 
-function normalizarTipoProtecao(item) {
   return {
-    id: Number(item?.id ?? 0),
-    nome: item?.nome ?? item?.descricao ?? "",
+    id: `lote-${item?.id}`,
+    idEpi: Number(epi?.id ?? 0),
+    nome: epi?.nome ?? "",
+    fabricante: epi?.fabricante ?? "",
+    CA: epi?.ca ?? "",
+    descricao: epi?.descricao ?? "",
+    tipoProtecao: epi?.protecao?.nome ?? "",
+    alerta_minimo: Number(epi?.alertaMinimo ?? 0),
+    tamanho: item?.tamanho?.tamanho ?? "-",
+    lote: item?.lote ?? "-",
+    quantidade: Number(item?.quantidade_atual ?? 0),
+    data_validade_lote: item?.data_validade ?? "",
+    validade_CA: epi?.validadeCa ?? "",
+    valor_unitario: Number(item?.valor_unitario ?? 0),
   };
 }
 
-function normalizarEpi(item) {
+function normalizarEpiSemLote(epi) {
   return {
-    id: Number(item?.id ?? 0),
-    nome: item?.nome ?? "",
-    fabricante: item?.fabricante ?? "",
-    CA: item?.CA ?? item?.ca ?? "",
-    descricao: item?.descricao ?? "",
-    validade_CA:
-      item?.validade_CA ?? item?.validadeCA ?? item?.validade_ca ?? "",
-    idTipoProtecao: Number(
-      item?.idTipoProtecao ??
-      item?.tipo_protecao_id ??
-      item?.tipoProtecaoId ??
-      item?.idTipo ??
-      0
-    ),
-    alerta_minimo: Number(item?.alerta_minimo ?? item?.alertaMinimo ?? 0),
+    id: `epi-${epi?.id}`,
+    idEpi: Number(epi?.id ?? 0),
+    nome: epi?.nome ?? "",
+    fabricante: epi?.fabricante ?? "",
+    CA: epi?.ca ?? "",
+    descricao: epi?.descricao ?? "",
+    tipoProtecao: epi?.protecao?.nome ?? "",
+    alerta_minimo: Number(epi?.alerta_minimo ?? 0),
+    tamanho: "-",
+    lote: "-",
+    quantidade: 0,
+    data_validade_lote: "",
+    validade_CA: epi?.validade_ca ?? "",
+    valor_unitario: 0,
   };
 }
 
-function normalizarTamanho(item) {
-  return {
-    id: Number(item?.id ?? 0),
-    tamanho: String(item?.tamanho ?? ""),
-  };
-}
+// O back manda data em dd/mm/aaaa; new Date() leria isso como mês/dia.
+function paraData(valor) {
+  if (!valor) return null;
 
-function normalizarEntrada(item) {
-  return {
-    id: Number(item?.id ?? 0),
-    idEpi: Number(
-      item?.idEpi ??
-      item?.epi_id ??
-      item?.epiId ??
-      item?.id_epi ??
-      item?.idProduto ??
-      item?.produto_id ??
-      0
-    ),
-    idTamanho: Number(
-      item?.idTamanho ??
-      item?.tamanho_id ??
-      item?.tamanhoId ??
-      item?.id_tamanho ??
-      0
-    ),
-    data_entrada: item?.data_entrada ?? item?.dataEntrada ?? "",
-    quantidade: Number(item?.quantidade ?? 0),
-    quantidadeAtual: Number(
-      item?.quantidadeAtual ??
-      item?.quantidade_atual ??
-      item?.estoqueAtual ??
-      item?.estoque_atual ??
-      item?.quantidade ??
-      0
-    ),
-    data_fabricacao: item?.data_fabricacao ?? item?.dataFabricacao ?? "",
-    data_validade: item?.data_validade ?? item?.dataValidade ?? item?.validade ?? "",
-    lote: item?.lote ?? "",
-    valor_unitario: Number(
-      item?.valor_unitario ?? item?.valorUnitario ?? item?.preco ?? 0
-    ),
-  };
+  const texto = String(valor).substring(0, 10);
+  const br = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  let dt;
+  if (br) dt = new Date(Number(br[3]), Number(br[2]) - 1, Number(br[1]));
+  else if (iso) dt = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+  else dt = new Date(valor);
+
+  return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
 function formatarData(data) {
-  if (!data) return "-";
-
-  const valor = String(data).substring(0, 10);
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
-    const [ano, mes, dia] = valor.split("-");
-    return `${dia}/${mes}/${ano}`;
-  }
-
-  const dt = new Date(data);
-  if (Number.isNaN(dt.getTime())) return "-";
-  return dt.toLocaleDateString("pt-BR");
+  const dt = paraData(data);
+  return dt ? dt.toLocaleDateString("pt-BR") : "-";
 }
 
 function formatarMoeda(valor) {
@@ -117,13 +83,10 @@ function formatarMoeda(valor) {
 }
 
 function isVencido(dataValidade) {
-  if (!dataValidade) return false;
+  const validade = paraData(dataValidade);
+  if (!validade) return false;
 
   const hoje = new Date();
-  const validade = new Date(dataValidade);
-
-  if (Number.isNaN(validade.getTime())) return false;
-
   hoje.setHours(0, 0, 0, 0);
   validade.setHours(0, 0, 0, 0);
 
@@ -160,33 +123,36 @@ function ModalBusca({ onClose }) {
   const [termo, setTermo] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [jaBuscou, setJaBuscou] = useState(false);
-
-  const [tiposProtecao, setTiposProtecao] = useState([]);
-  const [epis, setEpis] = useState([]);
-  const [tamanhos, setTamanhos] = useState([]);
-  const [entradas, setEntradas] = useState([]);
+  const [itens, setItens] = useState([]);
 
   useEffect(() => {
     let ativo = true;
 
-    async function carregarDadosBase() {
+    async function carregarEstoque() {
       setCarregando(true);
 
       try {
-        const [listaTipos, listaEpis, listaTamanhos, listaEntradas] =
-          await Promise.all([
-            buscarPrimeiraLista(["/tipo-protecao", "/tipos-protecao", "/tipos_protecao"]),
-            buscarPrimeiraLista(["/epis", "/epi", "/produtos"]),
-            buscarPrimeiraLista(["/tamanhos", "/tamanho"]),
-            buscarPrimeiraLista(["/entrada-epi", "/entrada_epi", "/entradas"]),
-          ]);
+        const [respLotes, respEpis] = await Promise.all([
+          api.get("/entradas-estoque"),
+          api.get("/epis"),
+        ]);
 
         if (!ativo) return;
 
-        setTiposProtecao(listaTipos.map(normalizarTipoProtecao));
-        setEpis(listaEpis.map(normalizarEpi));
-        setTamanhos(listaTamanhos.map(normalizarTamanho));
-        setEntradas(listaEntradas.map(normalizarEntrada));
+        const lotes = extrairLista(respLotes).map(normalizarLote);
+        const comLote = new Set(lotes.map((item) => item.idEpi));
+
+        const semLote = extrairLista(respEpis)
+          .filter((epi) => !comLote.has(Number(epi?.id ?? 0)))
+          .map(normalizarEpiSemLote);
+
+        setItens(
+          [...lotes, ...semLote].sort((a, b) =>
+            String(a.nome).localeCompare(String(b.nome))
+          )
+        );
+      } catch (erro) {
+        console.error("Erro ao carregar estoque:", erro);
       } finally {
         if (ativo) {
           setCarregando(false);
@@ -194,88 +160,19 @@ function ModalBusca({ onClose }) {
       }
     }
 
-    carregarDadosBase();
+    carregarEstoque();
 
     return () => {
       ativo = false;
     };
   }, []);
 
-  const tiposMap = useMemo(() => {
-    return tiposProtecao.reduce((acc, tipo) => {
-      acc[tipo.id] = tipo.nome;
-      return acc;
-    }, {});
-  }, [tiposProtecao]);
-
-  const basePesquisa = useMemo(() => {
-    const mapa = {};
-
-    if (entradas.length > 0) {
-      entradas.forEach((entrada) => {
-        const epi = epis.find((item) => Number(item.id) === Number(entrada.idEpi));
-        if (!epi) return;
-
-        const tamanho = tamanhos.find(
-          (item) => Number(item.id) === Number(entrada.idTamanho)
-        );
-
-        const chave = `${entrada.idEpi}-${entrada.idTamanho}-${entrada.lote || "sem-lote"}`;
-
-        if (!mapa[chave]) {
-          mapa[chave] = {
-            id: chave,
-            idEpi: epi.id,
-            nome: epi.nome,
-            fabricante: epi.fabricante,
-            CA: epi.CA,
-            descricao: epi.descricao,
-            validade_CA: epi.validade_CA,
-            idTipoProtecao: epi.idTipoProtecao,
-            alerta_minimo: epi.alerta_minimo,
-            tamanho: tamanho?.tamanho || "-",
-            lote: entrada.lote || "-",
-            quantidade: 0,
-            data_validade_lote: entrada.data_validade || "",
-            valor_unitario: Number(entrada.valor_unitario || 0),
-            possuiLote: true,
-          };
-        }
-
-        mapa[chave].quantidade += Number(entrada.quantidadeAtual || 0);
-      });
-
-      return Object.values(mapa).sort((a, b) =>
-        String(a.nome || "").localeCompare(String(b.nome || ""))
-      );
-    }
-
-    return epis.map((epi) => ({
-      id: epi.id,
-      idEpi: epi.id,
-      nome: epi.nome,
-      fabricante: epi.fabricante,
-      CA: epi.CA,
-      descricao: epi.descricao,
-      validade_CA: epi.validade_CA,
-      idTipoProtecao: epi.idTipoProtecao,
-      alerta_minimo: epi.alerta_minimo,
-      tamanho: "-",
-      lote: "-",
-      quantidade: 0,
-      data_validade_lote: "",
-      valor_unitario: 0,
-      possuiLote: false,
-    }));
-  }, [epis, entradas, tamanhos]);
-
   const resultados = useMemo(() => {
     const termoLower = termo.toLowerCase().trim();
 
     if (!jaBuscou || !termoLower) return [];
 
-    return basePesquisa.filter((item) => {
-      const tipoProtecao = tiposMap[item.idTipoProtecao] || "";
+    return itens.filter((item) => {
       const validadeTexto = formatarData(
         item.data_validade_lote || item.validade_CA || ""
       );
@@ -285,13 +182,13 @@ function ModalBusca({ onClose }) {
         String(item.CA || "").toLowerCase().includes(termoLower) ||
         String(item.fabricante || "").toLowerCase().includes(termoLower) ||
         String(item.descricao || "").toLowerCase().includes(termoLower) ||
-        String(tipoProtecao).toLowerCase().includes(termoLower) ||
+        String(item.tipoProtecao || "").toLowerCase().includes(termoLower) ||
         String(item.lote || "").toLowerCase().includes(termoLower) ||
         String(item.tamanho || "").toLowerCase().includes(termoLower) ||
         String(validadeTexto).toLowerCase().includes(termoLower)
       );
     });
-  }, [basePesquisa, jaBuscou, termo, tiposMap]);
+  }, [itens, jaBuscou, termo]);
 
   function buscar(e) {
     if (e) e.preventDefault();
@@ -365,7 +262,7 @@ function ModalBusca({ onClose }) {
           <div className="space-y-4 flex-1">
             {resultados.length > 0 ? (
               resultados.map((item) => {
-                const tipoProtecao = tiposMap[item.idTipoProtecao] || "Sem tipo";
+                const tipoProtecao = item.tipoProtecao || "Sem tipo";
                 const dataValidadeBase = item.data_validade_lote || item.validade_CA || "";
                 const vencido = isVencido(dataValidadeBase);
                 const classeEstoque = getClasseEstoque(item.quantidade, item.alerta_minimo);

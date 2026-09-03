@@ -26,6 +26,11 @@ export default function AbaFuncoes() {
   // --- ESTADOS DE PAGINAÇÃO ---
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itensPorPagina = 10;
+  const totalPaginas = Math.ceil(funcoes.length / itensPorPagina);
+  const funcoesPagina = funcoes.slice(
+    (paginaAtual - 1) * itensPorPagina,
+    paginaAtual * itensPorPagina
+  );
 
   const fileInputRef = useRef(null);
 
@@ -401,7 +406,7 @@ export default function AbaFuncoes() {
         ) : (
           <>
             <div className="md:hidden p-4 space-y-4">
-              {funcoes.map((f) => (
+              {funcoesPagina.map((f) => (
                 <div
                   key={f.id}
                   className="bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm transition-colors flex flex-col"
@@ -457,7 +462,7 @@ export default function AbaFuncoes() {
                 </thead>
 
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {funcoes.map((f) => (
+                  {funcoesPagina.map((f) => (
                     <tr key={f.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors group">
                       <td className="p-4 pl-6 font-bold text-slate-800 dark:text-slate-200 capitalize transition-colors">
                         <div className="flex items-center gap-2">
