@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import * as XLSX from "xlsx"; // 👉 Importa a biblioteca de Excel
+import { useState, useEffect, useMemo } from "react";
+import * as XLSX from "xlsx";
 import { api } from "../../services/api";
+import ImportarPlanilha from "../../components/ImportarPlanilha";
 import {
   Building2,
   PenLine,
@@ -19,11 +20,7 @@ export default function AbaDepartamentos() {
   const [departamentos, setDepartamentos] = useState([]);
   const [novoDepto, setNovoDepto] = useState("");
   const [carregando, setCarregando] = useState(false);
-  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
-  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
-
-  const fileInputRef = useRef(null);
 
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itensPorPagina = 9;
@@ -62,6 +59,32 @@ export default function AbaDepartamentos() {
       setDepartamentos([]);
       mostrarToast("Erro ao carregar departamentos.", "erro");
     }
+  };
+
+  const baixarModeloExcel = () => {
+    const dadosModelo = [
+      { "Instruções": "📌 Orientações de Preenchimento:" },
+      { "Instruções": "1. Digite um departamento por linha na coluna 'Nome do Departamento'." },
+      { "Instruções": "2. Não altere o nome do cabeçalho na linha 5." },
+      { "Instruções": "3. Salve o arquivo e faça o upload no sistema." },
+      {},
+      { "Nome do Departamento": "TI" },
+      { "Nome do Departamento": "Produção" },
+      { "Nome do Departamento": "Logística e Almoxarifado" },
+      { "Nome do Departamento": "Segurança do Trabalho" },
+      { "Nome do Departamento": "Administrativo e RH" },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(dadosModelo, {
+      header: ["Nome do Departamento"],
+      skipHeader: false,
+    });
+
+    worksheet["!cols"] = [{ wch: 45 }];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Departamentos");
+    XLSX.writeFile(workbook, "modelo_departamentos.xlsx");
   };
 
   const totalPaginas = Math.max(1, Math.ceil(departamentos.length / itensPorPagina));
@@ -171,6 +194,15 @@ export default function AbaDepartamentos() {
           </button>
         </div>
       )}
+
+      <ImportarPlanilha
+        className="mb-6"
+        descricao="Baixe o modelo, preencha os departamentos e envie o arquivo (.xlsx)."
+        rota="/gerencial/importar-departamentos"
+        onBaixarModelo={baixarModeloExcel}
+        onSucesso={carregarDepartamentos}
+        mostrarToast={mostrarToast}
+      />
 
       <div className="bg-slate-50/50 dark:bg-slate-800/50 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 mb-6 transition-colors">
         <div className="flex items-center gap-2.5 mb-5">

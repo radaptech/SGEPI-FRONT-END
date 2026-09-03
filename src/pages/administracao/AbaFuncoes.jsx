@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { api } from "../../services/api";
+import ImportarPlanilha from "../../components/ImportarPlanilha";
 import { 
   Briefcase, 
   PenLine, 
@@ -19,8 +20,6 @@ export default function AbaFuncoes() {
   const [funcoes, setFuncoes] = useState([]);
   const [departamentos, setDepartamentos] = useState([]);
   const [carregando, setCarregando] = useState(false);
-  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
-  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
 
   // --- ESTADOS DE PAGINAÇÃO ---
@@ -32,7 +31,6 @@ export default function AbaFuncoes() {
     paginaAtual * itensPorPagina
   );
 
-  const fileInputRef = useRef(null);
 
   const [erros, setErros] = useState({});
   const [toast, setToast] = useState(null);
@@ -142,39 +140,6 @@ export default function AbaFuncoes() {
     XLSX.writeFile(workbook, "modelo_funcoes.xlsx");
   };
 
-  const enviarPlanilhaFuncoes = async () => {
-    if (!arquivoPlanilha) {
-      mostrarToast("Selecione um arquivo de planilha antes de enviar.", "erro");
-      return;
-    }
-
-    try {
-      setEnviandoPlanilha(true);
-
-      const formData = new FormData();
-      formData.append("file", arquivoPlanilha);
-
-      const resposta = await api.post("/gerencial/importar-funcoes", formData);
-
-      mostrarToast(resposta?.message || "Planilha de funções importada com sucesso!", "sucesso");
-
-      setArquivoPlanilha(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      setPaginaAtual(1);
-      await carregarDados();
-    } catch (erro) {
-      console.error("Erro ao importar planilha de funções:", erro);
-      mostrarToast(
-        erro?.response?.data?.message || "Erro ao importar planilha de funções.",
-        "erro"
-      );
-    } finally {
-      setEnviandoPlanilha(false);
-    }
-  };
 
   // ----------------------------------------------------
 
@@ -301,6 +266,16 @@ export default function AbaFuncoes() {
         </div>
       )}
 
+      <ImportarPlanilha
+        descricao="Baixe o modelo com os departamentos, preencha as funções e envie o arquivo (.xlsx)."
+        rota="/gerencial/importar-funcoes"
+        onBaixarModelo={baixarModeloExcel}
+        onSucesso={async () => {
+          setPaginaAtual(1);
+          await carregarDados();
+        }}
+        mostrarToast={mostrarToast}
+      />
       <div className="bg-slate-50/50 dark:bg-slate-800/50 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 transition-colors">
         <div className="flex items-center gap-2.5 mb-2">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${

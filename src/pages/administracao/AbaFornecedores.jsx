@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { api } from "../../services/api";
+import ImportarPlanilha from "../../components/ImportarPlanilha";
 import {
   Truck,
   PenLine,
@@ -17,11 +18,8 @@ import {
 export default function AbaFornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
   const [carregando, setCarregando] = useState(false);
-  const [enviandoPlanilha, setEnviandoPlanilha] = useState(false);
-  const [arquivoPlanilha, setArquivoPlanilha] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
 
-  const fileInputRef = useRef(null);
 
   const [erros, setErros] = useState({});
   const [toast, setToast] = useState(null);
@@ -130,42 +128,6 @@ export default function AbaFornecedores() {
     XLSX.writeFile(workbook, "modelo_importacao_fornecedores.xlsx");
   };
 
-  const enviarPlanilhaFornecedores = async () => {
-    if (!arquivoPlanilha) {
-      mostrarToast("Selecione um arquivo de planilha antes de enviar.", "erro");
-      return;
-    }
-
-    try {
-      setEnviandoPlanilha(true);
-
-      const formData = new FormData();
-      formData.append("file", arquivoPlanilha);
-
-      // Chamada passando 2 parâmetros (evita o problema de CORS)
-      const resposta = await api.post("/gerencial/importar-fornecedores", formData);
-
-      mostrarToast(
-        resposta?.message || "Planilha de fornecedores importada com sucesso!",
-        "sucesso"
-      );
-
-      setArquivoPlanilha(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      await carregarFornecedores();
-    } catch (erro) {
-      console.error("Erro ao importar planilha de fornecedores:", erro);
-      mostrarToast(
-        erro?.response?.data?.message || "Erro ao importar planilha de fornecedores.",
-        "erro"
-      );
-    } finally {
-      setEnviandoPlanilha(false);
-    }
-  };
 
   // ----------------------------------------------------
 
@@ -362,6 +324,13 @@ export default function AbaFornecedores() {
         </div>
       )}
 
+      <ImportarPlanilha
+        descricao="Baixe o modelo, preencha os fornecedores e envie o arquivo (.xlsx)."
+        rota="/gerencial/importar-fornecedores"
+        onBaixarModelo={baixarModeloExcel}
+        onSucesso={carregarFornecedores}
+        mostrarToast={mostrarToast}
+      />
       <div className="bg-slate-50/50 dark:bg-slate-800/50 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 transition-colors">
         <div className="flex items-center gap-2.5 mb-2">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${editandoId ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
