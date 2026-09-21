@@ -10,10 +10,12 @@ import DashboardModals from "../components/dashboard/DashboardModals";
 import { useDashboardResumo } from "../hooks/useDashboardResumo";
 import { useDashboardCards } from "../hooks/useDashboardCards";
 import { useDashboardModals } from "../hooks/useDashboardModals";
+import { useDashboardDetalhes } from "../hooks/useDashboardDetalhes";
 
 import { temPermissao } from "../utils/permissoes";
 
 function Dashboard({ usuarioLogado }) {
+  const dadosResumo = useDashboardResumo();
   const {
     epis,
     entradas,
@@ -21,7 +23,7 @@ function Dashboard({ usuarioLogado }) {
     carregandoResumo,
     resumo,
     carregarResumo,
-  } = useDashboardResumo();
+  } = dadosResumo;
 
   const {
     modalAberto,
@@ -33,6 +35,8 @@ function Dashboard({ usuarioLogado }) {
   } = useDashboardModals();
 
   const cards = useDashboardCards(resumo, carregandoResumo);
+
+  const detalhe = useDashboardDetalhes(detalheCardAberto, dadosResumo);
 
   const nomeExibicao = usuarioLogado?.nome || "Usuário";
 
@@ -128,6 +132,12 @@ function Dashboard({ usuarioLogado }) {
 
       <ModalDetalhesDashboard
         aberto={!!detalheCardAberto}
+        titulo={detalhe.titulo}
+        subtitulo={detalhe.subtitulo}
+        icon={detalhe.icon}
+        dados={detalhe.dados}
+        colunas={detalhe.colunas}
+        subColunas={detalhe.subColunas}
         onClose={fecharDetalhes}
       />
 
