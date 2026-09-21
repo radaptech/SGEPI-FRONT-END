@@ -1,10 +1,17 @@
 import { useRef, useEffect, useState } from 'react';
 import { Camera, CameraOff, X, Aperture } from 'lucide-react';
 
+// O sensor do celular entrega 1080p ou mais. A foto vai em base64 dentro do JSON
+// da entrega e depois fica no bucket, entao nao vale a pena passar disso.
+const LARGURA_MAXIMA = 1280;
+
 function ModalFoto({ aberto, fecharFoto, onFotoCapturada }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [stream, setStream] = useState(null);
+  // O stream fica em ref, e nao em state: o cleanup do efeito precisa enxergar
+  // o valor atual para desligar a camera quando o modal desmonta.
+  const streamRef = useRef(null);
+  const [cameraPronta, setCameraPronta] = useState(false);
   const [erroCamera, setErroCamera] = useState('');
 
   useEffect(() => {
@@ -22,9 +29,10 @@ function ModalFoto({ aberto, fecharFoto, onFotoCapturada }) {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }
       });
-      
-      setStream(mediaStream);
-      
+
+      streamRef.current = mediaStream;
+      setCameraPronta(true);
+
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
@@ -35,22 +43,30 @@ function ModalFoto({ aberto, fecharFoto, onFotoCapturada }) {
   };
 
   const pararCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
+    setCameraPronta(false);
   };
 
   const tirarFoto = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+
+      // Sem isso, um clique antes do primeiro frame gera um canvas 0x0 e manda
+      // um data URL vazio para o back-end.
+      if (!video.videoWidth || !video.videoHeight) return;
+
+      const escala = Math.min(1, LARGURA_MAXIMA / video.videoWidth);
+      canvas.width = Math.round(video.videoWidth * escala);
+      canvas.height = Math.round(video.videoHeight * escala);
+
       const context = canvas.getContext('2d');
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const fotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
-      
+
       onFotoCapturada(fotoBase64);
       pararCamera();
       fecharFoto();
@@ -123,7 +139,7 @@ function ModalFoto({ aberto, fecharFoto, onFotoCapturada }) {
           <button
             type="button"
             onClick={tirarFoto}
-            disabled={!!erroCamera || !stream}
+            disabled={!!erroCamera || !cameraPronta}
             className="px-6 py-2.5 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold rounded-xl text-sm transition-all shadow-sm shadow-emerald-600/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto order-1 sm:order-2"
           >
             <Aperture className="w-4 h-4" /> Tirar Foto
